@@ -3,7 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const app = express();
 const errorHandler = require("./middleware/errorHandler");
-const authRoutes = require("./routes/authRoute");
+const authRoutes = require("./api/auth/auth.routes");
 
 //middleware
 app.use(cors());
