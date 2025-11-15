@@ -1,0 +1,54 @@
+module.exports = async(client)=>{
+    try{
+        console.log("Checking if products table already exist in database ");
+
+        const result = await client.query(`
+                  SELECT to_regclass('public.products') AS table_name;
+
+            `);
+
+            const tableExists =result.rows[0].table_name !==null;
+
+            if(tableExists){
+                     console.log("✔️ 'products' table already exists.");
+return;
+   
+
+            }
+              console.log("⏳ Creating 'products' table...");
+
+               await client.query(`
+      CREATE TABLE products (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        price NUMERIC(10, 2) NOT NULL,
+        unit VARCHAR(20) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+     console.log("✅ 'products' table created successfully!");
+
+    }catch(err){
+         console.error("❌ Failed to create 'products' table:", err.message);
+   
+    }
+};
+
+/*This table is the foundation for:
+
+Stock management
+
+Sales creation
+
+Sales reports
+
+Billing
+
+Receipts
+
+Admin dashboard
+
+Everything starts from PRODUCTS. */
