@@ -16,7 +16,7 @@ module.exports = async (client) => {
     await client.query(`
       CREATE TABLE stock (
         id SERIAL PRIMARY KEY,
-        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+       product_id INTEGER NOT NULL UNIQUE REFERENCES products(id) ON DELETE CASCADE,
         quantity INTEGER NOT NULL DEFAULT 0,
         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

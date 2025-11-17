@@ -1,33 +1,32 @@
 module.exports = async (client) => {
   try {
-    // 1️⃣ Check if table exists
     const check = await client.query(`
       SELECT to_regclass('public.sale_items') AS table_name;
     `);
 
-    if (check.rows[0].table_name !== null) {
+    if (check.rows[0].table_name) {
       console.log('ℹ️ "sale_items" table already exists.');
       return;
     }
 
-    // 2️⃣ Create table
     await client.query(`
       CREATE TABLE sale_items (
         id SERIAL PRIMARY KEY,
-        sale_id INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
-        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+        sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
         quantity INTEGER NOT NULL,
-        price NUMERIC(10,2) NOT NULL,
-        total NUMERIC(12,2) GENERATED ALWAYS AS (quantity * price) STORED
+        unit_price NUMERIC(10,2) NOT NULL,
+        total_price NUMERIC(10,2) NOT NULL
       );
     `);
 
-    console.log('✅ "sale_items" table created successfully.');
+    console.log('✅ "sale_items" table created.');
   } catch (err) {
     console.error('❌ Failed to create "sale_items" table:', err.message);
     throw err;
   }
 };
+
 /*This allows:
 
 ✔ Thermal Bill

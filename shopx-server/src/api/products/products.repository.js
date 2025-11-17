@@ -1,0 +1,89 @@
+//Only SQL. No business rules.
+
+const db =require("../../config/db");
+
+exports.getAllProducts = async()=>{
+    return await db.query("SELECT * FROM products ORDER BY id ASC");
+};
+
+exports.getProductById = async(id)=>{
+    return await db.query("SELECT * FROM products WHERE id =$1",[id]);
+};
+
+exports.createProduct = async({name,description,price,unit})=>{
+    return await db.query(`
+        INSERT INTO products (name,description,price,unit)
+        VALUES($1,$2,$3,$4) RETURNING *`,
+    [name,description,price,unit]
+    );
+};
+
+exports.updateProduct = async(id,{name,description,price,unit})=>{
+    return await db.query(`
+        UPDATE products 
+        SET name = COALESCE($1,name),
+        description = COALESCE($2,description),
+        price = COALESCE($3,price),
+        unit = COALESCE($4,unit) 
+        WHERE id = $5 RETURNING * `,   
+  
+  [name,description,price,unit,id]
+);
+};
+
+exports.deleteProduct = async(id)=>{
+    return await db.query(`
+      DELETE FROM products WHERE id = $1 RETURNING*`,
+      [id]
+        );
+};
+
+// STOCK MANAGEMENT SECTION
+exports.getStocksByProduct = async(productId)=>{
+    return await db.query(`
+        SELECT * FROM stock WHERE product_id = $1`,
+        [productId]
+        );
+};
+
+// ADJUST STOCK QUANTITY
+// This function updates stock quantity and records why it changed
+exports.adjustStock = async ({ productId, quantityChange, reason }) => {
+
+    // 1️⃣ Create a stock row if it doesn't exist
+    await db.query(
+        `INSERT INTO stock (product_id, quantity)
+         VALUES ($1, 0)
+         ON CONFLICT (product_id) DO NOTHING`,
+        [productId]
+    );
+
+    // 2️⃣ Update stock quantity
+    const stock = await db.query(
+        `UPDATE stock
+         SET quantity = quantity + $1
+         WHERE product_id = $2
+         RETURNING *`,
+        [quantityChange, productId]
+    );
+
+    // 3️⃣ Log stock movement
+    await db.query(
+        `INSERT INTO stock_movements (product_id, change, reason)
+         VALUES ($1, $2, $3)`,
+        [productId, quantityChange, reason]
+    );
+
+    return stock;
+};
+
+
+// RECORD PRICE CHANGES
+// This function saves a history record whenever a product's price changes
+exports.addPriceHistory = async(productId,oldPrice,newPrice)=>{
+    return await db.query(
+        `INSERT INTO price_history (product_id,old_price,new_price)
+        VALUES($1,$2,$3)`,
+        [productId,oldPrice,newPrice]
+    );
+};

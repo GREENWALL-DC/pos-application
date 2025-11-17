@@ -10,6 +10,8 @@ const createReceiptsTable = require("./tables/reciepts.table");
 const createEmployeeAttendanceTable = require("./tables/employee_attendance.table");
 const createPriceHistoryTable = require("./tables/price_history.table");
 const createRolesTable = require("./tables/roles.table");
+const createStockMovementsTable = require("./tables/stockMovements.table");
+const createSalespersonTable  = require("./tables/salespersons.table");
 
 
 
@@ -33,6 +35,8 @@ const createTables = async () => {
     await createEmployeeAttendanceTable(client);
     await createPriceHistoryTable(client);
     await createRolesTable(client);
+    await createStockMovementsTable(client);
+    await createSalespersonTable(client);
 
 
 
