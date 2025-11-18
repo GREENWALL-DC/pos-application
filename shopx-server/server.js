@@ -7,7 +7,12 @@ const authRoutes = require("./src/api/auth/auth.routes");
 const productRoutes = require("./src/api/products/products.routes");
 const customerRoutes = require("./src/api/customers/customers.routes");
 const salePersonRoutes = require("./src/api/salespersons/saleperson.routes");
-const saleRoutes = require("./src/api/sales/sales.routes")
+const saleRoutes = require("./src/api/sales/sales.routes");
+const reportRoutes =require("./src/api/reports/reports.routes");
+const invoiceRoutes = require("./src/api/printing/invoice.routes");
+const paymentRoutes = require("./src/api/payments/payments.routes");
+const dashboardRoutes = require("./src/api/dashboard/dashboard.routes");
+
 
 //middleware
 app.use(cors());
@@ -17,6 +22,11 @@ app.use("/api/products", productRoutes);
 app.use("/api/customers",customerRoutes);
 app.use("/api/salePersons",salePersonRoutes);
 app.use("/api/sales",saleRoutes);
+app.use("/api/reports",reportRoutes);
+app.use("/api/invoices",invoiceRoutes);
+app.use("/api/payments",paymentRoutes);
+app.use("/api/dashboard",dashboardRoutes);
+
 
 
 //test route

@@ -17,7 +17,7 @@ module.exports = async (client) => {
         customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
         salesperson_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         total_amount NUMERIC(12,2) NOT NULL,
-        payment_status VARCHAR(20) DEFAULT 'paid', -- paid / pending / partial
+        payment_status VARCHAR(20) DEFAULT 'unpaid', -- unpaid / partial / paid
         sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);

@@ -29,7 +29,16 @@ exports.createSale = async (data) => {
     salesperson_id: data.salesperson_id,
     customer_id: data.customer_id,
     total_amount,
+    payment_status: "unpaid"
   });
+
+  // 2.1️⃣ Insert into sale_balance (needed for payments module)
+await db.query(
+  `INSERT INTO sale_balance (sale_id, total_amount, paid_amount, balance)
+   VALUES ($1, $2, 0, $2)`,
+  [sale.id, total_amount]
+);
+
 
   // 3️⃣ Insert sale items + reduce stock
   for (const item of data.items) {

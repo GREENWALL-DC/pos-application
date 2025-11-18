@@ -12,6 +12,7 @@ const createPriceHistoryTable = require("./tables/price_history.table");
 const createRolesTable = require("./tables/roles.table");
 const createStockMovementsTable = require("./tables/stockMovements.table");
 const createSalespersonTable  = require("./tables/salespersons.table");
+const createSaleBalanceTable = require("./tables/saleBalance.table");
 
 
 
@@ -37,6 +38,8 @@ const createTables = async () => {
     await createRolesTable(client);
     await createStockMovementsTable(client);
     await createSalespersonTable(client);
+    await createSaleBalanceTable(client);
+
 
 
 
