@@ -40,10 +40,12 @@ exports.deleteProduct = asyncHandler(async(req,res)=>{
 // POST /products/:id/adjust-stock
 exports.adjustStock = asyncHandler(async (req, res) => {
   const { quantity, reason } = req.body;
-  const result = await service.adjustStock(
-    req.params.id,
-    quantity,
-    reason || "manual"
-  );
-  res.json(result);
+
+  const stock = await service.adjustStock({
+    productId: req.params.id,
+    quantityChange: quantity,
+    reason: reason || "manual",
+  });
+
+  res.json(stock);
 });

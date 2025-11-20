@@ -1,10 +1,11 @@
 const db = require("../../config/db");
 
-exports.createCustomer = async ({ name, phone, address,gst_number }) => {
+exports.createCustomer = async ({ name, phone, address, gst_number }) => {
   const result = await db.query(
-    `INSERT INTO customers (name, phone, address)
-     VALUES ($1, $2, $3) RETURNING *`,
-    [name, phone, address,gst_number]
+    `INSERT INTO customers (name, phone, address, gst_number)
+VALUES ($1, $2, $3, $4)
+ RETURNING *`,
+    [name, phone, address, gst_number]
   );
 
   return result.rows[0];
@@ -20,7 +21,7 @@ exports.getCustomerById = async (id) => {
   return result.rows[0];
 };
 
-exports.updateCustomer = async (id, { name, phone, address,gst_number }) => {
+exports.updateCustomer = async (id, { name, phone, address, gst_number }) => {
   const result = await db.query(
     `UPDATE customers
      SET name = COALESCE($1,name),
@@ -30,7 +31,7 @@ exports.updateCustomer = async (id, { name, phone, address,gst_number }) => {
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $5
      RETURNING *`,
-    [name, phone, address,gst_number ,id]
+    [name, phone, address, gst_number, id]
   );
 
   return result.rows[0];

@@ -63,14 +63,16 @@ exports.deleteProduct = async (id) => {
   return result.rows[0];
 };
 
-exports.adjustStock = async(productId,quantityChange,reason)=>{
+exports.adjustStock = async ({ productId, quantityChange, reason }) => {
     const stockRes = await repo.adjustStock({
         productId,
         quantityChange,
         reason,
     });
+
     return stockRes.rows[0];
 };
+
 
 // GET STOCK INFORMATION
 // This function gets current stock levels for a product

@@ -42,3 +42,4 @@ exports.getReceiptData = async (req, res) => {
   res.json(receipt);
 };
 
+

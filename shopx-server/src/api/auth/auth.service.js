@@ -16,7 +16,7 @@ const register = async ({ username, email, password, user_type }) => {
     username,
     email,
     passwordHash,
-    user_type: user_type || "user",
+    user_type: user_type || "salesperson",
   });
 
   return {

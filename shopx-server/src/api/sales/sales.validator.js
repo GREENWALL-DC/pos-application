@@ -1,7 +1,7 @@
 exports.validateSale = (data) => {
   const errors = [];
 
-  if (!data.salesperson_id) errors.push("Salesperson is required");
+//   if (!data.salesperson_id) errors.push("Salesperson is required");
   if (!data.customer_id) errors.push("Customer is required");
   if (!data.items || data.items.length === 0)
     errors.push("At least one sale item is required");

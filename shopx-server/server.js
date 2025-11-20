@@ -12,6 +12,7 @@ const reportRoutes =require("./src/api/reports/reports.routes");
 const invoiceRoutes = require("./src/api/printing/invoice.routes");
 const paymentRoutes = require("./src/api/payments/payments.routes");
 const dashboardRoutes = require("./src/api/dashboard/dashboard.routes");
+const stockRoutes =require("./src/api/stock/stock.routes");
 
 
 //middleware
@@ -26,6 +27,7 @@ app.use("/api/reports",reportRoutes);
 app.use("/api/invoices",invoiceRoutes);
 app.use("/api/payments",paymentRoutes);
 app.use("/api/dashboard",dashboardRoutes);
+app.use("/api/stock",stockRoutes);
 
 
 
