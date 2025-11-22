@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:shopx/presentation/auth/login_screen.dart';
+import 'package:shopx/presentation/auth/selection/selection_screen.dart';
 
 void main() {
   runApp(
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
           elevation: 0, // remove shadow
         ),
       ),
-      home:  LoginScreen(),
+      home:  SelectionScreen()
     );
   }
 }
