@@ -1,51 +1,81 @@
+import 'dart:async';
+import 'dart:ui'; // Required for ImageFilter
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/core/constants.dart';
+// Keep your existing imports
 import 'package:shopx/presentation/auth/owner/widgets/otp_selection_button.dart';
+import 'package:shopx/presentation/dashboard/admin_dashboard.dart';
 
 class OwnerLoginScreen extends HookConsumerWidget {
   const OwnerLoginScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Define Controllers using Hooks (Auto-disposed)
+    // 1. Controllers
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
 
-    // 2. Define State for OTP Selection
-    // 'Email' is selected by default based on the design
-    final selectedOtpMethod = useState<String>('Email');
+    // OTP Controllers (One for each digit)
+    final otp1Controller = useTextEditingController();
+    final otp2Controller = useTextEditingController();
+    final otp3Controller = useTextEditingController();
+    final otp4Controller = useTextEditingController();
+
+    // Focus Nodes for OTP auto-focus
+    final focus1 = useFocusNode();
+    final focus2 = useFocusNode();
+    final focus3 = useFocusNode();
+    final focus4 = useFocusNode();
+
+    // 2. State
+    final selectedOtpMethod = useState<String?>(null);
+    // Controls whether we are in "Form" mode or "OTP" mode
+    final isOtpSent = useState<bool>(false);
+    final secondsLeft = useState(300); // 5 minutes
+    final isTimerRunning = useState(false);
+
+    // 🎯 ADD THIS ONE LINE ONLY
+    final authState = ref.watch(authNotifierProvider);
 
     // 3. Theme Colors
     const primaryBlue = Color(0xFF1976D2);
-    const inputFillColor = Color(0xFFF3F4F6); // Light grey for inputs
+    const inputFillColor = Color(0xFFF3F4F6);
     const textLabelColor = Color(0xFF1F2937);
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: EdgeInsets.fromLTRB(24, 40, 24, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-             Row(
+              // --- HEADER (Back Button & Title) ---
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // LEFT: Back Button
                   InkWell(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: () {
+                      // If OTP is sent, back button goes back to edit form
+                      if (isOtpSent.value) {
+                        isOtpSent.value = false;
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    },
                     borderRadius: BorderRadius.circular(12),
                     child: Image.asset(
                       "assets/images/backbutton.png",
                       height: 35,
                       width: 35,
                       fit: BoxFit.cover,
+                      errorBuilder: (c, o, s) =>
+                          const Icon(Icons.arrow_back_ios),
                     ),
                   ),
-
-                  // CENTER: Title
                   const Expanded(
                     child: Text(
                       'Log in',
@@ -57,153 +87,433 @@ class OwnerLoginScreen extends HookConsumerWidget {
                       ),
                     ),
                   ),
-
-                  // RIGHT: Invisible Box Matching Back Button Size
-                  Opacity(
-                    opacity: 0,
-                    child: Container(
-                      height: 45,
-                      width: 45,
-                      decoration: BoxDecoration(
-                        color: primaryBlue,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(width: 35), // Balance the header
                 ],
               ),
 
-             kHeight40,
+              const SizedBox(height: 55),
 
-              // --- Email/Phone Input ---
-              const Text(
-                'Email or Phone Number',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: textLabelColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  hintText: 'Email or Phone Number',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  filled: true,
-                  fillColor: inputFillColor,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
+              // --- TOP SECTION: BLURRED WHEN OTP IS SENT ---
+              // AbsorbPointer prevents clicking when blurred
+              AbsorbPointer(
+                absorbing: isOtpSent.value,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: isOtpSent.value
+                        ? 2.0
+                        : 0.0, // Horizontal blur amount
+                    sigmaY: isOtpSent.value ? 2.0 : 0.0, // Vertical blur amount
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // --- Password Input ---
-              const Text(
-                'Password',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: textLabelColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: 'Minimum 8 characters',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  filled: true,
-                  fillColor: inputFillColor,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-                   kHeight30,
-
-              // --- Send an OTP Section ---
-              const Text(
-                'send an OTP',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937), // Darker text
-                ),
-              ),
-              const SizedBox(height: 12),
-              
-              // OTP Options Layout
-              Column(
-                children: [
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: OtpSelectionButton(
-                          label: 'Email',
-                          icon: Icons.email,
-                          isSelected: selectedOtpMethod.value == 'Email',
-                          onTap: () => selectedOtpMethod.value = 'Email',
+                      // Email Input
+                      const Text(
+                        'Email or Phone Number',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: textLabelColor,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OtpSelectionButton(
-                          label: 'WhatsApp',
-                          icon:Image.asset(
-                            "assets/images/WhatsApp.png",
-                           
-                          ) , 
-                          isSelected: selectedOtpMethod.value == 'WhatsApp',
-                          onTap: () => selectedOtpMethod.value = 'WhatsApp',
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: emailController,
+                        decoration: InputDecoration(
+                          hintText: 'Email or Phone Number',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: inputFillColor,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 18,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Password Input
+                      const Text(
+                        'Password',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: textLabelColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Minimum 8 characters',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: inputFillColor,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 18,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Send OTP Selection
+                      const Text(
+                        'send an OTP',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OtpSelectionButton(
+                                  label: 'Email',
+                                  icon: Icons.email,
+                                  isSelected:
+                                      selectedOtpMethod.value == 'Email',
+                                  onTap: () {
+                                    // ❗ Block click when username or password is empty
+                                    if (emailController.text.isEmpty ||
+                                        passwordController.text.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Please enter username and password first",
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                     // Otherwise allow selection
+                                    selectedOtpMethod.value = 'Email';
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OtpSelectionButton(
+                                  label: 'WhatsApp',
+                                  // Handling missing asset locally for safety
+                                  icon: Image.asset(
+                                    "assets/images/WhatsApp.png",
+                                    errorBuilder: (c, o, s) =>
+                                        const Icon(Icons.chat),
+                                  ),
+                                  isSelected:
+                                      selectedOtpMethod.value == 'WhatsApp',
+
+                                 onTap: () {
+  // ❗ Block click when username or password is empty
+  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please enter username and password first"),
+      ),
+    );
+    return;
+  }
+
+  // ✔ Allow selection
+  selectedOtpMethod.value = "WhatsApp";
+
+  // Your normal behavior remains the same
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("WhatsApp OTP coming soon"),
+    ),
+  );
+},
+
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OtpSelectionButton(
+                                  label: 'SMS',
+                                  icon: Icons.sms,
+                                  isSelected: selectedOtpMethod.value == 'SMS',
+
+                                 onTap: () {
+  // Block click when username or password is empty
+  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please enter username and password first"),
+      ),
+    );
+    return;
+  }
+
+  // Allow selection
+  selectedOtpMethod.value = "SMS";
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("SMS OTP is not available yet"),
+    ),
+  );
+},
+
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OtpSelectionButton(
+                                  label: 'Missed call',
+                                  icon: Icons.phone_missed,
+                                  isSelected:
+                                      selectedOtpMethod.value == 'Missed call',
+                                 onTap: () {
+  // Block click when username or password is empty
+  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please enter username and password first"),
+      ),
+    );
+    return;
+  }
+
+  // Allow selection
+  selectedOtpMethod.value = "Missed call";
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Missed call verification coming soon"),
+    ),
+  );
+},
+
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OtpSelectionButton(
-                          label: 'SMS',
-                          icon: Icons.sms,
-                          isSelected: selectedOtpMethod.value == 'SMS',
-                          onTap: () => selectedOtpMethod.value = 'SMS',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OtpSelectionButton(
-                          label: 'Missed call',
-                          icon: Icons.phone_missed,
-                          isSelected: selectedOtpMethod.value == 'Missed call',
-                          onTap: () => selectedOtpMethod.value = 'Missed call',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
 
-              const SizedBox(height: 60),
+              const SizedBox(height: 30),
 
-              // --- Log In Button ---
+              // --- ENTER OTP SECTION (Only Visible if isOtpSent == true) ---
+              if (isOtpSent.value) ...[
+                const Text(
+                  'Enter OTP:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textLabelColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // OTP Input Boxes
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildOtpDigitBox(context, otp1Controller, focus1, focus2),
+                    _buildOtpDigitBox(context, otp2Controller, focus2, focus3),
+                    _buildOtpDigitBox(context, otp3Controller, focus3, focus4),
+                    _buildOtpDigitBox(context, otp4Controller, focus4, null),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Resend OTP Link
+               // --- RESEND OTP SECTION (Only visible after OTP is sent) ---
+
+  Center(
+    child: isTimerRunning.value
+        ? Text(
+            "Resend OTP in ${_formatTime(secondsLeft.value)}",
+            style: const TextStyle(
+              color: primaryBlue,
+              fontWeight: FontWeight.bold,
+            ),
+          )
+        : InkWell(
+            onTap: () async {
+              // Send OTP again
+              await ref
+                  .read(authNotifierProvider.notifier)
+                  .sendOTP(selectedOtpMethod.value!.toLowerCase());
+
+              // Restart 5-minute timer
+              secondsLeft.value = 300;
+              isTimerRunning.value = true;
+
+              Timer.periodic(const Duration(seconds: 1), (timer) {
+                if (secondsLeft.value == 0) {
+                  timer.cancel();
+                  isTimerRunning.value = false;
+                } else {
+                  secondsLeft.value--;
+                }
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("OTP Resent!")),
+              );
+            },
+            child: const Text(
+              "Resend OTP",
+              style: TextStyle(
+                color: primaryBlue,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+                decorationColor: primaryBlue,
+              ),
+            ),
+          ),
+  ),
+kHeight20,
+              ] else ...[
+                // Extra spacing when OTP is not visible to match layout
+                const SizedBox(height: 60),
+              ],
+
+              // --- ACTION BUTTON (GET OTP / LOG IN) ---
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Login Logic Here
-                    // Access values: emailController.text, passwordController.text
-                    // Selected OTP: selectedOtpMethod.value
+                  onPressed: () async {
+                    if (!isOtpSent.value) {
+                      // STATE 1: GET OTP
+
+                      // Validate inputs
+                      if (emailController.text.isEmpty ||
+                          passwordController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please enter email and password"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (selectedOtpMethod.value == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please select an OTP method"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        // Step 1: Login and get temp token
+                        await ref
+                            .read(authNotifierProvider.notifier)
+                            .loginOwner(
+                              emailController.text,
+                              passwordController.text,
+                            );
+
+                        // Step 2: Send Email OTP
+                        await ref
+                            .read(authNotifierProvider.notifier)
+                            .sendOTP(selectedOtpMethod.value!.toLowerCase());
+
+                        // If successful, show OTP screen
+                        isOtpSent.value = true;
+
+                        // 🔥 START OTP TIMER
+                        secondsLeft.value = 300;
+                        isTimerRunning.value = true;
+
+                        Timer.periodic(const Duration(seconds: 1), (timer) {
+                          if (secondsLeft.value <= 0) {
+                            timer.cancel();
+                            isTimerRunning.value = false;
+                          } else {
+                            secondsLeft.value--;
+                          }
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("OTP sent to your email"),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                      }
+                    } else {
+                      // STATE 2: VERIFY OTP
+                      final otp =
+                          otp1Controller.text +
+                          otp2Controller.text +
+                          otp3Controller.text +
+                          otp4Controller.text;
+
+                      if (otp.length == 4) {
+                        try {
+                          await ref
+                              .read(authNotifierProvider.notifier)
+                              .verifyOTP(otp);
+
+                          // 🎯 ADD THESE LINES - Navigate to admin dashboard
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AdminDashboard(),
+                            ),
+                          );
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Login successful!")),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("OTP verification failed: $e"),
+                            ),
+                          );
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please enter 4-digit OTP"),
+                          ),
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
@@ -212,9 +522,9 @@ class OwnerLoginScreen extends HookConsumerWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Log in',
-                    style: TextStyle(
+                  child: Text(
+                    isOtpSent.value ? 'Log in' : 'Get OTP',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -223,32 +533,74 @@ class OwnerLoginScreen extends HookConsumerWidget {
                 ),
               ),
 
-                    kHeight20,
+              kHeight20,
 
-              // --- Forgot Password ---
-              Center(
-                child: InkWell(
-                  onTap: () {
-                    // Navigate to Forgot Password
-                  },
-                  child: const Text(
-                    'Forgot your password?',
-                    style: TextStyle(
-                      color: primaryBlue,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                      decorationColor: primaryBlue,
+              // --- FORGOT PASSWORD (Only visible in State 1) ---
+              if (!isOtpSent.value)
+                Center(
+                  child: InkWell(
+                    onTap: () async {
+                      // it is forgot password later add functionality
+                    },
+                    child: const Text(
+                      'Forgot your password?',
+                      style: TextStyle(
+                        color: primaryBlue,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                        decorationColor: primaryBlue,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              
-                    kHeight20,
+
+              kHeight20,
             ],
           ),
         ),
       ),
     );
   }
-}
 
+  // Helper widget to build the gray OTP boxes
+  Widget _buildOtpDigitBox(
+    BuildContext context,
+    TextEditingController controller,
+    FocusNode currentFocus,
+    FocusNode? nextFocus,
+  ) {
+    return Container(
+      height: 60,
+      width: 60,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: TextField(
+        controller: controller,
+        focusNode: currentFocus,
+        autofocus: true,
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        maxLength: 1,
+        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        decoration: const InputDecoration(
+          counterText: "", // Hides the "0/1" counter
+          border: InputBorder.none,
+          focusedBorder: InputBorder.none,
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty && nextFocus != null) {
+            FocusScope.of(context).requestFocus(nextFocus);
+          }
+        },
+      ),
+    );
+  }
+
+  String _formatTime(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return "$m:$s";
+  }
+}

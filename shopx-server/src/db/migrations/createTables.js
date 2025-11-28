@@ -13,6 +13,7 @@ const createRolesTable = require("./tables/roles.table");
 const createStockMovementsTable = require("./tables/stockMovements.table");
 const createSalespersonTable  = require("./tables/salespersons.table");
 const createSaleBalanceTable = require("./tables/saleBalance.table");
+const createOwnerOTPsTable = require("./tables/owner_otps.table");
 
 
 
@@ -31,7 +32,7 @@ const createTables = async () => {
     await createCustomerTable(client);
     await createSalesTable(client);
     await createSaleItemsTable(client);
-    await createPaymentsTable(client);
+    await createPaymentsTable(client);  
     await createReceiptsTable(client);
     await createEmployeeAttendanceTable(client);
     await createPriceHistoryTable(client);
@@ -39,6 +40,7 @@ const createTables = async () => {
     await createStockMovementsTable(client);
     await createSalespersonTable(client);
     await createSaleBalanceTable(client);
+    await createOwnerOTPsTable(client);
 
 
 

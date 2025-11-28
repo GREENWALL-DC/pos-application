@@ -6,18 +6,30 @@ const { registerValidator, loginValidator } = require("./auth.validator");
 
 const router = express.Router();
 
+
+// Admin-only routes
+router.post("/register", validateToken, checkAdmin, registerValidator, controller.registerUser);
+router.post("/login-owner", loginValidator, controller.loginOwner);
+
 // Public
-router.post("/register", registerValidator, controller.registerUser);
 router.post("/login", loginValidator, controller.loginUser);
+
 
 // Protected
 router.get("/current", validateToken, controller.currentUser);
 router.put("/update", validateToken, controller.updateUser);
 router.delete("/delete", validateToken, controller.deleteUser);
+router.post("/send-otp", validateToken, controller.sendOTP);
+router.post("/verify-otp", validateToken, controller.verifyOTP);
 
 // Admin
 router.get("/users", validateToken, checkAdmin, controller.getAllUsers);
 router.get("/user/:id", validateToken, checkAdmin, controller.getUserById);
-router.delete("/user/:id", validateToken, checkAdmin, controller.deleteUserByAdmin);
+router.delete(
+  "/user/:id",
+  validateToken,
+  checkAdmin,
+  controller.deleteUserByAdmin
+);
 
 module.exports = router;

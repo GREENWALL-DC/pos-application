@@ -1,8 +1,10 @@
 const registerValidator = (req, res, next) => {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
+  const { username, email, password,phone } = req.body;
+
+
+  if (!username || !email || !password||!phone) {
     res.status(400);
-    return next(new Error("All fields are required"));
+    return next(new Error("Username, email, password and phone are required"));
   }
   next();
 };

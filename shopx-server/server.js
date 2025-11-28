@@ -16,7 +16,13 @@ const stockRoutes =require("./src/api/stock/stock.routes");
 
 
 //middleware
-app.use(cors());
+app.use(cors({
+  origin: "*",                     // allow all origins (for development)
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: "Content-Type, Authorization",
+  credentials: true
+}));
+
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);

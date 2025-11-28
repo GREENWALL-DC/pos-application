@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/core/constants.dart';
+import 'package:shopx/presentation/dashboard/user_dashboard.dart';
 
 class EmployeeLoginScreen extends HookConsumerWidget {
   const EmployeeLoginScreen({super.key});
@@ -19,7 +21,7 @@ class EmployeeLoginScreen extends HookConsumerWidget {
       0xFFEBF4FF,
     ); // Very light blue for the bottom box
     const textLabelColor = Color(0xFF1F2937);
-
+  
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -135,32 +137,59 @@ class EmployeeLoginScreen extends HookConsumerWidget {
 
               kHeight30,
 
-              // --- Log In Button ---
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Handle Login Logic
-                    // print(employeeIdController.text);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Log in',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+            // --- Log In Button ---
+SizedBox(
+  width: double.infinity,
+  height: 56,
+  child: ElevatedButton(
+    onPressed: () async {
+      // Handle Login Logic
+      if (employeeIdController.text.isEmpty || passwordController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter username and password")),
+        );
+        return;
+      }
+
+      try {
+        // Use the regular login (not loginOwner)
+        await ref.read(authNotifierProvider.notifier).login(
+          employeeIdController.text,
+          passwordController.text,
+        );
+        
+        // Navigate to user dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UserDashboard()),
+        );
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Login successful!")),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Login failed: $e")),
+        );
+      }
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: primaryBlue,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      elevation: 0,
+    ),
+    child: const Text(
+      'Log in',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
 
               kHeight30,
               // --- Info Box ---

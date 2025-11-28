@@ -16,6 +16,7 @@ module.exports = async (client) => {
           username VARCHAR(50) UNIQUE NOT NULL,
           email VARCHAR(150) UNIQUE NOT NULL,
           password VARCHAR(255) NOT NULL,
+          phone VARCHAR(10) NOT NULL,
           user_type VARCHAR(10) CHECK (user_type IN ('user', 'admin')) DEFAULT 'user' NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

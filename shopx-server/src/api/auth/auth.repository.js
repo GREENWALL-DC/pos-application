@@ -7,34 +7,41 @@ const findUserByEmail = async (email) => {
 };
 
 const findUserByUsername = async (username) => {
-  const r = await db.query("SELECT * FROM users WHERE username = $1", [username]);
+  const r = await db.query("SELECT * FROM users WHERE username = $1", [
+    username,
+  ]);
   return r.rows[0] || null;
 };
 
 const findUserById = async (id) => {
-  const r = await db.query("SELECT id, username, email, user_type FROM users WHERE id = $1", [id]);
+  const r = await db.query(
+    "SELECT id, username, email, user_type, phone FROM users WHERE id = $1", // ✅ ADDED phone
+    [id]
+  );
   return r.rows[0] || null;
 };
 
 const getAllUsers = async () => {
-  const r = await db.query("SELECT id, username, email, user_type FROM users ORDER BY id ASC");
+  const r = await db.query(
+    "SELECT id, username, email, user_type, phone FROM users ORDER BY id ASC" // ✅ ADDED phone
+  );
   return r.rows;
 };
 
 // --- INSERT ---
-const createUser = async ({ username, email, passwordHash, user_type }) => {
+const createUser = async ({ username, email, passwordHash, user_type, phone }) => {
   const r = await db.query(
-    "INSERT INTO users (username, email, password, user_type) VALUES ($1,$2,$3,$4) RETURNING *",
-    [username, email, passwordHash, user_type]
+    "INSERT INTO users (username, email, password, user_type, phone) VALUES ($1,$2,$3,$4,$5) RETURNING *", // ✅ ADDED phone column
+    [username, email, passwordHash, user_type, phone] // ✅ ADDED phone parameter
   );
   return r.rows[0];
 };
 
 // --- UPDATE ---
-const updateUser = async (id, username, email) => {
+const updateUser = async (id, username, email, phone) => {
   const r = await db.query(
-    "UPDATE users SET username = COALESCE($1, username), email = COALESCE($2, email) WHERE id = $3 RETURNING id, username, email",
-    [username, email, id]
+    "UPDATE users SET username = COALESCE($1, username), email = COALESCE($2, email), phone = COALESCE($3, phone) WHERE id = $4 RETURNING id, username, email, phone", // ✅ ADDED phone
+    [username, email, phone, id] // ✅ ADDED phone parameter
   );
   return r.rows[0];
 };
@@ -45,6 +52,42 @@ const deleteUserById = async (id) => {
   return r.rows[0] || null;
 };
 
+// --- OTP SYSTEM ---
+
+// Save or update OTP for a user
+const saveOTP = async (userId, otp, method) => {
+  await db.query(
+    `INSERT INTO  owner_otps (user_id, otp, method, expires_at)
+     VALUES ($1, $2, $3, NOW() + INTERVAL '5 minutes')
+     ON CONFLICT (user_id)
+     DO UPDATE SET otp = $2, method = $3, expires_at = NOW() + INTERVAL '5 minutes'`,
+    [userId, otp, method]
+  );
+};
+
+// Find valid (not expired) OTP
+const findValidOTP = async (userId, otp) => {
+  const r = await db.query(
+    `SELECT * FROM owner_otps
+     WHERE user_id = $1 AND otp = $2 AND expires_at > NOW()`,
+    [userId, otp]
+  );
+  return r.rows[0] || null;
+};
+
+// Delete OTP after successful verification
+const deleteOTP = async (userId) => {
+  await db.query(`DELETE FROM owner_otps WHERE user_id = $1`, [userId]);
+};
+
+const countAdmins = async () => {
+  const query = `SELECT COUNT(*) FROM users WHERE user_type = 'admin'`;
+  const result = await db.query(query);
+  return parseInt(result.rows[0].count);
+};
+
+
+
 module.exports = {
   findUserByEmail,
   findUserByUsername,
@@ -53,5 +96,8 @@ module.exports = {
   createUser,
   updateUser,
   deleteUserById,
+  saveOTP,
+  findValidOTP,
+  deleteOTP,
+   countAdmins  
 };
-
