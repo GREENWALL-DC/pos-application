@@ -20,10 +20,13 @@ router.get("/:id", controller. getProductById);
 
 //Admin Only
 
+const uploadProductImage = require("../../middleware/uploadProductImage");
+
 router.post(
   "/",
   validateToken,
   checkAdmin,
+   uploadProductImage.array("images", 5), // accept up to 5 images
   validateCreateProduct,
   controller.createProduct
 );

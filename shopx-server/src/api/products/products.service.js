@@ -4,17 +4,32 @@ const repo = require("./products.repository");
 
 // This function gets all products from the database
 exports.getAllProducts = async () => {
-  // Call the repository to get all products from database
   const result = await repo.getAllProducts();
-  // Return just the data rows (without database metadata)
-  return result.rows;
+  const products = result.rows;
+
+  // Add images for each product
+  for (const product of products) {
+    const imgRes = await repo.getImagesByProduct(product.id);
+    product.images = imgRes.rows.map(row => row.image_path);
+  }
+
+  return products;
 };
+
 
 exports.getProductById = async (id) => {
   const result = await repo.getProductById(id);
-  if (result.rows.length === 0) throw new Error("Product not found ");
-  return result.rows[0];
+  if (result.rows.length === 0) throw new Error("Product not found");
+
+  const product = result.rows[0];
+
+  // Attach images
+  const imgRes = await repo.getImagesByProduct(id);
+  product.images = imgRes.rows.map(r => r.image_path);
+
+  return product;
 };
+
 
 // CREATE NEW PRODUCT
 // This function creates a product AND sets up its initial stock
@@ -80,3 +95,11 @@ exports.getStockWithHistory = async (productId)=>{
     const stock = await repo.getStocksByProduct(productId);
     return stock.rows[0];
 }
+
+
+exports.saveProductImages = async (productId, files) => {
+  for (const file of files) {
+    const imagePath= `/uploads/products/${file.filename}`;
+    await repo.addProductImage(productId, imagePath);
+  }
+};

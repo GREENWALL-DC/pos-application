@@ -87,3 +87,29 @@ exports.addPriceHistory = async(productId,oldPrice,newPrice)=>{
         [productId,oldPrice,newPrice]
     );
 };
+
+
+
+// Save product image
+exports.addProductImage = async (productId,image_path ) => {
+  return await db.query(
+    `
+      INSERT INTO product_images (product_id, image_path )
+      VALUES($1,$2)
+      RETURNING *
+    `,
+    [productId, image_path ]
+  );
+};
+
+// Get all images for a product
+exports.getImagesByProduct = async (productId) => {
+  return await db.query(
+    `
+      SELECT image_path 
+      FROM product_images
+      WHERE product_id = $1
+    `,
+    [productId]
+  );
+};

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/presentation/auth/selection/selection_screen.dart';
+import 'package:shopx/presentation/products/add_product_screen.dart';
 
 void main() {
   runApp(
@@ -28,7 +29,41 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home:  SelectionScreen()
+      // home: AddProductScreen(),
     
     );
   }
 }
+/*
+lib/
+ ├── application/
+ │     └── products/
+ │           ├── product_notifier.dart
+ │           └── product_state.dart
+ │
+ ├── domain/
+ │     └── products/
+ │           ├── product.dart
+ │           └── i_product_repository.dart
+ │
+ ├── infrastructure/
+ │     └── products/
+ │           ├── product_api.dart
+ │           └── product_repository.dart
+ │
+ └── presentation/
+       └── products/
+             ├── add_product/
+             │      ├── add_product_screen.dart
+             │      └── widgets/
+             │             ├── product_form.dart
+             │             └── product_image_picker.dart
+             │
+             ├── dashboard/
+             │      ├── product_dashboard_screen.dart
+             │      └── widgets/
+             │             ├── product_grid_item.dart
+             │             ├── product_list_item.dart
+             │             └── product_search_bar.dart
+
+*/

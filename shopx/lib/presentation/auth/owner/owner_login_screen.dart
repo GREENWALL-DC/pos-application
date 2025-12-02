@@ -18,6 +18,8 @@ class OwnerLoginScreen extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
 
+
+
     // OTP Controllers (One for each digit)
     final otp1Controller = useTextEditingController();
     final otp2Controller = useTextEditingController();
@@ -36,9 +38,27 @@ class OwnerLoginScreen extends HookConsumerWidget {
     final isOtpSent = useState<bool>(false);
     final secondsLeft = useState(300); // 5 minutes
     final isTimerRunning = useState(false);
+    final otpTimer = useRef<Timer?>(null);
+
+    useEffect(() {
+      return () {
+        otpTimer.value?.cancel(); // NEW CLEANUP
+      };
+    }, []);
 
     // 🎯 ADD THIS ONE LINE ONLY
     final authState = ref.watch(authNotifierProvider);
+
+        final usernameError = useState<bool>(false);
+final passwordError = useState<bool>(false);
+
+  // ⭐ FIX: If login failed, force-reset UI
+if (authState.error != null) {
+  otpTimer.value?.cancel();
+  isTimerRunning.value = false;
+  isOtpSent.value = false;
+}
+
 
     // 3. Theme Colors
     const primaryBlue = Color(0xFF1976D2);
@@ -58,14 +78,17 @@ class OwnerLoginScreen extends HookConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   InkWell(
-                    onTap: () {
-                      // If OTP is sent, back button goes back to edit form
-                      if (isOtpSent.value) {
-                        isOtpSent.value = false;
-                      } else {
-                        Navigator.of(context).pop();
-                      }
-                    },
+                   onTap: () {
+  if (isOtpSent.value) {
+    otpTimer.value?.cancel();     // ⭐ STOP TIMER
+    isTimerRunning.value = false; // ⭐ RESET
+    secondsLeft.value = 300;      // ⭐ RESET
+    isOtpSent.value = false;      // ⭐ HIDE OTP UI
+  } else {
+    Navigator.of(context).pop();
+  }
+},
+
                     borderRadius: BorderRadius.circular(12),
                     child: Image.asset(
                       "assets/images/backbutton.png",
@@ -210,7 +233,7 @@ class OwnerLoginScreen extends HookConsumerWidget {
                                       );
                                       return;
                                     }
-                                     // Otherwise allow selection
+                                    // Otherwise allow selection
                                     selectedOtpMethod.value = 'Email';
                                   },
                                 ),
@@ -228,28 +251,34 @@ class OwnerLoginScreen extends HookConsumerWidget {
                                   isSelected:
                                       selectedOtpMethod.value == 'WhatsApp',
 
-                                 onTap: () {
-  // ❗ Block click when username or password is empty
-  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please enter username and password first"),
-      ),
-    );
-    return;
-  }
+                                  onTap: () {
+                                    // ❗ Block click when username or password is empty
+                                    if (emailController.text.isEmpty ||
+                                        passwordController.text.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Please enter username and password first",
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
 
-  // ✔ Allow selection
-  selectedOtpMethod.value = "WhatsApp";
+                                    // ✔ Allow selection
+                                    selectedOtpMethod.value = "WhatsApp";
 
-  // Your normal behavior remains the same
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text("WhatsApp OTP coming soon"),
-    ),
-  );
-},
-
+                                    // Your normal behavior remains the same
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "WhatsApp OTP coming soon",
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -263,27 +292,33 @@ class OwnerLoginScreen extends HookConsumerWidget {
                                   icon: Icons.sms,
                                   isSelected: selectedOtpMethod.value == 'SMS',
 
-                                 onTap: () {
-  // Block click when username or password is empty
-  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please enter username and password first"),
-      ),
-    );
-    return;
-  }
+                                  onTap: () {
+                                    // Block click when username or password is empty
+                                    if (emailController.text.isEmpty ||
+                                        passwordController.text.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Please enter username and password first",
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
 
-  // Allow selection
-  selectedOtpMethod.value = "SMS";
+                                    // Allow selection
+                                    selectedOtpMethod.value = "SMS";
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text("SMS OTP is not available yet"),
-    ),
-  );
-},
-
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "SMS OTP is not available yet",
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -293,27 +328,33 @@ class OwnerLoginScreen extends HookConsumerWidget {
                                   icon: Icons.phone_missed,
                                   isSelected:
                                       selectedOtpMethod.value == 'Missed call',
-                                 onTap: () {
-  // Block click when username or password is empty
-  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please enter username and password first"),
-      ),
-    );
-    return;
-  }
+                                  onTap: () {
+                                    // Block click when username or password is empty
+                                    if (emailController.text.isEmpty ||
+                                        passwordController.text.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Please enter username and password first",
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
 
-  // Allow selection
-  selectedOtpMethod.value = "Missed call";
+                                    // Allow selection
+                                    selectedOtpMethod.value = "Missed call";
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text("Missed call verification coming soon"),
-    ),
-  );
-},
-
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Missed call verification coming soon",
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -350,56 +391,59 @@ class OwnerLoginScreen extends HookConsumerWidget {
                   ],
                 ),
 
-                const SizedBox(height: 20),
+                kHeight20,
 
                 // Resend OTP Link
-               // --- RESEND OTP SECTION (Only visible after OTP is sent) ---
+                // --- RESEND OTP SECTION (Only visible after OTP is sent) ---
+                Center(
+                  child: isTimerRunning.value
+                      ? Text(
+                          "Resend OTP in ${_formatTime(secondsLeft.value)}",
+                          style: const TextStyle(
+                            color: primaryBlue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : InkWell(
+                          onTap: () async {
+                            // Send OTP again
+                            await ref
+                                .read(authNotifierProvider.notifier)
+                                .sendOTP(
+                                  selectedOtpMethod.value!.toLowerCase(),
+                                );
 
-  Center(
-    child: isTimerRunning.value
-        ? Text(
-            "Resend OTP in ${_formatTime(secondsLeft.value)}",
-            style: const TextStyle(
-              color: primaryBlue,
-              fontWeight: FontWeight.bold,
-            ),
-          )
-        : InkWell(
-            onTap: () async {
-              // Send OTP again
-              await ref
-                  .read(authNotifierProvider.notifier)
-                  .sendOTP(selectedOtpMethod.value!.toLowerCase());
+                            // Restart 5-minute timer
+                            secondsLeft.value = 300;
+                            isTimerRunning.value = true;
+                            otpTimer.value = Timer.periodic(
+                              const Duration(seconds: 1),
+                              (timer) {
+                                if (secondsLeft.value == 0) {
+                                  timer.cancel();
+                                  isTimerRunning.value = false;
+                                } else {
+                                  secondsLeft.value--;
+                                }
+                              },
+                            );
 
-              // Restart 5-minute timer
-              secondsLeft.value = 300;
-              isTimerRunning.value = true;
-
-              Timer.periodic(const Duration(seconds: 1), (timer) {
-                if (secondsLeft.value == 0) {
-                  timer.cancel();
-                  isTimerRunning.value = false;
-                } else {
-                  secondsLeft.value--;
-                }
-              });
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("OTP Resent!")),
-              );
-            },
-            child: const Text(
-              "Resend OTP",
-              style: TextStyle(
-                color: primaryBlue,
-                fontWeight: FontWeight.bold,
-                decoration: TextDecoration.underline,
-                decorationColor: primaryBlue,
-              ),
-            ),
-          ),
-  ),
-kHeight20,
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("OTP Resent!")),
+                            );
+                          },
+                          child: const Text(
+                            "Resend OTP",
+                            style: TextStyle(
+                              color: primaryBlue,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                              decorationColor: primaryBlue,
+                            ),
+                          ),
+                        ),
+                ),
+                kHeight20,
               ] else ...[
                 // Extra spacing when OTP is not visible to match layout
                 const SizedBox(height: 60),
@@ -414,7 +458,7 @@ kHeight20,
                     if (!isOtpSent.value) {
                       // STATE 1: GET OTP
 
-                      // Validate inputs
+                      // ✅ 1. Validate inputs
                       if (emailController.text.isEmpty ||
                           passwordController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -434,46 +478,68 @@ kHeight20,
                         return;
                       }
 
-                      try {
-                        // Step 1: Login and get temp token
-                        await ref
-                            .read(authNotifierProvider.notifier)
-                            .loginOwner(
-                              emailController.text,
-                              passwordController.text,
-                            );
+                      // ✅ 2. Call login + sendOTP first
+                      Future.microtask(() async {
+                       try {
+  // Step 1: Login owner
+  await ref.read(authNotifierProvider.notifier).loginOwner(
+    emailController.text,
+    passwordController.text,
+  );
 
-                        // Step 2: Send Email OTP
-                        await ref
-                            .read(authNotifierProvider.notifier)
-                            .sendOTP(selectedOtpMethod.value!.toLowerCase());
+  // Step 2: Send OTP
+  await ref.read(authNotifierProvider.notifier).sendOTP(
+    selectedOtpMethod.value!.toLowerCase(),
+  );
 
-                        // If successful, show OTP screen
-                        isOtpSent.value = true;
+  // ⭐ ONLY NOW SHOW OTP UI
+  isOtpSent.value = true;
 
-                        // 🔥 START OTP TIMER
-                        secondsLeft.value = 300;
-                        isTimerRunning.value = true;
+  // Timer start
+  secondsLeft.value = 300;
+  isTimerRunning.value = true;
 
-                        Timer.periodic(const Duration(seconds: 1), (timer) {
-                          if (secondsLeft.value <= 0) {
-                            timer.cancel();
-                            isTimerRunning.value = false;
-                          } else {
-                            secondsLeft.value--;
-                          }
-                        });
+  otpTimer.value = Timer.periodic(
+    const Duration(seconds: 1),
+    (timer) {
+      if (secondsLeft.value <= 0) {
+        timer.cancel();
+        isTimerRunning.value = false;
+      } else {
+        secondsLeft.value--;
+      }
+    },
+  );
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("OTP sent to your email"),
-                          ),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text("Error: $e")));
-                      }
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("OTP sent to your email")),
+  );
+}catch (e) {
+  otpTimer.value?.cancel();
+  isTimerRunning.value = false;
+  isOtpSent.value = false;
+
+  // Extract backend message
+  String message = e.toString();
+
+  if (message.contains("wrong password")) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Incorrect password")),
+    );
+  } else if (message.contains("user not found")) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Username does not exist")),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+}
+
+
+
+                      });
                     } else {
                       // STATE 2: VERIFY OTP
                       final otp =
@@ -579,7 +645,7 @@ kHeight20,
       child: TextField(
         controller: controller,
         focusNode: currentFocus,
-        autofocus: true,
+        autofocus: false,
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 1,

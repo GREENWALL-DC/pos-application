@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shopx/domain/auth/user_model.dart';
 import 'package:shopx/infrastructure/auth/auth_repositary.dart';
 import 'auth_state.dart';
 
@@ -6,6 +7,7 @@ import 'auth_state.dart';
 class AuthNotifier extends Notifier<AuthState> {
   String? _tempToken;
   String? _selectedOtpMethod; // ✅ ADD: Store selected method
+  String? _jwtToken; // ✅ ADD THIS: Store permanent JWT token
 
   @override
   AuthState build() {
@@ -18,10 +20,17 @@ class AuthNotifier extends Notifier<AuthState> {
     state = const AuthState.loading();
 
     try {
-      final user = await ref
+      // ✅ UPDATED: Get result with both user and token
+      final result = await ref
           .read(authRepositoryProvider)
           .login(username, password);
-      state = AuthState.authenticated(user);
+
+      final user = result['user'] as UserModel;
+      final token = result['token'] as String;
+
+      // ✅ Store the token
+      _jwtToken = token;
+      state = AuthState.authenticated(user, token: token);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
@@ -38,60 +47,91 @@ class AuthNotifier extends Notifier<AuthState> {
     state = const AuthState.loading();
 
     try {
-      final user = await ref
+      // ✅ UPDATED: Get result with both user and token
+      final result = await ref
           .read(authRepositoryProvider)
           .register(username, email, password, phone, adminToken);
-      state = AuthState.authenticated(user);
+
+      final user = result['user'] as UserModel;
+      final token = result['token'] as String;
+
+      // ✅ Store the token
+      _jwtToken = token;
+      state = AuthState.authenticated(user, token: token);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
   }
 
-  // 🔍 GET CURRENT USER: Fetch current logged-in user
-  Future<void> getCurrentUser(String token) async {
+  Future<void> getCurrentUser() async {
+    // ✅ REMOVED token parameter
+    if (_jwtToken == null) {
+      // ✅ Check if we have a token
+      state = const AuthState.unauthenticated();
+      return;
+    }
+
     state = const AuthState.loading();
 
     try {
-      final user = await ref.read(authRepositoryProvider).getCurrentUser(token);
-      state = AuthState.authenticated(user);
+      final user = await ref
+          .read(authRepositoryProvider)
+          .getCurrentUser(_jwtToken!);
+      state = AuthState.authenticated(user, token: _jwtToken); // ✅ Pass token
     } catch (e) {
       state = AuthState.error(e.toString());
-      // If getting current user fails, assume user is not authenticated
       await logout();
     }
   }
 
   // 🚪 LOGOUT: Clear user data and return to unauthenticated state
   Future<void> logout() async {
+    // ✅ Clear ALL tokens
+    _jwtToken = null;
+    _tempToken = null;
+    _selectedOtpMethod = null;
     state = const AuthState.unauthenticated();
 
     // Here you can also clear stored tokens from secure storage
     // await _secureStorage.deleteToken();
   }
 
-  // ✏️ UPDATE PROFILE: Update user information
   Future<void> updateProfile(
-    String token,
-    Map<String, dynamic> userData,
+    Map<String, dynamic> userData, // ✅ REMOVED token parameter
   ) async {
+    if (_jwtToken == null) {
+      state = AuthState.error("Not authenticated");
+      return;
+    }
+
     state = state.copyWith(isLoading: true);
 
     try {
       final updatedUser = await ref
           .read(authRepositoryProvider)
-          .updateUser(token, userData);
-      state = AuthState.authenticated(updatedUser);
+          .updateUser(_jwtToken!, userData); // ✅ Use stored token
+      state = AuthState.authenticated(
+        updatedUser,
+        token: _jwtToken,
+      ); // ✅ Keep token
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  // 🗑️ DELETE ACCOUNT: Delete current user's account
-  Future<void> deleteAccount(String token) async {
+  Future<void> deleteAccount() async {
+    // ✅ REMOVED token parameter
+    if (_jwtToken == null) {
+      state = AuthState.error("Not authenticated");
+      return;
+    }
+
     state = const AuthState.loading();
 
     try {
-      await ref.read(authRepositoryProvider).deleteUser(token);
+      await ref
+          .read(authRepositoryProvider)
+          .deleteUser(_jwtToken!); // ✅ Use stored token
       state = const AuthState.unauthenticated();
     } catch (e) {
       state = AuthState.error(e.toString());
@@ -111,16 +151,6 @@ class AuthNotifier extends Notifier<AuthState> {
       state = AuthState.error(e.toString());
     }
   }
-
-
-
-
-
-
-
-
-
-
 
   // 📱 STEP 2: Send OTP via any method (Email, WhatsApp, SMS, Missed Call)
   Future<void> sendOTP(String method) async {
@@ -150,12 +180,21 @@ class AuthNotifier extends Notifier<AuthState> {
     state = const AuthState.loading();
 
     try {
-      final user = await ref
+      // ✅ FIX: Get BOTH user AND token
+      final result = await ref
           .read(authRepositoryProvider)
           .verifyOTP(_tempToken!, otp);
+
+      // ✅ Extract both values from result
+      final user = result['user'] as UserModel;
+      final permanentToken = result['token'] as String;
+
+      // ✅ Store the permanent token
+      _jwtToken = permanentToken;
       _tempToken = null; // Clear temp token after success
       _selectedOtpMethod = null; // Clear method after success
-      state = AuthState.authenticated(user);
+
+      state = AuthState.authenticated(user, token: permanentToken);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
