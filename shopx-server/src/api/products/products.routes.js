@@ -22,16 +22,26 @@ router.get("/:id", controller. getProductById);
 
 const uploadProductImage = require("../../middleware/uploadProductImage");
 
+// 1️⃣ Create product (JSON only, no images)
 router.post(
   "/",
   validateToken,
   checkAdmin,
-   uploadProductImage.array("images", 5), // accept up to 5 images
   validateCreateProduct,
   controller.createProduct
 );
 
+// 2️⃣ Upload images separately
+router.post(
+  "/:id/images",
+  validateToken,
+  checkAdmin,
+  uploadProductImage.array("images", 5),
+  controller.uploadImages
+);
 
+
+  
 router.put(
   "/:id",
   validateToken,

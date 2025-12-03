@@ -1,10 +1,12 @@
 exports.validateCreateProduct = (req,res,next)=>{
-    const {name,price,unit}=req.body;
+ const { name, price, unit, quantity, category, code } = req.body;
 
-    if(!name ||!price||!unit){
-        return res.status(400).json({message:"name ,price ,unit are required "});
+if (!name || !price || !unit || !quantity || !category || !code) {
+  return res.status(400).json({
+    message: "name, price, category, quantity, unit, code are required"
+  });
+}
 
-    }
 
   // If all fields are present, move to the next middleware/controller
     next();

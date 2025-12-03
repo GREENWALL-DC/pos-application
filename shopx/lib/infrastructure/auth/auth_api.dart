@@ -1,15 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shopx/infrastructure/core/dio_provider.dart';
 
 final authApiProvider = Provider<AuthApi>((ref) {
   return AuthApi(
-    Dio(
-      BaseOptions(
-        baseUrl: "http://localhost:5000/api/auth",
-        connectTimeout: Duration(seconds: 5),
-        receiveTimeout: Duration(seconds: 5),
-      ),
-    ),
+   ref.read(dioProvider)
   );
 });
 
@@ -21,7 +16,7 @@ class AuthApi {
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final res = await _dio.post(
-        "/login",
+        "auth/login",
         data: {"username": username, "password": password},
       );
       return res.data;
@@ -39,7 +34,7 @@ class AuthApi {
   ) async {
     // ✅ FIX: Added 'data:' parameter - same issue as login endpoint
     final res = await _dio.post(
-      "/register",
+      "auth/register",
       data: {
         "username": username,
         "email": email,
@@ -56,7 +51,7 @@ class AuthApi {
   Future<Map<String, dynamic>> current(String token) async {
     // ✅ CORRECT: GET request doesn't need 'data:' parameter
     final res = await _dio.get(
-      "/current",
+      "auth/current",
       options: Options(headers: {"Authorization": "Bearer $token"}),
     );
     return res.data;
@@ -68,7 +63,7 @@ class AuthApi {
     Map<String, dynamic> userData,
   ) async {
     final res = await _dio.put(
-      "/update",
+      "auth/update",
       data: userData, // Send updated user data in request body
       options: Options(headers: {"Authorization": "Bearer $token"}),
     );
@@ -78,7 +73,7 @@ class AuthApi {
   // ✅ NEW: Delete user account - required for your backend's DELETE /delete endpoint
   Future<Map<String, dynamic>> deleteUser(String token) async {
     final res = await _dio.delete(
-      "/delete",
+      "auth/delete",
       options: Options(headers: {"Authorization": "Bearer $token"}),
     );
     return res.data;
@@ -87,7 +82,7 @@ class AuthApi {
   // ✅ NEW: Send OTP - required for your backend's OTP functionality
   Future<Map<String, dynamic>> sendOTP(String token, String method) async {
     final res = await _dio.post(
-      "/send-otp",
+      "auth/send-otp",
       data: {"method": method}, // 'sms' or 'email' based on your backend
       options: Options(headers: {"Authorization": "Bearer $token"}),
     );
@@ -97,7 +92,7 @@ class AuthApi {
   // ✅ NEW: Verify OTP - required for your backend's OTP verification
   Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
     final res = await _dio.post(
-      "/verify-otp",
+      "auth/verify-otp",
       data: {"otp": otp}, // Send the OTP code for verification
       options: Options(headers: {"Authorization": "Bearer $token"}),
     );
@@ -107,7 +102,7 @@ class AuthApi {
   // ✅ NEW: Admin functionality - get all users (requires admin privileges)
   Future<Map<String, dynamic>> getAllUsers(String token) async {
     final res = await _dio.get(
-      "/users",
+      "auth/users",
       options: Options(headers: {"Authorization": "Bearer $token"}),
     );
     return res.data;
@@ -120,7 +115,7 @@ class AuthApi {
   ) async {
     try {
       final res = await _dio.post(
-        "/login-owner",
+        "auth/login-owner",
         data: {"username": username, "password": password},
       );
       return res.data;

@@ -10,26 +10,37 @@ exports.getProductById = async(id)=>{
     return await db.query("SELECT * FROM products WHERE id =$1",[id]);
 };
 
-exports.createProduct = async({name,description,price,unit})=>{
-    return await db.query(`
-        INSERT INTO products (name,description,price,unit)
-        VALUES($1,$2,$3,$4) RETURNING *`,
-    [name,description,price,unit]
-    );
+exports.createProduct = async ({ name, price, category, unit, quantity, code }) => {
+  return await db.query(`
+    INSERT INTO products (name, price, category, unit, quantity, code)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *`,
+    [name, price, category, unit, quantity, code]
+  );
 };
 
-exports.updateProduct = async(id,{name,description,price,unit})=>{
-    return await db.query(`
-        UPDATE products 
-        SET name = COALESCE($1,name),
-        description = COALESCE($2,description),
-        price = COALESCE($3,price),
-        unit = COALESCE($4,unit) 
-        WHERE id = $5 RETURNING * `,   
-  
-  [name,description,price,unit,id]
-);
+
+
+exports.updateProduct = async (
+  id,
+  { name, price, category, unit, quantity, code }
+) => {
+  return await db.query(`
+    UPDATE products 
+    SET 
+      name = COALESCE($1, name),
+      price = COALESCE($2, price),
+      category = COALESCE($3, category),
+      unit = COALESCE($4, unit),
+      quantity = COALESCE($5, quantity),
+      code = COALESCE($6, code)
+    WHERE id = $7
+    RETURNING *`,
+    [name, price, category, unit, quantity, code, id]
+  );
 };
+
+
 
 exports.deleteProduct = async(id)=>{
     return await db.query(`

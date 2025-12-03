@@ -1,0 +1,249 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shopx/application/cart/cart_notifier.dart';
+import 'package:shopx/core/constants.dart';
+import 'package:shopx/domain/products/product.dart';
+
+class AddQuantityDialog extends HookConsumerWidget {
+  final Product product;
+  final double availableStock; // Passed from parent (Backend data)
+  final Function(double quantity) onAddToCart;
+
+  const AddQuantityDialog({
+    super.key,
+    required this.product,
+    required this.availableStock,
+    required this.onAddToCart,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Hooks
+    final quantityController = useTextEditingController();
+
+    // We listen to the controller changes to update UI state for validation
+    final textValue = useValueListenable(quantityController).text;
+
+    // Logic
+    final double enteredQty = double.tryParse(textValue) ?? 0.0;
+    final bool isOverStock = enteredQty > availableStock;
+    final bool isValid = enteredQty > 0 && !isOverStock;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 5,
+      backgroundColor: Colors.grey,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            const Text(
+              "Select the Qty",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 15),
+
+            // Product Details
+            _buildInfoRow("Product Name", product.name),
+            const SizedBox(height: 8),
+            _buildInfoRow("Product Code", product.code),
+            const SizedBox(height: 8),
+
+            // Available Stock Row (Dynamic)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Available Stock :",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
+                ),
+                Text(
+                  "$availableStock ${product.unit}",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    // Highlight stock in red if 0, green otherwise
+                    color: availableStock > 0 ? Colors.green[700] : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+
+            kHeight20,
+
+            // Quantity Input Field
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: quantityController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  // Allow only numbers and dots
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                style: TextStyle(
+                  color: isOverStock ? Colors.red : Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 15,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  // Error styling
+                  enabledBorder: isOverStock
+                      ? OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: Colors.red,
+                            width: 1.5,
+                          ),
+                        )
+                      : InputBorder.none,
+                  focusedBorder: isOverStock
+                      ? OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: Colors.red,
+                            width: 1.5,
+                          ),
+                        )
+                      : OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: Colors.blue,
+                            width: 1.5,
+                          ),
+                        ),
+
+                  hintText: "Enter Quantity",
+                  // Dynamic Unit Suffix (KG / Nos)
+                  suffixText: product.unit.isNotEmpty ? product.unit : "Unit",
+                  suffixStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ),
+
+            // Validation Error Message
+            if (isOverStock)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, left: 5),
+                child: Text(
+                  "Quantity cannot exceed available stock!",
+                  style: TextStyle(color: Colors.red[700], fontSize: 12),
+                ),
+              ),
+
+            const SizedBox(height: 25),
+
+            // Add to Cart Button
+            SizedBox(
+              width: double.infinity,
+              height: 45,
+              child: ElevatedButton(
+                onPressed: isValid
+                    ? () {
+                        // 1️⃣ Add product to cart provider
+                        ref
+                            .read(cartProvider.notifier)
+                            .addToCart(product, enteredQty);
+
+                        // 2️⃣ Close dialog
+                        Navigator.of(context).pop();
+
+                        // 3️⃣ Show success message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Added to cart"),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    : null,
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700],
+                  disabledBackgroundColor: Colors.grey[300],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Add to cart",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper widget to display Label : Value
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            "$label :",
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}

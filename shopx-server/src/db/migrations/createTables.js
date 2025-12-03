@@ -28,7 +28,7 @@ const createTables = async () => {
     console.log("🚀 Running migrations...");
 
     await createUsersTable(client);
-    await createProductTable(client);
+   await createProductTable(client);
     await createStockTable(client);
     await createCustomerTable(client);
     await createSalesTable(client);

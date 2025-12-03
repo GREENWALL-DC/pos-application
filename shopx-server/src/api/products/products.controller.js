@@ -17,21 +17,33 @@ exports.getProductById = asyncHandler(async(req,res)=>{
     res.json(product);
 });
 
-// POST /products
-exports.createProduct = asyncHandler(async (req, res) => {
-  // 1️⃣ Create product without images first
-  const product = await service.createProduct(req.body);
 
-  // 2️⃣ If images uploaded → save them
-  if (req.files && req.files.length > 0) {
-    await service.saveProductImages(product.id, req.files);
-  }
+
+// POST /products
+// Create product (NO images)
+exports.createProduct = asyncHandler(async (req, res) => {
+  const product = await service.createProduct(req.body);
 
   res.status(201).json({
     message: "Product created",
-    product,
+    id: product.id,
+    product
   });
 });
+
+// Upload images separately
+exports.uploadImages = asyncHandler(async (req, res) => {
+  const productId = req.params.id;
+
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ message: "No images uploaded" });
+  }
+
+  await service.saveProductImages(productId, req.files);
+
+  res.json({ message: "Images uploaded successfully" });
+});
+
 
 
 // PUT /products/:id

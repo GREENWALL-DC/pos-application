@@ -26,7 +26,7 @@ class UserModel {
     email: data["email"],
     userType: data["user_type"],
     phone: data["phone"] ?? "",
-    token: json["token"] ?? data["token"] ?? "",
+token: json["accessToken"] ?? json["token"] ?? "",
   );
 }
 

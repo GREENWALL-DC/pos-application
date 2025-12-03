@@ -34,19 +34,20 @@ exports.getProductById = async (id) => {
 // CREATE NEW PRODUCT
 // This function creates a product AND sets up its initial stock
 exports.createProduct = async (data) => {
+  // Create product with quantity + code included
   const createRes = await repo.createProduct(data);
   const product = createRes.rows[0];
 
-  //Also create stock row for this new product
-  // This ensures every product has a stock record
+  // ✅ Use actual quantity from product
+  const initialQty = Number(product.quantity) || 0;
 
+  // Create initial stock
   await repo.adjustStock({
-    productId: product.id, // Use the ID of the newly created product
-    quantityChange: 0, // Start with 0 stock initially
-    reason: "product-created", // Reason for this stock entry
+    productId: product.id,
+    quantityChange: initialQty,   // ⭐ Correct
+    reason: "initial-stock",      // ⭐ More meaningful
   });
 
-  //return the created product
   return product;
 };
 

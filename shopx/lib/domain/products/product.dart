@@ -3,10 +3,11 @@ class Product {
   final String name;       // product name
   final double price;      // product price
   final String category;   // product category (Tea, Coffee, etc.)
-  final String description;// product description
+   final double quantity;    // initial stock (numeric)
   final String unit;  
+  final List<String> images;   // <-- ADD THIS
+  final String code; 
 
-    final List<String> images;   // <-- ADD THIS
 
 
   const Product({
@@ -14,9 +15,10 @@ class Product {
     required this.name,
     required this.price,
     required this.category,
-    required this.description,
+     required this.quantity,
      required this.unit, 
       this.images = const [],     // <-- default empty
+        required this.code,
   });
 
  
@@ -27,8 +29,9 @@ class Product {
       name: json["name"] ?? "",
       price: double.tryParse(json["price"].toString()) ?? 0.0,
       category: json["category"] ?? "",
-      description: json["description"] ?? "",
         unit: json["unit"] ?? "",
+         quantity: double.tryParse(json["quantity"].toString()) ?? 0.0,
+         code: json["code"]?.toString() ?? "", 
          images: json["images"] != null
           ? List<String>.from(json["images"])
           : [],
@@ -41,8 +44,9 @@ class Product {
       "name": name,
       "price": price,
       "category": category,
-      "description": description,
+       "quantity": quantity,
        "unit": unit,
+        "code": code,   
     };
   }
 }

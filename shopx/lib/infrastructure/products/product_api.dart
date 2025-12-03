@@ -2,25 +2,33 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shopx/domain/products/product.dart';
+import 'package:shopx/infrastructure/core/dio_provider.dart';
+
+final productApiProvider = Provider<ProductApi>((ref) {
+  // ✔ Inject shared Dio here
+  return ProductApi(ref.read(dioProvider));
+});
 
 class ProductApi {
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: "http://localhost:5000/api",
-      connectTimeout: Duration(seconds: 5),
-      receiveTimeout: Duration(seconds: 5),
-    ),
-  );
+  final Dio _dio;
+
+  // ✔ DO NOT create new Dio() here
+  ProductApi(this._dio);
+
 
   // POST → Add Product
-  Future<void> addProduct(Map<String, dynamic> data, String token) async {
-    await _dio.post(
-      "/products",
-      data: data,
-      options: Options(headers: {"Authorization": "Bearer $token"}),
-    );
-  }
+  Future<int> createProduct(Product product) async {
+  final res = await _dio.post(
+    "/products",
+    data: product.toJson(),
+  );
+
+  return res.data["id"]; // backend returns product id
+}
+
+ 
 
   // GET → Fetch All Products
   Future<List<dynamic>> getProducts() async {
@@ -34,84 +42,46 @@ class ProductApi {
     return response.data;
   }
 
+  // PUT → Update Product by ID
+  Future<void> updateProduct(
+    String id,
+    Map<String, dynamic> data,
+   
+  ) async {
+    await _dio.put(
+      "/products/$id",
+      data: data,
+    );
+  }
+
+  // DELETE → Remove Product by ID
+  Future<void> deleteProduct(String id) async {
+    await _dio.delete(
+      "/products/$id",
+    );
+  }
 
 
 
-
-
-
-
-
-// PUT → Update Product by ID
-Future<void> updateProduct(String id, Map<String, dynamic> data, String token) async {
-  await _dio.put(
-    "/products/$id", 
-    data: data,
-    options: Options(headers: {"Authorization": "Bearer $token"}), // ✅ ADD
-  );
-}
-
-// DELETE → Remove Product by ID  
-Future<void> deleteProduct(String id, String token) async {
-  await _dio.delete(
-    "/products/$id",
-    options: Options(headers: {"Authorization": "Bearer $token"}), // ✅ ADD
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Future<void> addProductWithImages(
-    Product product,
-    List<Uint8List> images,
-    String token,
-) async {
+Future<void> uploadImages(int productId, List<Uint8List> images) async {
   final formData = FormData();
 
-  // Add fields
-  formData.fields.add(MapEntry("name", product.name));
-  formData.fields.add(MapEntry("price", product.price.toString()));
-  formData.fields.add(MapEntry("category", product.category));
-  formData.fields.add(MapEntry("description", product.description));
-  formData.fields.add(MapEntry("unit", product.unit));
-
-  // Add images as bytes
   for (int i = 0; i < images.length; i++) {
     formData.files.add(
       MapEntry(
         "images",
-        MultipartFile.fromBytes(
-          images[i],
-          filename: "image_$i.png",
-        ),
+        MultipartFile.fromBytes(images[i], filename: "image_$i.png"),
       ),
     );
   }
 
   await _dio.post(
-    "/products",
+    "/products/$productId/images",
     data: formData,
-    options: Options(
-      headers: {"Authorization": "Bearer $token"},
-    ),
   );
 }
 
+ 
 }
 
-// if (auth.role == "admin") {
-//   Navigator.push(context, MaterialPageRoute(builder: (_) => AddProductPage()));
-// }
+

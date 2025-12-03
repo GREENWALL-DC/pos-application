@@ -369,17 +369,18 @@ class AddProductScreen extends HookConsumerWidget {
               child: ElevatedButton(
                 onPressed: () async {
 final images = pickedImages.value; // <-- already bytes
+final product = Product(
+  name: nameController.text,
+  price: double.parse(priceController.text),
+  category: categoryController.text,
+  code: codeController.text,
+  unit: selectedUnit.value,                      // ✔ only unit
+  quantity: double.parse(quantityController.text), // ✔ numeric quantity
+);
 
-                  final product = Product(
-                    name: nameController.text,
-                    price: double.parse(priceController.text),
-                    category: categoryController.text,
-                    description: codeController.text,
-                    unit: "${quantityController.text} ${selectedUnit.value}",
-                  );
                   await ref
                       .read(productNotifierProvider.notifier)
-                      .addProductWithImages(product, images);
+                      .createProduct(product, images);
 
                   Navigator.pop(context);
                 },

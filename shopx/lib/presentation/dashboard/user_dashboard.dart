@@ -46,12 +46,15 @@ class UserDashboard extends HookConsumerWidget {
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shopx/application/cart/cart_notifier.dart';
 import 'package:shopx/application/products/product_state.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/products/product.dart';
 import 'package:shopx/application/auth/auth_notifier.dart'; // Adjust if path differs
 // Import your provider file location
-import 'package:shopx/application/products/product_notifier.dart'; // Ensure this points to where you defined productNotifierProvider
+import 'package:shopx/application/products/product_notifier.dart';
+import 'package:shopx/presentation/cart/add_quantity_dialog.dart';
+import 'package:shopx/presentation/cart/cart_screen.dart'; // Ensure this points to where you defined productNotifierProvider
 
 class UserDashboard extends HookConsumerWidget {
   const UserDashboard({Key? key}) : super(key: key);
@@ -177,13 +180,13 @@ class UserDashboard extends HookConsumerWidget {
                   : Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: isGridView.value
-                          ? _buildGridView(displayProducts)
-                          : _buildListView(displayProducts),
+                          ? _buildGridView(displayProducts,ref)
+                          : _buildListView(displayProducts,ref),
                     ),
             ),
 
             // --- BOTTOM CART BAR ---
-            _buildBottomCartBar(displayProducts.length),
+            _buildBottomCartBar(context,displayProducts.length),
           ],
         ),
       ),
@@ -295,7 +298,7 @@ class UserDashboard extends HookConsumerWidget {
   }
 
   // --- GRID VIEW IMPLEMENTATION ---
-  Widget _buildGridView(List<Product> products) {
+  Widget _buildGridView(List<Product> products,WidgetRef ref) {
     return GridView.builder(
       padding: const EdgeInsets.only(top: 10, bottom: 80),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -379,9 +382,28 @@ class UserDashboard extends HookConsumerWidget {
                       ),
                     ),
                     InkWell(
-                      onTap: () {
-                        // TODO: Handle Add to Cart
-                      },
+onTap: () {
+  showDialog(
+    context: context,
+    builder: (_) => AddQuantityDialog(
+      product: product,
+      availableStock: product.quantity,   // ✅ stock from backend
+      onAddToCart: (qty) {
+        // 1️⃣ Add to cart provider
+        ref.read(cartProvider.notifier).addToCart(product, qty);
+
+        // 2️⃣ Show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Added to cart"),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
+    ),
+  );
+},
+
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
@@ -406,7 +428,7 @@ class UserDashboard extends HookConsumerWidget {
   }
 
   // --- LIST VIEW IMPLEMENTATION ---
-  Widget _buildListView(List<Product> products) {
+  Widget _buildListView(List<Product> products,WidgetRef ref) {
     return ListView.separated(
       padding: const EdgeInsets.only(top: 10, bottom: 80),
       itemCount: products.length,
@@ -485,8 +507,27 @@ class UserDashboard extends HookConsumerWidget {
               // Add Button
               InkWell(
                 onTap: () {
-                  // TODO: Handle Add to Cart
-                },
+  showDialog(
+    context: context,
+    builder: (_) => AddQuantityDialog(
+      product: product,
+      availableStock: product.quantity,   // ✅ stock from backend
+      onAddToCart: (qty) {
+        // 1️⃣ Add to cart provider
+        ref.read(cartProvider.notifier).addToCart(product, qty);
+
+        // 2️⃣ Show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Added to cart"),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
+    ),
+  );
+},
+
                 child: Container(
                   width: 35,
                   height: 35,
@@ -505,7 +546,7 @@ class UserDashboard extends HookConsumerWidget {
   }
 
   // --- BOTTOM CART SUMMARY BAR ---
-  Widget _buildBottomCartBar(int count) {
+  Widget _buildBottomCartBar(BuildContext context,int count) {
     // Note: 'Total' is hardcoded or sum of displayed items for UI purposes.
     // In real app, connect this to a CartProvider
     return Container(
@@ -515,28 +556,42 @@ class UserDashboard extends HookConsumerWidget {
         color: const Color(0xFF1565C0), // Darker Blue
         borderRadius: BorderRadius.circular(15),
       ),
+      child:
+      
+      Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CartScreen()),
+        );
+      },
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-              const SizedBox(width: 10),
-              Text(
-                "$count elements",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const Text(
-            "Total: SAR 0.00", // Dynamic calc needed here
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+          const SizedBox(width: 10),
+          Text(
+            "$count elements",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
+    ),
+
+    const Text(
+      "Total: SAR 0.00",
+      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    ),
+  ],
+)
+
+
+
     );
   }
 
