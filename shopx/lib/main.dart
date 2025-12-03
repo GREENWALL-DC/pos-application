@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/presentation/auth/selection/selection_screen.dart';
+import 'package:shopx/presentation/cart/cart_success_screen.dart';
 import 'package:shopx/presentation/products/add_product_screen.dart';
 
 void main() {
@@ -20,6 +21,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ShopX',
       debugShowCheckedModeBanner: false,
+      routes: {
+        '/success':(_) => const SuccessScreen()
+      } ,
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
