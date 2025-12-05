@@ -5,7 +5,7 @@ exports.validateCustomer =(data)=>{
 
     if(!data.phone)errors.push("Phone number is required");
 
-    if(!data.gst_number)errors.push("Gst number is required");
+    if (!data.tin) errors.push("TIN is required");
 
     return errors;
 };

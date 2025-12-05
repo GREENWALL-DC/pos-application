@@ -1,40 +1,4 @@
 /*
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:shopx/application/products/product_notifier.dart';
-
-class UserDashboard extends HookConsumerWidget {
-  const UserDashboard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final productState = ref.watch(productNotifierProvider);
-
-    useEffect(() {
-      ref.read(productNotifierProvider.notifier).fetchProducts();
-      return null;
-    }, []);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("User Dashboard")),
-      body: productState.error != null
-          ? Center(child: Text("Error: ${productState.error}"))
-          : productState.products.isEmpty
-              ? const Center(child: Text("No products available"))
-              : ListView.builder(
-                  itemCount: productState.products.length,
-                  itemBuilder: (_, index) {
-                    final product = productState.products[index];
-                    return ListTile(
-                      title: Text(product.name),
-                      subtitle: Text("${product.category} • ₹${product.price}"),
-                    );
-                  },
-                ),
-    );
-  }
-}
 
  "username": "employee1",
   "email": "employee1@gmail.com",
@@ -54,10 +18,17 @@ import 'package:shopx/application/auth/auth_notifier.dart'; // Adjust if path di
 // Import your provider file location
 import 'package:shopx/application/products/product_notifier.dart';
 import 'package:shopx/presentation/cart/add_quantity_dialog.dart';
-import 'package:shopx/presentation/cart/cart_screen.dart'; // Ensure this points to where you defined productNotifierProvider
+import 'package:shopx/presentation/cart/cart_screen.dart';
+import 'package:shopx/presentation/dashboard/user/pages/bottomnav/manual_entry_page.dart';
+import 'package:shopx/presentation/dashboard/user/pages/customers/add_customer_page.dart';
+import 'package:shopx/presentation/dashboard/user/pages/customers/customer_list_page.dart';
+import 'package:shopx/presentation/dashboard/user/pages/products/products_list_page.dart';
+import 'package:shopx/presentation/dashboard/user/pages/transactions/transaction_history_page.dart';
+import 'package:shopx/presentation/dashboard/user/user_side_nav.dart'; // Ensure this points to where you defined productNotifierProvider
 
 class UserDashboard extends HookConsumerWidget {
   const UserDashboard({Key? key}) : super(key: key);
+  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -111,86 +82,135 @@ class UserDashboard extends HookConsumerWidget {
 
     final displayProducts = getProcessedProducts();
 
+    final currentTab = useState(0);
+    final showCodes = useState(false); // <-- NEW
+
     return Scaffold(
-     backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
+      drawer:  UserSideNav(
+        onChangeTab: (tabIndex) {
+          currentTab.value = tabIndex;
+        },
+      ),
       body: SafeArea(
         child: Column(
           children: [
             // --- HEADER (Time, Menu, Username) ---
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20.0,
-                vertical: 10,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.menu, color: Colors.blue),
-                    onPressed: () {
-                      // Handle Menu
-                    },
-                  ),
-                  Text(
-                    user?.username ?? "UserName", // Dynamic Username
-                    style: const TextStyle(
-                      fontSize: 18,
+         // Show header ONLY for tabs 0 and 1
+if (currentTab.value == 0 || currentTab.value == 1)
+  Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.blue),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+
+        // ✅ SHOW USERNAME HERE
+        Text(
+          user?.username ?? "UserName",
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+
+        const SizedBox(width: 40),
+      ],
+    ),
+  ),
+
+            // --- SHOW CONTROLS ONLY IN PRODUCTS TAB ---
+            if (currentTab.value == 0)
+              Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: isSearchActive.value
+                    ? _buildSearchBar(
+                        isSearchActive,
+                        searchQuery,
+                        searchController,
+                      )
+                    : _buildControlBar(
+                        isSearchActive,
+                        isGridView,
+                        sortOption,
+                        showCodes,
+                      ),
+              )
+            else
+              const Padding(
+                padding: EdgeInsets.only(left: 24, top: 10, bottom: 5),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Manual entry",
+                    style: TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: Colors.black,
                     ),
                   ),
-                  // Placeholder for spacing to center title relative to screen
-                  const SizedBox(width: 48),
-                ],
+                ),
               ),
-            ),
-
-            // --- CONTROLS (Search, View Toggle, Sort) ---
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: isSearchActive.value
-                  ? _buildSearchBar(
-                      isSearchActive,
-                      searchQuery,
-                      searchController,
-                    )
-                  : _buildControlBar(isSearchActive, isGridView, sortOption),
-            ),
 
             // --- PRODUCT CONTENT ---
-            Expanded(
-              child: productState.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : productState.error != null
-                  ? Center(child: Text("Error: ${productState.error}"))
-                  : displayProducts.isEmpty
-                  ? const Center(child: Text("No products found."))
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: isGridView.value
-                          ? _buildGridView(displayProducts,ref)
-                          : _buildListView(displayProducts,ref),
-                    ),
-            ),
+          Expanded(
+  child: Builder(
+    builder: (context) {
+      if (currentTab.value == 0) {
+        return _buildProductsUI(
+          productState,
+          displayProducts,
+          ref,
+          isGridView,
+          showCodes,
+        );
+      } else if (currentTab.value == 1) {
+        return const ManualEntryPage();   // bottom nav item
+      } else if (currentTab.value == 2) {
+        return const ProductListPage();   // from drawer
+      } else if (currentTab.value == 3) {
+        return const TransactionHistoryPage();  // from drawer
+      } else if (currentTab.value == 4) {
+        return const CustomerListPage();  // from drawer
+      } else {
+        return const SizedBox.shrink();
+      }
+    },
+  ),
+),
+
 
             // --- BOTTOM CART BAR ---
-            _buildBottomCartBar(context,displayProducts.length),
+            if (currentTab.value == 0)
+              _buildBottomCartBar(context, displayProducts.length),
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
+      bottomNavigationBar: _buildBottomNavBar(context, currentTab),
     );
   }
 
@@ -200,6 +220,7 @@ class UserDashboard extends HookConsumerWidget {
     ValueNotifier<bool> isSearchActive,
     ValueNotifier<bool> isGridView,
     ValueNotifier<String> sortOption,
+    ValueNotifier<bool> showCodes,
   ) {
     return Row(
       children: [
@@ -207,6 +228,8 @@ class UserDashboard extends HookConsumerWidget {
         Expanded(
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
+              dropdownColor: Colors.white,
+              focusColor: Colors.white,
               value:
                   sortOption.value == "All" ||
                       sortOption.value == "LowToHigh" ||
@@ -240,18 +263,21 @@ class UserDashboard extends HookConsumerWidget {
 
         // Search Icon
         IconButton(
-          icon: Icon(Icons.search,color: Colors.black),
+          icon: Icon(Icons.search, color: Colors.black),
           onPressed: () => isSearchActive.value = true,
         ),
 
         // Barcode Icon (Mock)
         IconButton(
-          icon: Image.asset("assets/images/bar-code.png",
-          width: 20,
-          height: 20,
-          color: Colors.black
+          icon: Image.asset(
+            "assets/images/bar-code.png",
+            width: 20,
+            height: 20,
+            color: Colors.black,
           ),
-          onPressed: () => isSearchActive.value = true,
+          onPressed: () {
+            showCodes.value = !showCodes.value; // <-- toggle visibility
+          },
         ),
 
         // View Toggle Icon
@@ -298,7 +324,11 @@ class UserDashboard extends HookConsumerWidget {
   }
 
   // --- GRID VIEW IMPLEMENTATION ---
-  Widget _buildGridView(List<Product> products,WidgetRef ref) {
+  Widget _buildGridView(
+    List<Product> products,
+    WidgetRef ref,
+    ValueNotifier<bool> showCodes,
+  ) {
     return GridView.builder(
       padding: const EdgeInsets.only(top: 10, bottom: 80),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -364,11 +394,24 @@ class UserDashboard extends HookConsumerWidget {
                     fontSize: 13,
                   ),
                 ),
+
+                if (showCodes.value) // <-- SHOW ONLY WHEN TOGGLED
+                  Text(
+                    "Code: ${product.code}",
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   product.category,
                   style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),
+
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -382,27 +425,30 @@ class UserDashboard extends HookConsumerWidget {
                       ),
                     ),
                     InkWell(
-onTap: () {
-  showDialog(
-    context: context,
-    builder: (_) => AddQuantityDialog(
-      product: product,
-      availableStock: product.quantity,   // ✅ stock from backend
-      onAddToCart: (qty) {
-        // 1️⃣ Add to cart provider
-        ref.read(cartProvider.notifier).addToCart(product, qty);
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AddQuantityDialog(
+                            product: product,
+                            availableStock:
+                                product.quantity, // ✅ stock from backend
+                            onAddToCart: (qty) {
+                              // 1️⃣ Add to cart provider
+                              ref
+                                  .read(cartProvider.notifier)
+                                  .addToCart(product, qty);
 
-        // 2️⃣ Show message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Added to cart"),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-    ),
-  );
-},
+                              // 2️⃣ Show message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Added to cart"),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
 
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -428,7 +474,11 @@ onTap: () {
   }
 
   // --- LIST VIEW IMPLEMENTATION ---
-  Widget _buildListView(List<Product> products,WidgetRef ref) {
+  Widget _buildListView(
+    List<Product> products,
+    WidgetRef ref,
+    ValueNotifier<bool> showCodes,
+  ) {
     return ListView.separated(
       padding: const EdgeInsets.only(top: 10, bottom: 80),
       itemCount: products.length,
@@ -488,10 +538,21 @@ onTap: () {
                         fontSize: 14,
                       ),
                     ),
+
+                    if (showCodes.value)
+                      Text(
+                        "Code: ${product.code}",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+
                     Text(
                       product.category,
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
+
                     const SizedBox(height: 8),
                     Text(
                       "SAR ${product.price.toStringAsFixed(2)}",
@@ -507,26 +568,26 @@ onTap: () {
               // Add Button
               InkWell(
                 onTap: () {
-  showDialog(
-    context: context,
-    builder: (_) => AddQuantityDialog(
-      product: product,
-      availableStock: product.quantity,   // ✅ stock from backend
-      onAddToCart: (qty) {
-        // 1️⃣ Add to cart provider
-        ref.read(cartProvider.notifier).addToCart(product, qty);
+                  showDialog(
+                    context: context,
+                    builder: (_) => AddQuantityDialog(
+                      product: product,
+                      availableStock: product.quantity, // ✅ stock from backend
+                      onAddToCart: (qty) {
+                        // 1️⃣ Add to cart provider
+                        ref.read(cartProvider.notifier).addToCart(product, qty);
 
-        // 2️⃣ Show message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Added to cart"),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-    ),
-  );
-},
+                        // 2️⃣ Show message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Added to cart"),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
 
                 child: Container(
                   width: 35,
@@ -546,7 +607,7 @@ onTap: () {
   }
 
   // --- BOTTOM CART SUMMARY BAR ---
-  Widget _buildBottomCartBar(BuildContext context,int count) {
+  Widget _buildBottomCartBar(BuildContext context, int count) {
     // Note: 'Total' is hardcoded or sum of displayed items for UI purposes.
     // In real app, connect this to a CartProvider
     return Container(
@@ -556,71 +617,114 @@ onTap: () {
         color: const Color(0xFF1565C0), // Darker Blue
         borderRadius: BorderRadius.circular(15),
       ),
-      child:
-      
-      Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CartScreen()),
-        );
-      },
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-          const SizedBox(width: 10),
-          Text(
-            "$count elements",
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+            },
+            child: Row(
+              children: [
+                const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+                const SizedBox(width: 10),
+                Text(
+                  "$count elements",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
+          ),
+
+          const Text(
+            "Total: SAR 0.00",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ],
       ),
-    ),
-
-    const Text(
-      "Total: SAR 0.00",
-      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-    ),
-  ],
-)
-
-
-
     );
   }
 
   // --- BOTTOM NAVIGATION BAR ---
-  Widget _buildBottomNavBar() {
-  return Container(
-    height: 70,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(30),
-        topRight: Radius.circular(30),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.15),
-          blurRadius: 10,
-          offset: const Offset(0, -3),
+  Widget _buildBottomNavBar(
+    BuildContext context,
+    ValueNotifier<int> currentTab,
+  ) {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-      ],
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: const [
-        Icon(Icons.grid_view_rounded, color: Colors.blue, size: 38),
-        Icon(Icons.edit_note, color: Colors.grey, size: 38),
-      ],
-    ),
-  );
-}
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // 🟦 PRODUCTS TAB (current screen)
+          InkWell(
+            onTap: () {
+              currentTab.value = 0; // Switch to products
+            },
+            child: Icon(
+              Icons.grid_view_rounded,
+              color: currentTab.value == 0 ? Colors.blue : Colors.grey,
+              size: 38,
+            ),
+          ),
 
+          // 📝 MANUAL ENTRY TAB (navigate here)
+          InkWell(
+            onTap: () {
+              currentTab.value = 1; // Switch to Manual Entry tab
+            },
+            child: Icon(
+              Icons.edit_note,
+              color: currentTab.value == 1 ? Colors.blue : Colors.grey,
+              size: 38,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductsUI(
+    productState,
+    displayProducts,
+    WidgetRef ref,
+    ValueNotifier<bool> isGridView,
+    ValueNotifier<bool> showCodes,
+  ) {
+    if (productState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (productState.error != null) {
+      return Center(child: Text("Error: ${productState.error}"));
+    }
+    if (displayProducts.isEmpty) {
+      return const Center(child: Text("No products found."));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: isGridView.value
+          ? _buildGridView(displayProducts, ref, showCodes)
+          : _buildListView(displayProducts, ref, showCodes),
+    );
+  }
 }

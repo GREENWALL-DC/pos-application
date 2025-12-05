@@ -7,7 +7,7 @@ import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/core/constants.dart';
 // Keep your existing imports
 import 'package:shopx/presentation/auth/owner/widgets/otp_selection_button.dart';
-import 'package:shopx/presentation/dashboard/admin_dashboard.dart';
+import 'package:shopx/presentation/dashboard/admin/admin_dashboard.dart';
 
 class OwnerLoginScreen extends HookConsumerWidget {
   const OwnerLoginScreen({super.key});

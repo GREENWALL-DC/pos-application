@@ -21,9 +21,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ShopX',
       debugShowCheckedModeBanner: false,
-      routes: {
-        '/success':(_) => const SuccessScreen()
-      } ,
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(

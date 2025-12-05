@@ -45,7 +45,7 @@ exports.createSale = async (data) => {
     }
 
     // 6️⃣ AUTO PAYMENT (FULL PAYMENT NOW)
-    const payment = await paymentsRepo.createPayment({
+    const payment = await paymentsRepo.createPayment(client,{
       saleId: sale.id,
       customerId: data.customer_id,
       amount: total_amount,

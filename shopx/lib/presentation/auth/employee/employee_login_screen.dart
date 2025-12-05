@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/core/constants.dart';
-import 'package:shopx/presentation/dashboard/user_dashboard.dart';
+import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
 
 class EmployeeLoginScreen extends HookConsumerWidget {
   const EmployeeLoginScreen({super.key});

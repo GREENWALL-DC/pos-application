@@ -1,14 +1,15 @@
 const db = require("../../config/db");
 
 module.exports = {
-  createPayment: async ({ saleId, customerId, amount, method }) => {
-    return await db.query(
-      `INSERT INTO payments (sale_id, customer_id, amount, method)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [saleId, customerId, amount, method]
-    );
-  },
+  
+createPayment: async (client, { saleId, customerId, amount, method }) => {
+  return await client.query(
+    `INSERT INTO payments (sale_id, customer_id, amount, method)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [saleId, customerId, amount, method]
+  );
+},
 
   getSaleBalance: async (saleId) => {
     return await db.query(

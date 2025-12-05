@@ -1,12 +1,13 @@
 const db = require("../../config/db");
 
-exports.createCustomer = async ({ name, phone, address, gst_number }) => {
+exports.createCustomer = async ({ name, phone, address, tin }) => {
   const result = await db.query(
-    `INSERT INTO customers (name, phone, address, gst_number)
+    `INSERT INTO customers (name, phone, address, tin)
 VALUES ($1, $2, $3, $4)
  RETURNING *`,
-    [name, phone, address, gst_number]
+    [name, phone, address, tin]
   );
+
 
   return result.rows[0];
 };

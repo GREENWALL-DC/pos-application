@@ -17,6 +17,8 @@ class SalesNotifier extends Notifier<SalesState> {
   try {
     final repo = ref.read(salesRepositoryProvider);
 
+print("📌 SalesNotifier.createSale called");
+
     final saleId = await repo.createSale(
       customerId: customerId,
       items: items,
@@ -32,6 +34,12 @@ class SalesNotifier extends Notifier<SalesState> {
 }
 
 
+Future<Sale> getSale(int id) async {
+  final repo = ref.read(salesRepositoryProvider);
+  return await repo.getSaleById(id);
+}
+
+
 Future<Sale?> fetchSaleById(int id) async {
   try {
     state = state.copyWith(isLoading: true);
@@ -39,7 +47,11 @@ Future<Sale?> fetchSaleById(int id) async {
     final sale = await repo.getSaleById(id);
     state = state.copyWith(isLoading: false, sale: sale);
     return sale;
-  } catch (e) {
+  } catch (e,stack) {
+    
+    print("❌ ERROR IN fetchSaleById: $e");
+  print("❌ STACKTRACE: $stack");
+
     state = state.copyWith(isLoading: false, error: e.toString());
     return null;
   }

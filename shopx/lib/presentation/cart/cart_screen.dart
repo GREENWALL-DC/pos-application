@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/cart/cart_notifier.dart';
+import 'package:shopx/application/customers/customer_notifier.dart';
 import 'package:shopx/application/sales/sales_notifier.dart';
-import 'package:shopx/domain/products/product.dart'; // Ensure this path matches your project
-
-
+import 'package:shopx/domain/customers/customer.dart';
+import 'package:shopx/domain/products/product.dart';
+import 'package:shopx/presentation/cart/cart_success_screen.dart'; // Ensure this path matches your project
 
 class CartScreen extends HookConsumerWidget {
+  
   const CartScreen({super.key});
 
   @override
@@ -15,6 +17,20 @@ class CartScreen extends HookConsumerWidget {
     // 1. Watch Cart State
     final cartState = ref.watch(cartProvider);
     final cartItems = cartState.items;
+
+    final customerState = ref.watch(customerNotifierProvider);
+    final customers = customerState.customers; // list from backend
+
+    final selectedCustomer = useState<Customer?>(
+      null,
+    ); //storing selected customer
+
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(customerNotifierProvider.notifier).fetchCustomers();
+      });
+      return null;
+    }, []);
 
     // 2. Text Controllers (Local Hooks)
     final nameCtrl = useTextEditingController();
@@ -28,65 +44,66 @@ class CartScreen extends HookConsumerWidget {
     // Calculate Totals
     // Assuming your CartState has a getter for totalPrice, otherwise calculate here:
     final double subTotal = cartItems.fold(
-        0, (sum, item) => sum + (item.product.price * item.quantity));
+      0,
+      (sum, item) => sum + (item.product.price * item.quantity),
+    );
     final double discount = 0.00;
     final double totalPayable = subTotal - discount;
 
     // --- LOGIC: Place Order ---
     void handlePlaceOrder() async {
-  // 1. Validation
-  if (cartItems.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Cart is empty!")),
-    );
-    return;
-  }
+      // 1. Validation
+      if (cartItems.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Cart is empty!")));
+        return;
+      }
 
-  if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please fill in Customer Details")),
-    );
-    return;
-  }
-
-  // 2. Prepare sale items for backend
-  final saleItems = cartItems.map((item) {
-    return {
-      "product_id": item.product.id,
-      "quantity": item.quantity,
-      "unit_price": item.product.price,
-    };
-  }).toList();
-
-  // 3. Call backend and create sale
-  try {
-    final saleId = await ref
-        .read(salesNotifierProvider.notifier)
-        .createSale(
-          customerId: 1, // temporary until customer system is added
-          items: saleItems,
-          paymentMethod: paymentMethod.value,
+      if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please fill in Customer Details")),
         );
+        return;
+      }
 
-    // 4. Clear cart
-    ref.read(cartProvider.notifier).clearCart();
+      // 2. Prepare sale items for backend
+      final saleItems = cartItems.map((item) {
+        return {
+          "product_id": item.product.id,
+          "quantity": item.quantity,
+          "unit_price": item.product.price,
+        };
+      }).toList();
 
-    // 5. Navigate to success screen with ONLY saleId
-    Navigator.pushNamed(
-      context,
-      '/success',
-      arguments: {
-        "saleId": saleId,
-      },
+      // 3. Call backend and create sale
+      try {
+        print("🛒 Creating sale...");
+        final saleId = await ref
+            .read(salesNotifierProvider.notifier)
+            .createSale(
+              customerId: selectedCustomer.value?.id ?? 0,
+              items: saleItems,
+              paymentMethod: paymentMethod.value,
+            );
+
+        // 4. Clear cart
+        ref.read(cartProvider.notifier).clearCart();
+        print("🟢 SALE CREATED! Sale ID = $saleId");
+
+
+        // 5. Navigate to success screen with ONLY saleId
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SuccessScreen(saleId: saleId,)),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Order failed: $e")));
+      }
       
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Order failed: $e")),
-    );
-  }
-}
-
+    }
 
     // --- UI HELPERS ---
     const blueColor = Color(0xFF1976D2);
@@ -104,8 +121,11 @@ class CartScreen extends HookConsumerWidget {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_ios,
-                        size: 20, color: blueColor),
+                    child: const Icon(
+                      Icons.arrow_back_ios,
+                      size: 20,
+                      color: blueColor,
+                    ),
                   ),
                   const Expanded(
                     child: Text(
@@ -133,20 +153,23 @@ class CartScreen extends HookConsumerWidget {
                     // 1. Cart Items List
                     if (cartItems.isEmpty)
                       const Center(
-                          child: Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: Text("Your cart is currently empty"),
-                      ))
+                        child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Text("Your cart is currently empty"),
+                        ),
+                      )
                     else
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: cartItems.length,
-                        separatorBuilder: (ctx, i) => const SizedBox(height: 12),
+                        separatorBuilder: (ctx, i) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (ctx, index) {
                           final item = cartItems[index];
                           final product = item.product;
-                          final double itemTotal = product.price * item.quantity;
+                          final double itemTotal =
+                              product.price * item.quantity;
 
                           return Container(
                             padding: const EdgeInsets.all(8),
@@ -158,7 +181,7 @@ class CartScreen extends HookConsumerWidget {
                                   color: Colors.black.withOpacity(0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
-                                )
+                                ),
                               ],
                             ),
                             child: Row(
@@ -172,14 +195,18 @@ class CartScreen extends HookConsumerWidget {
                                     color: Colors.grey[100],
                                     image: product.images.isNotEmpty
                                         ? DecorationImage(
-                                            image:NetworkImage("http://localhost:5000${product.images.first}"),
+                                            image: NetworkImage(
+                                              "http://localhost:5000${product.images.first}",
+                                            ),
                                             fit: BoxFit.cover,
                                           )
                                         : null,
                                   ),
                                   child: product.images.isEmpty
-                                      ? const Icon(Icons.image,
-                                          color: Colors.grey)
+                                      ? const Icon(
+                                          Icons.image,
+                                          color: Colors.grey,
+                                        )
                                       : null,
                                 ),
                                 const SizedBox(width: 12),
@@ -203,15 +230,17 @@ class CartScreen extends HookConsumerWidget {
                                       Text(
                                         "Qty: ${item.quantity.toInt()} x \$${product.price}",
                                         style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[500]),
+                                          fontSize: 12,
+                                          color: Colors.grey[500],
+                                        ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         "\$${itemTotal.toStringAsFixed(2)}", // Item total logic if needed
                                         style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey),
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -228,7 +257,8 @@ class CartScreen extends HookConsumerWidget {
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                          color: blueColor.withOpacity(0.2)),
+                                        color: blueColor.withOpacity(0.2),
+                                      ),
                                       color: Colors.white,
                                     ),
                                     child: const Icon(
@@ -237,7 +267,7 @@ class CartScreen extends HookConsumerWidget {
                                       color: blueColor,
                                     ),
                                   ),
-                                )
+                                ),
                               ],
                             ),
                           );
@@ -256,12 +286,98 @@ class CartScreen extends HookConsumerWidget {
                       ),
                       child: Column(
                         children: [
-                          _buildTextField(
-                            controller: nameCtrl,
-                            hint: "Customer Name",
-                            icon: Icons.person_outline,
+                          Autocomplete<Customer>(
+                            optionsBuilder: (TextEditingValue textValue) {
+                              if (textValue.text.isEmpty)
+                                return const Iterable<Customer>.empty();
+
+                              return customers.where(
+                                (c) => c.name.toLowerCase().contains(
+                                  textValue.text.toLowerCase(),
+                                ),
+                              );
+                            },
+                            displayStringForOption: (Customer c) => c.name,
+
+                            // ⭐ ONLY THIS BLOCK ADDED
+                            optionsViewBuilder: (context, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 4,
+                                  color: Colors.white,
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 80, // ⭐ LIMIT HEIGHT
+                                    ),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      itemCount: options.length,
+                                      itemBuilder: (context, index) {
+                                        final Customer c = options.elementAt(
+                                          index,
+                                        );
+                                        return ListTile(
+                                          title: Text(c.name),
+                                          onTap: () => onSelected(c),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+
+                            fieldViewBuilder:
+                                (context, controller, focusNode, onSubmit) {
+                                  // Sync autocomplete value → nameCtrl
+                                  controller.addListener(() {
+                                    nameCtrl.text = controller.text;
+                                  });
+
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: TextField(
+                                      controller: controller,
+                                      focusNode: focusNode,
+                                      style: const TextStyle(fontSize: 14),
+                                      decoration: InputDecoration(
+                                        prefixIcon: const Icon(
+                                          Icons.person_outline,
+                                          color: Colors.grey,
+                                          size: 20,
+                                        ),
+                                        hintText: "Customer Name",
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 14,
+                                        ),
+                                        border: InputBorder.none,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 14,
+                                            ),
+                                      ),
+                                      onChanged: (val) {
+                                        nameCtrl.text = val;
+                                      },
+                                    ),
+                                  );
+                                },
+                            onSelected: (Customer selected) {
+                              selectedCustomer.value = selected;
+                              nameCtrl.text = selected.name;
+                              phoneCtrl.text = selected.phone;
+                              addressCtrl.text = selected.address;
+                            },
                           ),
+
                           const SizedBox(height: 12),
+
                           _buildTextField(
                             controller: phoneCtrl,
                             hint: "Phone number",
@@ -367,7 +483,12 @@ class CartScreen extends HookConsumerWidget {
       // 5. Place Order Button
       bottomSheet: Container(
         color: bgColor, // Match scaffold background
-        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 10),
+        padding: const EdgeInsets.only(
+          left: 20,
+          right: 20,
+          bottom: 20,
+          top: 10,
+        ),
         child: SizedBox(
           width: double.infinity,
           height: 56,
@@ -430,8 +551,10 @@ class CartScreen extends HookConsumerWidget {
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -449,7 +572,9 @@ class CartScreen extends HookConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0).withOpacity(0.5), // Grey background from design
+          color: const Color(
+            0xFFE0E0E0,
+          ).withOpacity(0.5), // Grey background from design
           borderRadius: BorderRadius.circular(12),
           border: isSelected
               ? Border.all(color: activeColor, width: 2)
@@ -458,12 +583,12 @@ class CartScreen extends HookConsumerWidget {
         child: Row(
           children: [
             Container(
-               padding: const EdgeInsets.all(4),
-               decoration: BoxDecoration(
-                 border: Border.all(color: Colors.grey),
-                 shape: BoxShape.circle
-               ),
-              child: Icon(icon, color: Colors.grey[700], size: 20)
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.grey[700], size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(

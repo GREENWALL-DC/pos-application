@@ -13,7 +13,7 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
 class ProductNotifier extends Notifier<ProductState> {
   @override
   ProductState build() {
-    return ProductState();
+    return ProductState();  
   }
 
   // 1️⃣ Create product + upload images

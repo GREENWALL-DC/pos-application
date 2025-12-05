@@ -35,7 +35,7 @@ exports.addSaleItem = async (client, sale_id, item) => {
 exports.getFullInvoice = async (id) => {
   const sale = await db.query(`
       SELECT s.*, 
-             u.name AS salesperson_name,
+             u.username AS salesperson_name,
              c.name AS customer_name, 
              c.phone AS customer_phone
       FROM sales s

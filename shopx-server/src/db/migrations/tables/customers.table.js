@@ -17,7 +17,7 @@ module.exports = async (client) => {
         name VARCHAR(100) NOT NULL,
         phone VARCHAR(20),
         address TEXT,
-        gst_number VARCHAR(50), -- optional for shop owners
+        tin VARCHAR(50), -- optional for shop owners
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
