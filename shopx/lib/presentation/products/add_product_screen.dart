@@ -174,53 +174,19 @@ class AddProductScreen extends HookConsumerWidget {
             ),
             kHeight16,
 
-            // Field: Unit
-            _buildLabel('Unit'),
-            Row(
-              children: [
-                // QUANTITY TEXT FIELD
-                Expanded(
-                  flex: 2,
-                  child: _buildTextField(
-                    controller: quantityController,
-                    hintText: 'Enter Quantity',
-                    fillColor: inputFillColor,
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                    ],
-                  ),
-                ),
+            // Field: Quantity (always in KG)
+_buildLabel('Quantity (in Kg)'),
+_buildTextField(
+  controller: quantityController,
+  hintText: 'Enter quantity in Kg',
+  fillColor: inputFillColor,
+  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+  inputFormatters: [
+    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+  ],
+),
 
-                const SizedBox(width: 12),
 
-                // UNIT DROPDOWN
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: inputFillColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedUnit.value,
-                        items: const [
-                          DropdownMenuItem(value: "Kg", child: Text("Kg")),
-                          DropdownMenuItem(value: "Nos", child: Text("Nos")),
-                        ],
-                        onChanged: (value) {
-                          selectedUnit.value = value!;
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
             kHeight16,
 
             // Field: Code
@@ -374,7 +340,6 @@ final product = Product(
   price: double.parse(priceController.text),
   category: categoryController.text,
   code: codeController.text,
-  unit: selectedUnit.value,                      // ✔ only unit
   quantity: double.parse(quantityController.text), // ✔ numeric quantity
 );
 

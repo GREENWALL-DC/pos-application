@@ -3,23 +3,32 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/cart/cart_notifier.dart';
+import 'package:shopx/application/stock/stock_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/products/product.dart';
 
 class AddQuantityDialog extends HookConsumerWidget {
   final Product product;
-  final double availableStock; // Passed from parent (Backend data)
   final Function(double quantity) onAddToCart;
 
   const AddQuantityDialog({
     super.key,
     required this.product,
-    required this.availableStock,
     required this.onAddToCart,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    useEffect(() {
+  if (product.id != null) {
+    ref.read(stockNotifierProvider.notifier)
+       .loadStockForProduct(product.id!);
+  }
+  return null;
+}, []);
+
+
     // Hooks
     final quantityController = useTextEditingController();
 
@@ -28,8 +37,16 @@ class AddQuantityDialog extends HookConsumerWidget {
 
     // Logic
     final double enteredQty = double.tryParse(textValue) ?? 0.0;
+    final stockState = ref.watch(stockNotifierProvider);
+
+//     if (stockState.isLoading) {
+//   return const Center(child: CircularProgressIndicator());
+// }
+
+    final availableStock = stockState.stock[product.id] ?? 0.0;
     final bool isOverStock = enteredQty > availableStock;
     final bool isValid = enteredQty > 0 && !isOverStock;
+
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -71,14 +88,14 @@ class AddQuantityDialog extends HookConsumerWidget {
                   ),
                 ),
                 Text(
-                  "$availableStock ${product.unit}",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    // Highlight stock in red if 0, green otherwise
-                    color: availableStock > 0 ? Colors.green[700] : Colors.red,
-                  ),
-                ),
+  "$availableStock Kg",   // always KG now
+  style: TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.bold,
+    color: availableStock > 0 ? Colors.green[700] : Colors.red,
+  ),
+),
+
               ],
             ),
 
@@ -147,7 +164,7 @@ class AddQuantityDialog extends HookConsumerWidget {
 
                   hintText: "Enter Quantity",
                   // Dynamic Unit Suffix (KG / Nos)
-                  suffixText: product.unit.isNotEmpty ? product.unit : "Unit",
+                  suffixText:"Kg",
                   suffixStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.grey,

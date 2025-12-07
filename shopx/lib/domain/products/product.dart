@@ -4,7 +4,6 @@ class Product {
   final double price;      // product price
   final String category;   // product category (Tea, Coffee, etc.)
    final double quantity;    // initial stock (numeric)
-  final String unit;  
   final List<String> images;   // <-- ADD THIS
   final String code; 
 
@@ -16,7 +15,7 @@ class Product {
     required this.price,
     required this.category,
      required this.quantity,
-     required this.unit, 
+   
       this.images = const [],     // <-- default empty
         required this.code,
   });
@@ -29,7 +28,7 @@ class Product {
       name: json["name"] ?? "",
       price: double.tryParse(json["price"].toString()) ?? 0.0,
       category: json["category"] ?? "",
-        unit: json["unit"] ?? "",
+        
          quantity: double.tryParse(json["quantity"].toString()) ?? 0.0,
          code: json["code"]?.toString() ?? "", 
          images: json["images"] != null
@@ -45,7 +44,7 @@ class Product {
       "price": price,
       "category": category,
        "quantity": quantity,
-       "unit": unit,
+      
         "code": code,   
     };
   }

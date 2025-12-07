@@ -2,7 +2,8 @@ const db = require("../../config/db");
 const repo = require("./sales.repositary");
 
 // For stock deduction
-const stockRepo = require("../stock/stock.repository");
+// ✔ USE STOCK *SERVICE* — not repository!
+const stockService = require("../stock/stock.service");
 
 // For payments
 const paymentsRepo = require("../payments/payments.repository");
@@ -23,7 +24,7 @@ exports.createSale = async (data) => {
 
     // 2️⃣ CALCULATE TOTAL
     let total_amount = 0;
-    data.items.forEach(i => total_amount += i.quantity * i.unit_price);
+    data.items.forEach((i) => (total_amount += i.quantity * i.unit_price));
 
     // 3️⃣ CREATE MAIN SALE
     const sale = await repo.createSale(client, {
@@ -32,43 +33,32 @@ exports.createSale = async (data) => {
       total_amount,
     });
 
-    // 4️⃣ CREATE SALE BALANCE ENTRY
-    await repo.createSaleBalance(client, sale.id, total_amount);
+   // 5️⃣ INSERT SALE ITEMS + REDUCE STOCK (correct way)
+for (const item of data.items) {
+  await repo.addSaleItem(client, sale.id, item);
 
-    // 5️⃣ INSERT SALE ITEMS + REDUCE STOCK
-    for (const item of data.items) {
-      await repo.addSaleItem(client, sale.id, item);
+  // Use REAL stock logic (prevents negative stock, checks availability)
+  await stockService.adjustStock(item.product_id, -item.quantity, "sale");
+}
 
-      // reduce stock
-      await stockRepo.updateStockQuantity(item.product_id, -item.quantity);
-      await stockRepo.insertStockMovement(item.product_id, -item.quantity, "sale");
-    }
 
-    // 6️⃣ AUTO PAYMENT (FULL PAYMENT NOW)
-    const payment = await paymentsRepo.createPayment(client,{
+    // 6️⃣ CREATE ONE FULL PAYMENT
+    const payment = await paymentsRepo.createPayment(client, {
       saleId: sale.id,
       customerId: data.customer_id,
-      amount: total_amount,
-      method: data.payment_method || "cash"
+      amount: total_amount, // always full
+      method: data.payment_method || "cash",
     });
 
-    // 7️⃣ UPDATE BALANCE
-    await paymentsRepo.updateSaleBalance({
-      saleId: sale.id,
-      paidAmount: total_amount,
-      balance: 0,
-    });
-
-    // 8️⃣ SET SALE AS FULLY PAID
+    // 7️⃣ SET SALE AS PAID
     await paymentsRepo.updateSaleStatus(sale.id, "paid");
 
     await client.query("COMMIT");
 
     return {
       sale,
-      payment: payment.rows[0]
+      payment: payment.rows[0],
     };
-
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

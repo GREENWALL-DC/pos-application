@@ -25,7 +25,6 @@ return;
         quantity NUMERIC(10,2) DEFAULT 0,       
         code TEXT,    
         category TEXT, 
-        unit VARCHAR(20) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

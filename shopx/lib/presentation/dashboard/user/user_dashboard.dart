@@ -12,6 +12,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/cart/cart_notifier.dart';
 import 'package:shopx/application/products/product_state.dart';
+import 'package:shopx/application/stock/stock_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/products/product.dart';
 import 'package:shopx/application/auth/auth_notifier.dart'; // Adjust if path differs
@@ -425,13 +426,15 @@ if (currentTab.value == 0 || currentTab.value == 1)
                       ),
                     ),
                     InkWell(
-                      onTap: () {
+                      onTap: ()async {
+                          // 1️⃣ Load backend stock BEFORE using dialog
+  await ref.read(stockNotifierProvider.notifier).loadStockForProduct(product.id!);
+
+                      // 2️⃣ Show dialog WITH real stock
                         showDialog(
                           context: context,
                           builder: (_) => AddQuantityDialog(
                             product: product,
-                            availableStock:
-                                product.quantity, // ✅ stock from backend
                             onAddToCart: (qty) {
                               // 1️⃣ Add to cart provider
                               ref
@@ -567,12 +570,15 @@ if (currentTab.value == 0 || currentTab.value == 1)
               ),
               // Add Button
               InkWell(
-                onTap: () {
+                onTap: () async{
+                    // 1️⃣ Load backend stock BEFORE using dialog
+  await ref.read(stockNotifierProvider.notifier).loadStockForProduct(product.id!);
+// 2️⃣ Show dialog WITH real stock
                   showDialog(
                     context: context,
                     builder: (_) => AddQuantityDialog(
                       product: product,
-                      availableStock: product.quantity, // ✅ stock from backend
+                   
                       onAddToCart: (qty) {
                         // 1️⃣ Add to cart provider
                         ref.read(cartProvider.notifier).addToCart(product, qty);

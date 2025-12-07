@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/cart/cart_notifier.dart';
 import 'package:shopx/application/customers/customer_notifier.dart';
 import 'package:shopx/application/sales/sales_notifier.dart';
+import 'package:shopx/application/stock/stock_notifier.dart';
 import 'package:shopx/domain/customers/customer.dart';
 import 'package:shopx/domain/products/product.dart';
 import 'package:shopx/presentation/cart/cart_success_screen.dart'; // Ensure this path matches your project
@@ -75,6 +76,25 @@ class CartScreen extends HookConsumerWidget {
           "unit_price": item.product.price,
         };
       }).toList();
+
+
+final stockMap = ref.read(stockNotifierProvider).stock;
+
+for (var item in cartItems) {
+  final available = stockMap[item.product.id] ?? 0.0;
+
+  if (item.quantity > available) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            "Not enough stock for ${item.product.name}. Available: $available"),
+      ),
+    );
+    return; // ❌ stop sale
+  }
+}
+
+
 
       // 3. Call backend and create sale
       try {

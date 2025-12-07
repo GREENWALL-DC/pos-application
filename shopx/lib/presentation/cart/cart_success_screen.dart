@@ -16,27 +16,25 @@ import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
 
 class SuccessScreen extends HookConsumerWidget {
   final int saleId;
-  const SuccessScreen({super.key,
-  required this.saleId});
+  const SuccessScreen({super.key, required this.saleId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-   
-   print("🔥 SUCCESS SCREEN SALE ID = $saleId");
-    
+    print("🔥 SUCCESS SCREEN SALE ID = $saleId");
+
     // ---------------------------
     // 2. Fetch sale details
     // ---------------------------
-   final futureSale = useMemoized(
-  () => ref.read(salesNotifierProvider.notifier).getSale(saleId),
-);
+    final futureSale = useMemoized(
+      () => ref.read(salesNotifierProvider.notifier).getSale(saleId),
+    );
 
     final saleSnapshot = useFuture(futureSale);
 
     if (saleSnapshot.connectionState == ConnectionState.waiting) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-print("🔥 SUCCESS SCREEN RECEIVED sale = ${saleSnapshot.data}");
+    print("🔥 SUCCESS SCREEN RECEIVED sale = ${saleSnapshot.data}");
 
     if (!saleSnapshot.hasData) {
       return const Scaffold(body: Center(child: Text("Failed to load sale")));
@@ -79,7 +77,7 @@ print("🔥 SUCCESS SCREEN RECEIVED sale = ${saleSnapshot.data}");
       buffer.writeln("Sale ID: ${sale.id}");
       buffer.writeln("Customer: ${customer.name}");
       buffer.writeln("Phone: ${customer.phone}");
-      buffer.writeln("Payment: ${sale.payments.first.method}");
+      buffer.writeln(  "Payment: ${sale.payments.first.method} (SAR ${sale.payments.first.amount})",   );
       buffer.writeln("Total: SAR ${sale.totalAmount}");
       buffer.writeln("\nItems:");
       for (var item in sale.items) {
@@ -206,12 +204,12 @@ print("🔥 SUCCESS SCREEN RECEIVED sale = ${saleSnapshot.data}");
     // ---------------------------
     // 6. Next Order
     // ---------------------------
-   void handleNextOrder() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => UserDashboard()),
-  );
-}
+    void handleNextOrder() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => UserDashboard()),
+      );
+    }
 
     // ---------------------------
     // CONSTANTS
