@@ -25,6 +25,7 @@ return;
         quantity NUMERIC(10,2) DEFAULT 0,       
         code TEXT,    
         category TEXT, 
+        vat NUMERIC(5,2) DEFAULT 0,  
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

@@ -14,7 +14,7 @@ router.get("/", validateToken, controller.getAllCustomers);
 router.get("/:id", validateToken, controller.getCustomerById);
 
 // Update customer
-router.put("/:id", validateToken, controller.updateCustomer);
+router.put("/:id", validateToken, checkAdmin, controller.updateCustomer);
 
 // Delete customer (admin only)
 router.delete("/:id", validateToken, checkAdmin, controller.deleteCustomer);

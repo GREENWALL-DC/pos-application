@@ -3,7 +3,7 @@ class Customer {
   final String name;
   final String phone;
   final String? email;
-  final String? tin;        // tax identification number
+  final String tin;        // tax identification number
   final String address;
   final DateTime createdAt;
 
@@ -12,7 +12,7 @@ class Customer {
     required this.name,
     required this.phone,
     this.email,
-    this.tin,
+   required this.tin,
    required this.address,
     required this.createdAt,
   });

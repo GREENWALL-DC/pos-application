@@ -492,6 +492,9 @@ if (authState.error != null) {
     selectedOtpMethod.value!.toLowerCase(),
   );
 
+  // ⭐ ADD THIS LINE — CRITICAL FIX
+    if (!context.mounted) return;
+
   // ⭐ ONLY NOW SHOW OTP UI
   isOtpSent.value = true;
 

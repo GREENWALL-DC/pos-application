@@ -16,12 +16,21 @@ exports.createSale = async (
 
 // INSERT SALE ITEM
 exports.addSaleItem = async (client, sale_id, item) => {
-  const total_price = item.quantity * item.unit_price;
+  const discount = item.discount || 0;
+
+  const total_price = item.quantity * (item.unit_price - discount);
 
   return await client.query(
-    `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, total_price)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [sale_id, item.product_id, item.quantity, item.unit_price, total_price]
+    `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, discount, total_price)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
+      sale_id,
+      item.product_id,
+      item.quantity,
+      item.unit_price,
+      discount,
+      total_price
+    ]
   );
 };
 

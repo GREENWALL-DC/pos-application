@@ -5,8 +5,8 @@ import 'package:shopx/application/products/product_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/widget/productlist/product_card.dart';
 
-class ProductListPage extends HookConsumerWidget {
-  const ProductListPage({super.key});
+class userProductListPage extends HookConsumerWidget {
+  const userProductListPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

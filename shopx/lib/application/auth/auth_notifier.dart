@@ -2,18 +2,62 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shopx/domain/auth/user_model.dart';
 import 'package:shopx/infrastructure/auth/auth_repositary.dart';
 import 'auth_state.dart';
+import 'package:shared_preferences/shared_preferences.dart'; 
+
+
 
 // 🎯 AUTH NOTIFIER: Manages authentication state and business logic
 class AuthNotifier extends Notifier<AuthState> {
   String? _tempToken;
   String? _selectedOtpMethod; // ✅ ADD: Store selected method
   String? _jwtToken; // ✅ ADD THIS: Store permanent JWT token
+  
 
   @override
   AuthState build() {
-    // ✅ STEP 2: ADD this new method (replaces constructor)
-    return const AuthState.initial();
+     // Start with loading state until we verify stored token
+      // _initAuth();   // 🔥 auto check stored token
+    return const AuthState.unauthenticated();
   }
+
+  
+Future<void> _initAuth() async {
+  final storedToken = await _loadToken();
+
+  if (storedToken == null) {
+    state = const AuthState.unauthenticated();
+    return;
+  }
+
+  try {
+    final user = await ref.read(authRepositoryProvider)
+        .getCurrentUser(storedToken);
+
+    _jwtToken = storedToken; // restore token to memory
+    state = AuthState.authenticated(user, token: storedToken);
+  } catch (_) {
+    await logout();
+  }
+}
+
+
+  // 🔥 LOCAL TOKEN STORAGE (SharedPreferences)
+Future<void> _saveToken(String token) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString("jwt_token", token);
+}
+
+Future<String?> _loadToken() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString("jwt_token");
+}
+
+Future<void> _clearToken() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove("jwt_token");
+}
+
+
 
   // 🔐 LOGIN: Authenticate user with username and password
   Future<void> login(String username, String password) async {
@@ -30,6 +74,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
       // ✅ Store the token
       _jwtToken = token;
+      await _saveToken(token);  
       state = AuthState.authenticated(user, token: token);
     } catch (e) {
       state = AuthState.error(e.toString());
@@ -57,6 +102,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
       // ✅ Store the token
       _jwtToken = token;
+      await _saveToken(token); 
       state = AuthState.authenticated(user, token: token);
     } catch (e) {
       state = AuthState.error(e.toString());
@@ -90,6 +136,7 @@ class AuthNotifier extends Notifier<AuthState> {
     _jwtToken = null;
     _tempToken = null;
     _selectedOtpMethod = null;
+    await _clearToken();                    // 🔥 delete token locally
     state = const AuthState.unauthenticated();
 
     // Here you can also clear stored tokens from secure storage
@@ -193,7 +240,7 @@ class AuthNotifier extends Notifier<AuthState> {
       _jwtToken = permanentToken;
       _tempToken = null; // Clear temp token after success
       _selectedOtpMethod = null; // Clear method after success
-
+      await _saveToken(permanentToken);       // 🔥 save token
       state = AuthState.authenticated(user, token: permanentToken);
     } catch (e) {
       state = AuthState.error(e.toString());

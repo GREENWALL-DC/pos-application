@@ -11,18 +11,39 @@ import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/products/product.dart';
 
 class AddProductScreen extends HookConsumerWidget {
-  const AddProductScreen({super.key});
-
- 
+  final Product? productToEdit;
+  const AddProductScreen({super.key,
+  this.productToEdit
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Hooks for TextFields
-    final nameController = useTextEditingController();
-    final priceController = useTextEditingController();
-    final categoryController = useTextEditingController();
-    final codeController = useTextEditingController();
-    final quantityController = useTextEditingController();
+   final nameController = useTextEditingController(
+  text: productToEdit?.name ?? "",
+);
+
+final priceController = useTextEditingController(
+  text: productToEdit != null ? productToEdit!.price.toString() : "",
+);
+
+final categoryController = useTextEditingController(
+  text: productToEdit?.category ?? "",
+);
+
+final codeController = useTextEditingController(
+  text: productToEdit?.code ?? "",
+);
+
+final quantityController = useTextEditingController(
+  text: productToEdit != null ? productToEdit!.quantity.toString() : "",
+);
+
+final vatController = useTextEditingController(
+  text: productToEdit != null ? productToEdit!.vat.toString() : "",
+);
+
+
     final selectedUnit = useState("Kg"); // default
 
     // Color Constants extracted from the image
@@ -36,7 +57,12 @@ class AddProductScreen extends HookConsumerWidget {
     const Color labelColor = Color(0xFF333333); // Dark text color
     const Color removeRed = Color(0xFFE53935);
 
-    final pickedImages = useState<List<Uint8List>>([]);
+// OLD SERVER IMAGES (URLs)
+final existingImageUrls = useState<List<String>>(productToEdit?.images ?? []);
+
+// NEWLY PICKED IMAGES (bytes)
+final pickedImages = useState<List<Uint8List>>([]);
+
     Future<void> pickFileOrImage() async {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -58,16 +84,20 @@ class AddProductScreen extends HookConsumerWidget {
     }
 
     void cancelAddProduct() {
-      nameController.clear();
-      priceController.clear();
-      categoryController.clear();
-      codeController.clear();
-      quantityController.clear();
-      selectedUnit.value = "Kg"; // Reset to default
-      pickedImages.value = []; // ✅ ADD THIS LINE - Clear images
+  if (productToEdit == null) {
+    // Reset only in add mode
+    nameController.clear();
+    priceController.clear();
+    categoryController.clear();
+    codeController.clear();
+    quantityController.clear();
+    selectedUnit.value = "Kg";
+    pickedImages.value = [];
+  }
 
-      Navigator.pop(context); // go back
-    }
+  Navigator.pop(context);
+}
+
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -97,16 +127,17 @@ class AddProductScreen extends HookConsumerWidget {
               ),
 
               // TITLE (CENTERED)
-              const Expanded(
+               Expanded(
                 child: Center(
-                  child: Text(
-                    'Add a product',
-                    style: TextStyle(
-                      color: Color(0xFF1E75D5),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                 child: Text(
+  productToEdit == null ? 'Add a product' : 'Edit product',
+  style: TextStyle(
+    color: Colors.blue,
+    fontWeight: FontWeight.bold
+  ),
+  
+),
+
                 ),
               ),
 
@@ -164,6 +195,20 @@ class AddProductScreen extends HookConsumerWidget {
             ),
             kHeight16,
 
+            // Field: VAT (%)
+_buildLabel('VAT (%)'),
+_buildTextField(
+  controller: vatController,
+  hintText: 'Enter VAT percentage',
+  fillColor: inputFillColor,
+  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+  inputFormatters: [
+    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')), // only numbers and dot
+  ],
+),
+kHeight16,
+
+
             // Field: Categories
             _buildLabel('Categories'),
             _buildTextField(
@@ -175,17 +220,18 @@ class AddProductScreen extends HookConsumerWidget {
             kHeight16,
 
             // Field: Quantity (always in KG)
-_buildLabel('Quantity (in Kg)'),
-_buildTextField(
-  controller: quantityController,
-  hintText: 'Enter quantity in Kg',
-  fillColor: inputFillColor,
-  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-  inputFormatters: [
-    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-  ],
-),
-
+            _buildLabel('Quantity (in Kg)'),
+            _buildTextField(
+              controller: quantityController,
+              hintText: 'Enter quantity in Kg',
+              fillColor: inputFillColor,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+              ],
+            ),
 
             kHeight16,
 
@@ -218,154 +264,207 @@ _buildTextField(
             kHeight12,
 
             // Image Picker Widget
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  // If NO images picked → show placeholder
-                  pickedImages.value.isEmpty
-                      ? Container(
-                          width: 80,
-                          decoration: BoxDecoration(
-                            color: inputFillColor,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              color: Colors.grey.shade700,
-                              size: 30,
-                            ),
-                          ),
-                        )
-                      : Expanded(
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: pickedImages.value.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 10),
-                            itemBuilder: (context, index) {
-                              final imgBytes = pickedImages.value[index];
-
-                              return Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(6),
-                                    child: Image.memory(
-                                      imgBytes,
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-
-                                  // Delete Button
-                                  Positioned(
-                                    top: 0,
-                                    right: 0,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        final newList = List<Uint8List>.from(
-                                          pickedImages.value,
-                                        );
-                                        newList.removeAt(index);
-                                        pickedImages.value = newList;
-                                      },
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        padding: const EdgeInsets.all(4),
-                                        child: const Icon(
-                                          Icons.close,
-                                          size: 14,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-
-                  const SizedBox(width: 10),
-
-                  // Choose photo button
-                  SizedBox(
-                    height: 36,
-                    child: ElevatedButton(
-                      onPressed: pickFileOrImage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: darkBlueButton,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        elevation: 0,
+          Container(
+  height: 100,
+  decoration: BoxDecoration(
+    border: Border.all(color: Colors.grey.shade400),
+    borderRadius: BorderRadius.circular(4),
+  ),
+  padding: const EdgeInsets.all(8),
+  child: Row(
+    children: [
+      // ---------- PLACEHOLDER ----------
+      if (existingImageUrls.value.isEmpty && pickedImages.value.isEmpty)
+        Container(
+          width: 80,
+          decoration: BoxDecoration(
+            color: inputFillColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.image_outlined,
+              color: Colors.grey.shade700,
+              size: 30,
+            ),
+          ),
+        )
+      else
+        // ---------- IMAGE LIST VIEW ----------
+        Expanded(
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              // ========= OLD IMAGES (URLs) =========
+              ...existingImageUrls.value.map(
+                (url) => Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(
+                      "http://localhost:5000"+url,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
                       ),
-                      child: const Text(
-                        'Choose a photo',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          final updated =
+                              List<String>.from(existingImageUrls.value);
+                          updated.remove(url);
+                          existingImageUrls.value = updated;
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: const Icon(Icons.close,
+                              size: 14, color: Colors.white),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+
+              const SizedBox(width: 10),
+
+              // ========= NEW IMAGES (MEMORY) =========
+              ...pickedImages.value.map(
+                (bytes) => Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.memory(
+                        bytes,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          final updated =
+                              List<Uint8List>.from(pickedImages.value);
+                          updated.remove(bytes);
+                          pickedImages.value = updated;
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: const Icon(Icons.close,
+                              size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+      const SizedBox(width: 10),
+
+      // ---------- PICK IMAGE BUTTON ----------
+      SizedBox(
+        height: 36,
+        child: ElevatedButton(
+          onPressed: pickFileOrImage,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: darkBlueButton,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
             ),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Choose a photo',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+
 
             kHeight40,
 
             // --- Footer Buttons ---
 
             // Add Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () async {
-final images = pickedImages.value; // <-- already bytes
-final product = Product(
-  name: nameController.text,
-  price: double.parse(priceController.text),
-  category: categoryController.text,
-  code: codeController.text,
-  quantity: double.parse(quantityController.text), // ✔ numeric quantity
+           SizedBox(
+  width: double.infinity,
+  height: 50,
+  child: ElevatedButton(
+    onPressed: () async {
+      final images = pickedImages.value;
+
+      final product = Product(
+        id: productToEdit?.id, // keep old ID in edit mode
+        name: nameController.text,
+        price: double.parse(priceController.text),
+        category: categoryController.text,
+        code: codeController.text,
+        quantity: double.parse(quantityController.text),
+         vat: double.tryParse(vatController.text.trim()) ?? 0.0,
+      );
+
+      if (productToEdit == null) {
+        // CREATE NEW PRODUCT
+        await ref
+            .read(productNotifierProvider.notifier)
+            .createProduct(product, images);
+      } else {
+        // UPDATE EXISTING PRODUCT
+      await ref.read(productNotifierProvider.notifier).updateProduct(
+  productToEdit!.id!,
+  product,
+  existingUrls: existingImageUrls.value,
+  newImages: pickedImages.value,
 );
 
-                  await ref
-                      .read(productNotifierProvider.notifier)
-                      .createProduct(product, images);
+      }
 
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Add a new product',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
+      Navigator.pop(context);
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: primaryBlue,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      elevation: 0,
+    ),
+    child: Text(
+      productToEdit == null
+          ? 'Add a new product'
+          : 'Update product',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
+),
+
 
             kHeight20,
             // Remove Button

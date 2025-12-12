@@ -11,6 +11,10 @@ const router = express.Router();
 router.post("/register", validateToken, checkAdmin, registerValidator, controller.registerUser);
 router.post("/login-owner", loginValidator, controller.loginOwner);
 
+// Admin login route (NEW)
+router.post("/admin/login", loginValidator, controller.loginAdmin);
+
+
 // Public
 router.post("/login", loginValidator, controller.loginUser);
 

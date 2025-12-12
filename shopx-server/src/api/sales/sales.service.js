@@ -23,8 +23,12 @@ exports.createSale = async (data) => {
     }
 
     // 2️⃣ CALCULATE TOTAL
-    let total_amount = 0;
-    data.items.forEach((i) => (total_amount += i.quantity * i.unit_price));
+   let total_amount = 0;
+data.items.forEach((i) => {
+  const discount = i.discount || 0;
+  total_amount += i.quantity * (i.unit_price - discount);
+});
+
 
     // 3️⃣ CREATE MAIN SALE
     const sale = await repo.createSale(client, {

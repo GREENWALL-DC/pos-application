@@ -17,16 +17,20 @@ class AddQuantityDialog extends HookConsumerWidget {
     required this.onAddToCart,
   });
 
+
+  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
-    useEffect(() {
+// Load stock AFTER the dialog finishes building
+WidgetsBinding.instance.addPostFrameCallback((_) {
   if (product.id != null) {
     ref.read(stockNotifierProvider.notifier)
        .loadStockForProduct(product.id!);
   }
-  return null;
-}, []);
+});
+
 
 
     // Hooks

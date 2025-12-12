@@ -15,6 +15,7 @@ final dioProvider = Provider<Dio>((ref) {
       onRequest: (options, handler) {
         final token = ref.read(authNotifierProvider).token;
 
+  
         if (token != null && token.isNotEmpty) {
           options.headers["Authorization"] = "Bearer $token";
         }

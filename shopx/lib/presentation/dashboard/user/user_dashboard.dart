@@ -192,7 +192,7 @@ if (currentTab.value == 0 || currentTab.value == 1)
       } else if (currentTab.value == 1) {
         return const ManualEntryPage();   // bottom nav item
       } else if (currentTab.value == 2) {
-        return const ProductListPage();   // from drawer
+        return const userProductListPage();   // from drawer
       } else if (currentTab.value == 3) {
         return const TransactionHistoryPage();  // from drawer
       } else if (currentTab.value == 4) {

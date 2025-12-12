@@ -5,6 +5,7 @@ class AuthState {
   final String? token;
   final bool isLoading;
   final String? error;
+  
 
    const AuthState({
     this.user,
@@ -82,6 +83,13 @@ class AuthState {
 
   // 🖨️ String representation for debugging
   @override
-  String toString() => 'AuthState(user: $user, isLoading: $isLoading, error: $error)';       
+  String toString() => 'AuthState(user: $user, isLoading: $isLoading, error: $error)';  
+  
+       
 
+}
+
+extension AuthStateHelpers on AuthState {
+  bool get isAuthenticated => user != null;  // logged in if user exists
+   bool get isUnauthenticated => user == null && !isLoading;
 }

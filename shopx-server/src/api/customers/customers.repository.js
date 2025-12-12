@@ -22,21 +22,21 @@ exports.getCustomerById = async (id) => {
   return result.rows[0];
 };
 
-exports.updateCustomer = async (id, { name, phone, address, gst_number }) => {
+exports.updateCustomer = async (id, { name, phone, address, tin }) => {
   const result = await db.query(
     `UPDATE customers
-     SET name = COALESCE($1,name),
-         phone = COALESCE($2,phone),
-         address = COALESCE($3,address),
-          gst_number = COALESCE($4, gst_number),
-         updated_at = CURRENT_TIMESTAMP
+     SET name = COALESCE($1, name),
+         phone = COALESCE($2, phone),
+         address = COALESCE($3, address),
+         tin = COALESCE($4, tin)
      WHERE id = $5
      RETURNING *`,
-    [name, phone, address, gst_number, id]
+    [name, phone, address, tin, id]
   );
 
   return result.rows[0];
 };
+
 
 exports.deleteCustomer = async (id) => {
   const result = await db.query(

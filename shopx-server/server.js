@@ -6,7 +6,6 @@ const errorHandler = require("./src/middleware/errorHandler");
 const authRoutes = require("./src/api/auth/auth.routes");
 const productRoutes = require("./src/api/products/products.routes");
 const customerRoutes = require("./src/api/customers/customers.routes");
-const salePersonRoutes = require("./src/api/salespersons/saleperson.routes");
 const saleRoutes = require("./src/api/sales/sales.routes");
 const reportRoutes =require("./src/api/reports/reports.routes");
 const invoiceRoutes = require("./src/api/printing/invoice.routes");
@@ -14,6 +13,7 @@ const paymentRoutes = require("./src/api/payments/payments.routes");
 const dashboardRoutes = require("./src/api/dashboard/dashboard.routes");
 const stockRoutes =require("./src/api/stock/stock.routes");
 const uploadProductImage = require("./src/middleware/uploadProductImage");
+const userRoutes = require("./src/api/users/user.routes");
 
 
 //middleware
@@ -28,15 +28,16 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/customers",customerRoutes);
-app.use("/api/salePersons",salePersonRoutes);
 app.use("/api/sales",saleRoutes);
 app.use("/api/reports",reportRoutes);
 app.use("/api/invoices",invoiceRoutes);
 app.use("/api/payments",paymentRoutes);
 app.use("/api/dashboard",dashboardRoutes);
 app.use("/api/stock",stockRoutes);
+app.use("/api/users", userRoutes);
 // Serve uploaded files
 app.use("/uploads", express.static("uploads"));
+
 
 
 

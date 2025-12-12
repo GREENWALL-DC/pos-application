@@ -10,20 +10,19 @@ exports.getProductById = async(id)=>{
     return await db.query("SELECT * FROM products WHERE id =$1",[id]);
 };
 
-exports.createProduct = async ({ name, price, category,  quantity, code }) => {
+exports.createProduct = async ({ name, price, category, quantity, code, vat }) => {
   return await db.query(`
-    INSERT INTO products (name, price, category,  quantity, code)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO products (name, price, category, quantity, code, vat)
+    VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING *`,
-    [name, price, category,  quantity, code]
+    [name, price, category, quantity, code, vat]
   );
 };
 
 
-
 exports.updateProduct = async (
   id,
-  { name, price, category, quantity, code }
+  { name, price, category, quantity, code, vat }
 ) => {
   return await db.query(`
     UPDATE products 
@@ -32,12 +31,14 @@ exports.updateProduct = async (
       price = COALESCE($2, price),
       category = COALESCE($3, category),
       quantity = COALESCE($4, quantity),
-      code = COALESCE($5, code)
-    WHERE id = $6
+      code = COALESCE($5, code),
+      vat = COALESCE($6, vat)
+    WHERE id = $7
     RETURNING *`,
-    [name, price, category, quantity, code, id]
+    [name, price, category, quantity, code, vat, id]
   );
 };
+
 
 
 

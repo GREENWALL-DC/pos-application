@@ -12,6 +12,12 @@ const loginUser = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+const loginAdmin = asyncHandler(async (req, res) => {
+  const result = await service.loginAdmin(req.body);
+  res.json(result);
+});
+
+
 const currentUser = asyncHandler(async (req, res) => {
   res.json(req.user);
 });
@@ -69,6 +75,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
+  loginAdmin,
   currentUser,
   updateUser,
   getUserById,

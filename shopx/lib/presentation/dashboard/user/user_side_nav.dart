@@ -94,7 +94,7 @@ class UserSideNav extends HookConsumerWidget {
     Navigator.pop(context);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ProductListPage()),
+      MaterialPageRoute(builder: (_) => const userProductListPage()),
     );
   },
 ),
@@ -177,11 +177,62 @@ DrawerMenuItem(
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+             kHeight10,
+
+              // LOGOUT BUTTON
+              InkWell(
+  onTap: () => _showLogoutDialog(context, ref),
+  child: Row(
+    children: const [
+      Icon(Icons.logout, color: Colors.white),
+      SizedBox(width: 12),
+      Text(
+        "Logout",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ],
+  ),
+),
+kHeight20,
             ],
           ),
         ),
       ),
     );
   }
+
+  Future<void> _showLogoutDialog(BuildContext context, WidgetRef ref) async {
+  final shouldLogout = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              "Logout",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (shouldLogout == true) {
+    ref.read(authNotifierProvider.notifier).logout();
+    Navigator.pushNamedAndRemoveUntil(context, "/login", (route) => false);
+  }
+}
+
 }

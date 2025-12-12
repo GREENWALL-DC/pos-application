@@ -16,7 +16,7 @@ class AuthApi {
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final res = await _dio.post(
-        "auth/login",
+        "auth/admin/login",
         data: {"username": username, "password": password},
       );
       return res.data;

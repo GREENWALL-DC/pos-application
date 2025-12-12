@@ -66,6 +66,11 @@ const login = async ({ username, password }) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) throw new Error("Invalid credentials");
 
+    // 🚨 BLOCK ADMINS FROM EMPLOYEE LOGIN
+  if (user.user_type === "admin") {
+    throw new Error("Admins must login through admin route");
+  }
+
   const accessToken = jwt.sign(
     {
       user: {
@@ -92,6 +97,48 @@ const login = async ({ username, password }) => {
     },
   };
 };
+
+
+
+const loginAdmin = async ({ username, password }) => {
+  if (!username || !password) throw new Error("All fields are mandatory");
+
+  const user = await repo.findUserByUsername(username);
+  if (!user) throw new Error("Invalid credentials");
+
+  if (user.user_type !== "admin") {
+    throw new Error("Not authorized. Only admin can login.");
+  }
+
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) throw new Error("Invalid credentials");
+
+  const accessToken = jwt.sign(
+    {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        user_type: user.user_type,
+      },
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  return {
+    accessToken,
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      user_type: user.user_type,
+    },
+  };
+};
+
+
+
 
 const updateUser = async (userId, { username, email }) => {
   if (!username && !email) throw new Error("Provide username or email");
@@ -212,6 +259,7 @@ const verifyOTP = async ({ userId, otp }) => {
 module.exports = {
   register,
   login,
+  loginAdmin,
   updateUser,
   getUserById,
   deleteSelf,

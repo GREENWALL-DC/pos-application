@@ -21,6 +21,9 @@ class CustomerNotifier extends Notifier<CustomerState> {
     try {
       await ref.read(customerRepositoryProvider).createCustomer(customer);
 
+       // FIX: refresh list
+    await fetchCustomers();
+
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -29,7 +32,7 @@ class CustomerNotifier extends Notifier<CustomerState> {
 
   // GET ALL
   Future<void> fetchCustomers() async {
-    state = state.copyWith(isLoading: true, error: null);
+state = state.copyWith(isLoading: true, error: null, success: false);
 
     try {
       final data = await ref.read(customerRepositoryProvider).getAllCustomers();
@@ -58,6 +61,8 @@ class CustomerNotifier extends Notifier<CustomerState> {
 
     try {
       await ref.read(customerRepositoryProvider).updateCustomer(id, customer);
+       // FIX: refresh list
+    await fetchCustomers();
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -70,6 +75,8 @@ class CustomerNotifier extends Notifier<CustomerState> {
 
     try {
       await ref.read(customerRepositoryProvider).deleteCustomer(id);
+       // FIX: refresh list
+    await fetchCustomers();
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

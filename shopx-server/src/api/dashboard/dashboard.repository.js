@@ -1,17 +1,28 @@
 const db = require("../../config/db");
 
 module.exports = {
-  getTotalSales: async () => {
-    return await db.query(`SELECT COALESCE(SUM(total_amount), 0) AS total_sales FROM sales`);
-  },
+ getTotalSales: async () => {
+  return await db.query(`
+    SELECT 
+      COUNT(id) AS total_sales,
+      COALESCE(SUM(total_amount), 0) AS total_revenue,
+      COALESCE(AVG(total_amount), 0) AS avg_order_value
+    FROM sales
+  `);
+},
+
 
   getTotalPayments: async () => {
     return await db.query(`SELECT COALESCE(SUM(amount), 0) AS total_payments FROM payments`);
   },
 
-  getPendingAmount: async () => {
-    return await db.query(`SELECT COALESCE(SUM(balance), 0) AS pending_amount FROM sale_balance`);
-  },
+  
+
+  getCustomerCount: async () => {
+  return await db.query(`SELECT COUNT(*) AS total_customers FROM customers`);
+},
+
+
 
   getTodaySales: async () => {
     return await db.query(`
@@ -20,6 +31,33 @@ module.exports = {
       WHERE DATE(sale_date) = CURRENT_DATE
     `);
   },
+getWeeklySales: async () => {
+  return await db.query(`
+    WITH days AS (
+      SELECT unnest(ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN']) AS day
+    ),
+    sales_data AS (
+      SELECT 
+        TO_CHAR(sale_date, 'DY') AS day,
+        SUM(total_amount) AS revenue,
+        COUNT(*) AS transactions
+      FROM sales
+      WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
+      GROUP BY TO_CHAR(sale_date, 'DY')
+    )
+    SELECT 
+      d.day,
+      COALESCE(s.revenue, 0) AS revenue,
+      COALESCE(s.transactions, 0) AS transactions
+    FROM days d
+    LEFT JOIN sales_data s ON s.day = d.day
+    ORDER BY array_position(
+      ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN'], d.day
+    );
+  `);
+},
+
+
 
   getTopProducts: async () => {
     return await db.query(`
@@ -61,4 +99,13 @@ module.exports = {
       ORDER BY s.quantity ASC
     `);
   },
+
+  getTotalDiscount: async () => {
+  return await db.query(`
+    SELECT 
+      COALESCE(SUM(quantity * discount), 0) AS total_discount
+    FROM sale_items
+  `);
+},
+
 };

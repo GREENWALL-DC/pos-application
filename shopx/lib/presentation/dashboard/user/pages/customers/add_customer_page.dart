@@ -13,7 +13,6 @@ class AddCustomerPage extends HookConsumerWidget {
     // 1. Controllers
     final nameController = useTextEditingController();
     final phoneController = useTextEditingController();
-    final emailController = useTextEditingController();
     final tinController = useTextEditingController();
     final addressController = useTextEditingController();
 
@@ -22,10 +21,7 @@ class AddCustomerPage extends HookConsumerWidget {
 
 
 
-    bool isValidEmail(String email) {
-  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-  return emailRegex.hasMatch(email);
-}
+ 
 
 bool isValidPhone(String phone) {
   final phoneRegex = RegExp(r'^[0-9]{10}$'); // exactly 10 digits
@@ -41,13 +37,12 @@ bool isValidTin(String tin) {
    void validateForm() {
   final name = nameController.text.trim();
   final phone = phoneController.text.trim();
-  final email = emailController.text.trim();
   final tin = tinController.text.trim();
   final address = addressController.text.trim();
 
   if (name.isNotEmpty &&
       isValidPhone(phone) &&
-      isValidEmail(email) &&
+     
       isValidTin(tin) &&
       address.isNotEmpty) {
     isFormValid.value = true;
@@ -145,11 +140,7 @@ bool isValidTin(String tin) {
                       validateForm,
                       isPhone: true,
                     ),
-                    buildInputGroup(
-                      "Email",
-                      emailController,
-                      validateForm,
-                    ),
+                  
                     buildInputGroup(
                       "TIN / Tax ID",
                       tinController,
@@ -180,7 +171,6 @@ bool isValidTin(String tin) {
                             id: 0, // Backend ignores ID on create
                             name: nameController.text,
                             phone: phoneController.text,
-                            email: emailController.text,
                             tin: tinController.text,
                             address: addressController.text,
                             createdAt: DateTime.now(), // Backend handles date

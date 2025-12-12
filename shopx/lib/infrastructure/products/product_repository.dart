@@ -11,15 +11,31 @@ class ProductRepository {
 
   // Add product (admin only)
   // 1️⃣ Create product + upload images (admin)
-  Future<void> createProduct(Product product, List<Uint8List> images) async {
-    // Step 1: Create product (JSON only)
-    final productId = await api.createProduct(product);
+  // CREATE PRODUCT → return newly created Product
+Future<Product> createProduct(Product product, List<Uint8List> images) async {
+  // 1️⃣ Create product (backend returns productId)
+  final productId = await api.createProduct(product);
 
-    // Step 2: Upload images (optional)
-    if (images.isNotEmpty) {
-      await api.uploadImages(productId, images);
-    }
+  List<String> uploadedUrls = [];
+
+  // 2️⃣ Upload images (optional)
+  if (images.isNotEmpty) {
+    await api.uploadImages(productId, images);
   }
+
+  // 3️⃣ Build final product object for instant UI update
+  return Product(
+    id: productId.toString(),
+    name: product.name,
+    price: product.price,
+    category: product.category,
+    quantity: product.quantity,
+    code: product.code,
+    vat: product.vat,
+    images: uploadedUrls,
+  );
+}
+
 
 
     // Fetch all products (public)
@@ -38,10 +54,38 @@ class ProductRepository {
 
 
 // Update product JSON (admin)
-  Future<void> updateProduct(String id, Product product) async {
-    final json = product.toJson();
-    await api.updateProduct(id, json);
+Future<Product> updateProduct(
+  String id,
+  Product product,
+  List<String> existingUrls,
+  List<Uint8List> newImages,
+) async {
+  // 1️⃣ Update core product fields
+  await api.updateProduct(id, product.toJson());
+
+  // 2️⃣ Upload new images
+  List<String> newUrls = [];
+  if (newImages.isNotEmpty) {
+    await api.uploadImages(int.parse(id), newImages);
   }
+
+  // 3️⃣ Return updated Product for UI
+  return Product(
+    id: id,
+    name: product.name,
+    price: product.price,
+    category: product.category,
+    quantity: product.quantity,
+    code: product.code,
+    vat: product.vat,
+    images: [
+      ...existingUrls, // keep old
+      ...newUrls,      // add new
+    ],
+  );
+}
+
+
 
 
 // Delete product (admin)

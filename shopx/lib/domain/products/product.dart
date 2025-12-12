@@ -6,6 +6,8 @@ class Product {
    final double quantity;    // initial stock (numeric)
   final List<String> images;   // <-- ADD THIS
   final String code; 
+  final double vat;
+
 
 
 
@@ -18,6 +20,7 @@ class Product {
    
       this.images = const [],     // <-- default empty
         required this.code,
+        required this.vat
   });
 
  
@@ -31,6 +34,7 @@ class Product {
         
          quantity: double.tryParse(json["quantity"].toString()) ?? 0.0,
          code: json["code"]?.toString() ?? "", 
+         vat: double.tryParse(json["vat"].toString()) ?? 0.0,
          images: json["images"] != null
           ? List<String>.from(json["images"])
           : [],
@@ -43,9 +47,9 @@ class Product {
       "name": name,
       "price": price,
       "category": category,
-       "quantity": quantity,
-      
-        "code": code,   
+       "quantity": quantity,    
+        "code": code, 
+        "vat": vat,  
     };
   }
 }

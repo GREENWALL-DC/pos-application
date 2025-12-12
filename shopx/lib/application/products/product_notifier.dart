@@ -17,18 +17,28 @@ class ProductNotifier extends Notifier<ProductState> {
   }
 
   // 1️⃣ Create product + upload images
-  Future<void> createProduct(Product product, List<Uint8List> images) async {
-    state = state.copyWith(isLoading: true, error: null);
+ Future<void> createProduct(Product product, List<Uint8List> images) async {
+  state = state.copyWith(isLoading: true, error: null);
 
-    try {
-      await ref.read(productRepositoryProvider)
-          .createProduct(product, images);
+  try {
+    // Repository now RETURNS new product
+    final newProduct = await ref.read(productRepositoryProvider)
+        .createProduct(product, images);
 
-      state = state.copyWith(isLoading: false, success: true);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+    // 🔥 Add product instantly to UI list
+    final updatedList = [...state.products, newProduct];
+
+    state = state.copyWith(
+      isLoading: false,
+      success: true,
+      products: updatedList,
+    );
+
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
   }
+}
+
 
   // 2️⃣ Fetch all products
   Future<void> fetchProducts() async {
@@ -43,28 +53,72 @@ class ProductNotifier extends Notifier<ProductState> {
   }
 
   // 3️⃣ Update product (no token required)
-  Future<void> updateProduct(String id, Product product) async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> updateProduct(
+  String id,
+  Product updatedProduct, {
+  required List<String> existingUrls,
+  required List<Uint8List> newImages,
+}) async {
+  state = state.copyWith(isLoading: true, error: null);
 
-    try {
-      await ref.read(productRepositoryProvider).updateProduct(id, product);
-      state = state.copyWith(isLoading: false, success: true);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+  try {
+    // Update product + images on backend
+    await ref.read(productRepositoryProvider).updateProduct(
+      id,
+      updatedProduct,
+      existingUrls,
+      newImages,
+    );
+
+    // Fetch fully updated product (WITH images)
+    final fullUpdatedProduct =
+        await ref.read(productRepositoryProvider).getProductById(id);
+
+    // Replace old product with full updated one
+    final updatedList = state.products.map((p) {
+      return p.id == id ? fullUpdatedProduct : p;
+    }).toList();
+
+    state = state.copyWith(
+      isLoading: false,
+      success: true,
+      products: updatedList,
+    );
+
+  } catch (e) {
+    state = state.copyWith(
+      isLoading: false,
+      error: e.toString(),
+    );
   }
+}
+
+
+
 
   // 4️⃣ Delete product
-  Future<void> deleteProduct(String id) async {
-    state = state.copyWith(isLoading: true, error: null);
+ // 4️⃣ Delete product (with instant UI update)
+Future<void> deleteProduct(String id) async {
+  state = state.copyWith(isLoading: true, error: null);
 
-    try {
-      await ref.read(productRepositoryProvider).deleteProduct(id);
-      state = state.copyWith(isLoading: false, success: true);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+  try {
+    await ref.read(productRepositoryProvider).deleteProduct(id);
+
+    // 🔥 Immediately remove product from state (UI updates instantly)
+    final updatedList =
+        state.products.where((p) => p.id != id).toList();
+
+    state = state.copyWith(
+      isLoading: false,
+      success: true,
+      products: updatedList,
+    );
+
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
   }
+}
+
 }
 
 final productNotifierProvider =
