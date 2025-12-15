@@ -12,27 +12,43 @@ class AuthRepository {
   AuthRepository(this._api);
 
   // 🔐 LOGIN: Authenticate user and get user data AND token
-  Future<Map<String, dynamic>> login(String username, String password) async {
+  Future<Map<String, dynamic>> loginUser(
+    String username,
+    String password,
+  ) async {
     try {
-      final response = await _api.login(username, password);
+      final response = await _api.loginUser(username, password);
 
-      // Extract user data
-      final userJson = response["user"] ?? response;
-      final user = UserModel.fromJson(userJson);
-
-      // Extract token from response
-      final token = response["accessToken"] as String?;
+      final user = UserModel.fromJson(response["user"]);
+      final token = response["accessToken"];
 
       if (token == null) {
-        throw Exception('No token received after login');
+        throw Exception("No token received after user login");
       }
 
-      // ✅ Return BOTH user and token
       return {'user': user, 'token': token};
     } catch (e) {
-      throw Exception('Login repository failed: $e');
+      throw Exception("User login failed: $e");
     }
   }
+
+  Future<Map<String, dynamic>> loginAdmin(String username, String password) async {
+  try {
+    final response = await _api.loginAdmin(username, password);
+
+    final user = UserModel.fromJson(response["user"]);
+    final token = response["accessToken"];
+
+    if (token == null) {
+      throw Exception("No token received after admin login");
+    }
+
+    return {'user': user, 'token': token};
+  } catch (e) {
+    throw Exception("Admin login failed: $e");
+  }
+}
+
 
   // 👤 REGISTER: Create new admin user (admin-only operation)
   Future<Map<String, dynamic>> register(
@@ -100,9 +116,6 @@ class AuthRepository {
   // ✅ VERIFY OTP: Verify OTP code and get user data AND token
   Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
     final response = await _api.verifyOTP(token, otp);
-
-
-    
 
     // Extract user data
     final userJson = response["user"] ?? response;

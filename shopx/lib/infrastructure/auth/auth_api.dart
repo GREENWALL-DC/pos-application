@@ -13,17 +13,30 @@ class AuthApi {
 
   AuthApi(this._dio);
 
-  Future<Map<String, dynamic>> login(String username, String password) async {
-    try {
-      final res = await _dio.post(
-        "auth/admin/login",
-        data: {"username": username, "password": password},
-      );
-      return res.data;
-    } on DioException catch (e) {
-      throw e.response?.data?['message'] ?? 'Login failed';
-    }
+  Future<Map<String, dynamic>> loginUser(String username, String password) async {
+  try {
+    final res = await _dio.post(
+      "auth/login",
+      data: {"username": username, "password": password},
+    );
+    return res.data;
+  } on DioException catch (e) {
+    throw e.response?.data?['message'] ?? 'User login failed';
   }
+}
+
+
+Future<Map<String, dynamic>> loginAdmin(String username, String password) async {
+  try {
+    final res = await _dio.post(
+      "auth/admin/login",
+      data: {"username": username, "password": password},
+    );
+    return res.data;
+  } on DioException catch (e) {
+    throw e.response?.data?['message'] ?? 'Admin login failed';
+  }
+}
 
   Future<Map<String, dynamic>> register(
     String username,

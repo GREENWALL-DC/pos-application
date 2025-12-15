@@ -182,36 +182,61 @@ SizedBox(
     return;
   }
 
+
+
+
+
+
+
+
+
+
+
+
   try {
-    await ref.read(authNotifierProvider.notifier).login(
-      employeeIdController.text.trim(),
-      passwordController.text.trim(),
+  await ref.read(authNotifierProvider.notifier).loginUser(
+    employeeIdController.text.trim(),
+    passwordController.text.trim(),
+  );
+
+  final auth = ref.read(authNotifierProvider);
+
+  // Success → go to dashboard
+  if (auth.user != null) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const UserDashboard()),
     );
+    return;
+  }
 
-    final auth = ref.read(authNotifierProvider);
+  // Error handling
+  final message = auth.error?.toLowerCase() ?? "";
 
-    if (auth.user != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const UserDashboard()),
-      );
-      return;
-    }
-
-    // Backend Error Handling
-    final message = auth.error?.toLowerCase() ?? "";
-
-    if (message.contains("password")) {
-      passwordError.value = "Incorrect password";
-    } else if (message.contains("user") || message.contains("username")) {
-      usernameError.value = "User not found";
-    } else {
-      passwordError.value = "Invalid credentials";
-    }
-
-  } catch (e) {
+  if (message.contains("wrong password")) {
+    passwordError.value = "Incorrect password";
+  } else if (message.contains("user not found")) {
+    usernameError.value = "Username does not exist";
+  } else {
     passwordError.value = "Invalid credentials";
   }
+
+} catch (e) {
+  passwordError.value = "Invalid credentials";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 ,
     style: ElevatedButton.styleFrom(

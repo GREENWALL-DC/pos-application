@@ -60,26 +60,46 @@ Future<void> _clearToken() async {
 
 
   // 🔐 LOGIN: Authenticate user with username and password
-  Future<void> login(String username, String password) async {
-    state = const AuthState.loading();
+ Future<void> loginUser(String username, String password) async {
+  state = const AuthState.loading();
 
-    try {
-      // ✅ UPDATED: Get result with both user and token
-      final result = await ref
-          .read(authRepositoryProvider)
-          .login(username, password);
+  try {
+    final result = await ref
+        .read(authRepositoryProvider)
+        .loginUser(username, password);
 
-      final user = result['user'] as UserModel;
-      final token = result['token'] as String;
+    final user = result['user'] as UserModel;
+    final token = result['token'] as String;
 
-      // ✅ Store the token
-      _jwtToken = token;
-      await _saveToken(token);  
-      state = AuthState.authenticated(user, token: token);
-    } catch (e) {
-      state = AuthState.error(e.toString());
-    }
+    _jwtToken = token;
+    await _saveToken(token);
+
+    state = AuthState.authenticated(user, token: token);
+  } catch (e) {
+    state = AuthState.error(e.toString());
   }
+}
+
+Future<void> loginAdmin(String username, String password) async {
+  state = const AuthState.loading();
+
+  try {
+    final result = await ref
+        .read(authRepositoryProvider)
+        .loginAdmin(username, password);
+
+    final user = result['user'] as UserModel;
+    final token = result['token'] as String;
+
+    _jwtToken = token;
+    await _saveToken(token);
+
+    state = AuthState.authenticated(user, token: token);
+  } catch (e) {
+    state = AuthState.error(e.toString());
+  }
+}
+
 
   // 👤 REGISTER: Create new admin user (admin-only)
   Future<void> register(

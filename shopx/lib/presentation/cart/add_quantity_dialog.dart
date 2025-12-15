@@ -24,12 +24,14 @@ class AddQuantityDialog extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
 
 // Load stock AFTER the dialog finishes building
-WidgetsBinding.instance.addPostFrameCallback((_) {
+useEffect(() {
   if (product.id != null) {
     ref.read(stockNotifierProvider.notifier)
        .loadStockForProduct(product.id!);
   }
-});
+  return null; // runs only once when dialog opens
+}, []);
+
 
 
 
