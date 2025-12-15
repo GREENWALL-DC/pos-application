@@ -50,7 +50,7 @@ exports.sendEmail = async (to, otp) => {
       {
         sender: {
           name: "Joy Brews",
-          email: "no-reply@joybrews.app"
+          email: "ansifmohammad7@gmail.com"
         },
         to: [
           {
@@ -75,12 +75,12 @@ exports.sendEmail = async (to, otp) => {
 
     console.log("OTP email sent via Brevo:", response.data);
     return response.data;
-  } catch (error) {
-    console.error(
-      "Brevo email sending failed:",
-      error.response?.data || error.message
-    );
-    throw new Error("Failed to send email OTP");
   }
+  
+ catch (error) {
+  console.error("Email failed", error);
+  return null;
+}
+
 };
 
