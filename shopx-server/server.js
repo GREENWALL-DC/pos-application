@@ -38,10 +38,6 @@ app.use("/api/users", userRoutes);
 // Serve uploaded files
 app.use("/uploads", express.static("uploads"));
 
-
-
-
-
 //test route
 app.get("/", (req, res) => {
   res.send("ShopX Backend Running 🚀");

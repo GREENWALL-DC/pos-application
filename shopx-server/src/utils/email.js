@@ -1,10 +1,23 @@
 const nodemailer = require("nodemailer");
 
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASSWORD,
+//   },
+// });
+
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,             // Use 587 instead of 465 (Render free-tier requirement)
+  secure: false,         // Must be false for port 587
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
+    pass: process.env.EMAIL_PASSWORD, // Your Gmail App Password
+  },
+  tls: {
+    rejectUnauthorized: false,   // Required on Render Free tier
   },
 });
 
@@ -20,7 +33,7 @@ exports.sendEmail = async (to, otp) => {
   try {
     const mailOptions = {
       from: `"Joy Brews" <${process.env.EMAIL_USER}>`,
-      to,
+      to, 
       subject: "Your Login OTP Code",
       html: `
         <h2>Your OTP Code</h2>
