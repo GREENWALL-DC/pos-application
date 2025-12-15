@@ -1,23 +1,10 @@
 const nodemailer = require("nodemailer");
 
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASSWORD,
-//   },
-// });
-
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,             // Use 587 instead of 465 (Render free-tier requirement)
-  secure: false,         // Must be false for port 587
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD, // Your Gmail App Password
-  },
-  tls: {
-    rejectUnauthorized: false,   // Required on Render Free tier
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
 
