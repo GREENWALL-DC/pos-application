@@ -5,7 +5,7 @@ import 'package:shopx/application/auth/auth_notifier.dart';
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(BaseOptions(
     // baseUrl: "http://localhost:5000/api/",
-    baseUrl: "https://shopx-server-production.up.railway.app/api/",
+  baseUrl: "https://shopx-server-p9ov.onrender.com/api/",
     connectTimeout: Duration(seconds: 20),
     receiveTimeout: Duration(seconds: 20),
     headers: {"Content-Type": "application/json"},
