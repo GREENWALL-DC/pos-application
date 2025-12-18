@@ -102,15 +102,65 @@ Future<Map<String, dynamic>> loginAdmin(String username, String password) async 
     return res.data;
   }
 
+
+
+
+
+
+
+
+
+
+
   // ✅ NEW: Verify OTP - required for your backend's OTP verification
-  Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
+  // Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
+  //   final res = await _dio.post(
+  //     "auth/verify-otp",
+  //     data: {"otp": otp}, // Send the OTP code for verification
+  //     options: Options(headers: {"Authorization": "Bearer $token"}),
+  //   );
+  //   return res.data;
+  // }
+Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
+  try {
     final res = await _dio.post(
       "auth/verify-otp",
-      data: {"otp": otp}, // Send the OTP code for verification
+      data: {"otp": otp},
       options: Options(headers: {"Authorization": "Bearer $token"}),
     );
+
     return res.data;
+  } on DioException catch (e) {
+    // ❗ WRONG OTP → THROW, DO NOT RETURN NULL
+    if (e.response?.statusCode == 400 ||
+        e.response?.statusCode == 401) {
+      throw Exception("Incorrect OTP");
+    }
+
+    // Other errors
+    throw Exception("OTP verification failed");
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // ✅ NEW: Admin functionality - get all users (requires admin privileges)
   Future<Map<String, dynamic>> getAllUsers(String token) async {

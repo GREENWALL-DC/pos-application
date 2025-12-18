@@ -113,24 +113,63 @@ class AuthRepository {
     // No return needed - just confirmation it succeeded
   }
 
+
+
+
+
+
+
   // ✅ VERIFY OTP: Verify OTP code and get user data AND token
-  Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
-    final response = await _api.verifyOTP(token, otp);
+  // Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
+  //   final response = await _api.verifyOTP(token, otp);
 
-    // Extract user data
-    final userJson = response["user"] ?? response;
-    final user = UserModel.fromJson(userJson);
+  //   // Extract user data
+  //   final userJson = response["user"] ?? response;
+  //   final user = UserModel.fromJson(userJson);
 
-    // Extract token from response- LOOK FOR accessToken
-    final permanentToken = response["accessToken"] as String?;
+  //   // Extract token from response- LOOK FOR accessToken
+  //   final permanentToken = response["accessToken"] as String?;
 
-    if (permanentToken == null) {
-      throw Exception('No token received after OTP verification');
-    }
+  //   if (permanentToken == null) {
+  //     throw Exception('No token received after OTP verification');
+  //   }
 
-    // ✅ Return BOTH user and token
-    return {'user': user, 'token': permanentToken};
+  //   // ✅ Return BOTH user and token
+  //   return {'user': user, 'token': permanentToken};
+  // }
+  
+Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
+  final response = await _api.verifyOTP(token, otp);
+
+  final userJson = response["user"];
+  final user = UserModel.fromJson(userJson);
+
+  final permanentToken = response["accessToken"] as String?;
+  if (permanentToken == null) {
+    throw Exception('No token received after OTP verification');
   }
+
+  return {'user': user, 'token': permanentToken};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // 👥 GET ALL USERS: Admin-only - get list of all users
   Future<List<UserModel>> getAllUsers(String token) async {

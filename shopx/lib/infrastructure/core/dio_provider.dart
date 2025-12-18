@@ -5,10 +5,14 @@ import 'package:shopx/application/auth/auth_notifier.dart';
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(BaseOptions(
     // baseUrl: "http://localhost:5000/api/",
-  baseUrl: "https://shopx-server-p9ov.onrender.com/api/",
+  // baseUrl: "https://shopx-server-p9ov.onrender.com/api/",this is render 
+baseUrl: "https://aba65707ae3f.ngrok-free.app/api/",
+
     connectTimeout: Duration(seconds: 20),
     receiveTimeout: Duration(seconds: 20),
-    headers: {"Content-Type": "application/json"},
+    headers: {"Content-Type": "application/json",
+          //  "ngrok-skip-browser-warning": "true", 
+    },
   ));
 
   dio.interceptors.add(

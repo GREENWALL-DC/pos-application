@@ -11,7 +11,12 @@ import 'package:shopx/application/customers/customer_notifier.dart';
 
 // YOUR Sales Notifier
 import 'package:shopx/application/sales/sales_notifier.dart';
+import 'package:shopx/core/constants.dart';
+import 'package:shopx/domain/config/company_config.dart';
+import 'package:shopx/domain/reciept/receipt_data.dart';
 import 'package:shopx/domain/sales/sale.dart';
+import 'package:shopx/infrastructure/pdf/pdf_receipt_service.dart';
+import 'package:shopx/infrastructure/printer/thermal_printer_service.dart';
 import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
 
 class SuccessScreen extends HookConsumerWidget {
@@ -66,138 +71,116 @@ class SuccessScreen extends HookConsumerWidget {
     // ---------------------------
     final emailController = useTextEditingController();
 
-    // ---------------------------
-    // 3. Text/WhatsApp share logic
-    // ---------------------------
-    Future<void> handleSendReceipt() async {
-      final buffer = StringBuffer();
+   //SHARE PDF
+   Future<void> onSendPdfReceipt() async {
+  final receiptItems = sale.items.map((item) {
+    return ReceiptItem(
+      nameEn: item.productName,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+    );
+  }).toList();
 
-      buffer.writeln("SHOPX POS RECEIPT");
-      buffer.writeln("------------------------");
-      buffer.writeln("Sale ID: ${sale.id}");
-      buffer.writeln("Customer: ${customer.name}");
-      buffer.writeln("Phone: ${customer.phone}");
-      buffer.writeln(  "Payment: ${sale.payments.first.method} (SAR ${sale.payments.first.amount})",   );
-      buffer.writeln("Total: SAR ${sale.totalAmount}");
-      buffer.writeln("\nItems:");
-      for (var item in sale.items) {
-        buffer.writeln(
-          "${item.productId} x${item.quantity} = SAR ${item.unitPrice * item.quantity}",
-        );
-      }
-      buffer.writeln("------------------------");
+  final subTotal = sale.items.fold<double>(
+    0,
+    (sum, item) => sum + item.totalPrice,
+  );
 
-      await Share.share(buffer.toString());
-    }
+  const vatPercentage = 15.0;
+  final vatAmount = sale.totalAmount - subTotal;
 
-    // ---------------------------
-    // 4. PDF receipt generator
-    // ---------------------------
-    Future<File> generatePdf() async {
-      final pdf = pw.Document();
+  final receipt = ReceiptData(
+    companyNameEn: CompanyConfig.companyNameEn,
+    companyNameAr: CompanyConfig.companyNameAr,
+    city: CompanyConfig.city,
+    country: CompanyConfig.country,
+    crNumber: CompanyConfig.crNumber,
+    vatNumber: CompanyConfig.vatNumber,
+    mobile: CompanyConfig.mobile,
+    invoiceNumber: sale.id.toString(),
+    invoiceDate: sale.saleDate,
+    customerName: sale.customerName,
+    items: receiptItems,
+    subTotal: subTotal,
+    vatPercentage: vatPercentage,
+    vatAmount: vatAmount,
+    netTotal: sale.totalAmount,
+    qrPayload: 'Invoice:${sale.id}',
+  );
 
-      pdf.addPage(
-        pw.Page(
-          margin: const pw.EdgeInsets.all(20),
-          build: (pw.Context ctx) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  "SHOPX POS RECEIPT",
-                  style: pw.TextStyle(
-                    fontSize: 22,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-                pw.Text("Sale ID: ${sale.id}"),
-                pw.Text("Customer: ${customer.name}"),
-                pw.Text("Phone: ${customer.phone}"),
-                pw.Text("Payment: ${sale.payments.first.method}"),
-                pw.SizedBox(height: 10),
-                pw.Text("ITEMS"),
-                pw.Divider(),
-                ...sale.items.map(
-                  (i) => pw.Text(
-                    "${i.productId} x${i.quantity} = SAR ${i.unitPrice * i.quantity}",
-                  ),
-                ),
-                pw.Divider(),
-                pw.SizedBox(height: 10),
-                pw.Text(
-                  "TOTAL: SAR ${sale.totalAmount}",
-                  style: pw.TextStyle(
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
+  final file =
+      await PdfReceiptService.generateReceiptPdf(receipt);
 
-      final dir = await getTemporaryDirectory();
-      final file = File("${dir.path}/receipt_${sale.id}.pdf");
-      await file.writeAsBytes(await pdf.save());
-      return file;
-    }
+  await Share.shareXFiles(
+    [XFile(file.path)],
+    text: 'Invoice ${sale.id}',
+  );
+}
 
-    Future<void> sharePdf() async {
-      final file = await generatePdf();
-      await Share.shareXFiles([
-        XFile(
-          file.path,
-          mimeType: "application/pdf", // <-- This is the only required fix
-        ),
-      ], text: "Receipt for Sale #${sale.id}");
-    }
 
     // ---------------------------
     // 5. Thermal Printer ESC/POS
     // ---------------------------
+
     Future<void> onPrintReceipt() async {
-      final profile = await CapabilityProfile.load();
-      final gen = Generator(PaperSize.mm58, profile);
-
-      List<int> bytes = [];
-
-      bytes += gen.text(
-        "SHOPX POS",
-        styles: PosStyles(
-          bold: true,
-          width: PosTextSize.size2,
-          align: PosAlign.center,
-        ),
-      );
-      bytes += gen.text("RECEIPT", styles: PosStyles(align: PosAlign.center));
-      bytes += gen.hr();
-
-      bytes += gen.text("Sale ID: ${sale.id}");
-      bytes += gen.text("Customer: ${customer.name}");
-      bytes += gen.text("Phone: ${customer.phone}");
-      bytes += gen.text("Payment: ${sale.payments.first.method}");
-      bytes += gen.hr();
-
-      for (var item in sale.items) {
-        bytes += gen.text(
-          "${item.productId}  x${item.quantity}  SAR ${item.unitPrice * item.quantity}",
+      // 1️⃣ Build receipt items from SaleItem (safe & existing fields)
+      final receiptItems = sale.items.map((item) {
+        return ReceiptItem(
+          nameEn: item.productName,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
         );
-      }
+      }).toList();
 
-      bytes += gen.hr(ch: "=");
-      bytes += gen.text(
-        "TOTAL: SAR ${sale.totalAmount}",
-        styles: PosStyles(bold: true, width: PosTextSize.size2),
+      // 2️⃣ Calculate subtotal from sale items
+      final double subTotal = sale.items.fold(
+        0.0,
+        (sum, item) => sum + item.totalPrice,
       );
-      bytes += gen.cut();
 
-      // TODO: Connect printer & send bytes
-      // await PrintBluetoothThermal.writeBytes(bytes);
+      // 3️⃣ VAT handling (FIXED percentage – production-safe)
+      // Adjust this later if backend sends exact value
+      const double vatPercentage = 15.0;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Thermal Printer: Data Prepared")),
+      final double netTotal = sale.totalAmount;
+      final double vatAmount = netTotal - subTotal;
+
+      // 4️⃣ Simple QR payload (NOT ZATCA – just sale info)
+      final String qrPayload =
+          '''
+Sale ID: ${sale.id}
+Customer: ${sale.customerName}
+Total: SAR ${netTotal.toStringAsFixed(2)}
+Date: ${sale.saleDate.toIso8601String()}
+''';
+
+      // 5️⃣ Build ReceiptData (NO nulls, NO errors)
+      final receiptData = ReceiptData(
+        companyNameEn: CompanyConfig.companyNameEn,
+        companyNameAr: CompanyConfig.companyNameAr,
+        city: CompanyConfig.city,
+        country: CompanyConfig.country,
+        crNumber: CompanyConfig.crNumber,
+        vatNumber: CompanyConfig.vatNumber,
+        mobile: CompanyConfig.mobile,
+
+        invoiceNumber: sale.id.toString(),
+        invoiceDate: sale.saleDate,
+        customerName: sale.customerName,
+
+        items: receiptItems,
+        subTotal: subTotal,
+        vatPercentage: vatPercentage,
+        vatAmount: vatAmount,
+        netTotal: netTotal,
+
+        qrPayload: qrPayload,
+      );
+
+      // 6️⃣ Print (Bluetooth handled internally)
+      await ThermalPrinterService.printReceipt(
+        receipt: receiptData,
+        context: context,
       );
     }
 
@@ -350,7 +333,7 @@ class SuccessScreen extends HookConsumerWidget {
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: handleSendReceipt,
+                            onPressed: onSendPdfReceipt,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Color(0xFFE3F2FD),
                               elevation: 0,
@@ -371,7 +354,7 @@ class SuccessScreen extends HookConsumerWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 40),
+                  kHeight40,
 
                   // PRINT BUTTON
                   SizedBox(
@@ -398,31 +381,7 @@ class SuccessScreen extends HookConsumerWidget {
 
                   const SizedBox(height: 16),
 
-                  // PDF SHARE BUTTON (OPTIONAL)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: sharePdf,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        "SHARE PDF RECEIPT",
-                        style: TextStyle(
-                          color: mainBlue,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
+                  
 
                   // NEXT ORDER
                   SizedBox(

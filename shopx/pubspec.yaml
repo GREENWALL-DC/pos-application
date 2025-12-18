@@ -51,6 +51,8 @@ dependencies:
   fl_chart: 0.68.0
   google_fonts: ^6.3.2
   syncfusion_flutter_charts: ^31.1.19
+  print_bluetooth_thermal: ^1.1.9
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +77,8 @@ flutter:
  
   assets:
     - assets/images/
+    - assets/fonts/Cairo-Regular.ttf
+    - assets/fonts/Cairo-Bold.ttf
 
 
 

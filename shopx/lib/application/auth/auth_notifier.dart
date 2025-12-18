@@ -231,35 +231,77 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+
+
+
+
+
+
   // ✅ STEP 3: Verify OTP (works for ALL methods)
-  Future<void> verifyOTP(String otp) async {
-    if (_tempToken == null) {
-      state = AuthState.error("Session expired. Please login again");
-      return;
-    }
+  // Future<void> verifyOTP(String otp) async {
+  //   if (_tempToken == null) {
+  //     state = AuthState.error("Session expired. Please login again");
+  //     return;
+  //   }
 
-    state = const AuthState.loading();
+  //   state = const AuthState.loading();
 
-    try {
-      // ✅ FIX: Get BOTH user AND token
-      final result = await ref
-          .read(authRepositoryProvider)
-          .verifyOTP(_tempToken!, otp);
+  //   try {
+  //     // ✅ FIX: Get BOTH user AND token
+  //     final result = await ref
+  //         .read(authRepositoryProvider)
+  //         .verifyOTP(_tempToken!, otp);
 
-      // ✅ Extract both values from result
-      final user = result['user'] as UserModel;
-      final permanentToken = result['token'] as String;
+  //     // ✅ Extract both values from result
+  //     final user = result['user'] as UserModel;
+  //     final permanentToken = result['token'] as String;
 
-      // ✅ Store the permanent token
-      _jwtToken = permanentToken;
-      _tempToken = null; // Clear temp token after success
-      _selectedOtpMethod = null; // Clear method after success
-      await _saveToken(permanentToken); // 🔥 save token
-      state = AuthState.authenticated(user, token: permanentToken);
-    } catch (e) {
-      state = AuthState.error(e.toString());
-    }
+  //     // ✅ Store the permanent token
+  //     _jwtToken = permanentToken;
+  //     _tempToken = null; // Clear temp token after success
+  //     _selectedOtpMethod = null; // Clear method after success
+  //     await _saveToken(permanentToken); // 🔥 save token
+  //     state = AuthState.authenticated(user, token: permanentToken);
+  //   } catch (e) {
+  //     state = AuthState.error(e.toString());
+  //   }
+  // }
+Future<bool> verifyOTP(String otp) async {
+  if (_tempToken == null) {
+    state = AuthState.error("Session expired. Please login again");
+    return false;
   }
+
+  state = const AuthState.loading();
+
+  try {
+    final result = await ref
+        .read(authRepositoryProvider)
+        .verifyOTP(_tempToken!, otp);
+
+    // ✅ CORRECT OTP
+    final user = result['user'] as UserModel;
+    final permanentToken = result['token'] as String;
+
+    _jwtToken = permanentToken;
+    _tempToken = null;
+    _selectedOtpMethod = null;
+    await _saveToken(permanentToken);
+
+    state = AuthState.authenticated(user, token: permanentToken);
+    return true;
+  } catch (e) {
+    // ❌ WRONG OTP or server error
+    state = AuthState.error("Incorrect OTP");
+    return false;
+  }
+}
+
+
+
+
+
+  
 
   // 🧹 CLEAR ERROR: Clear any error message
   void clearError() {

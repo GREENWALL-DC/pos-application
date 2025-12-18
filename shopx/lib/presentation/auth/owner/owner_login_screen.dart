@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/auth/auth_notifier.dart';
+import 'package:shopx/application/auth/auth_state.dart';
 import 'package:shopx/core/constants.dart';
 // Keep your existing imports
 import 'package:shopx/presentation/auth/owner/widgets/otp_selection_button.dart';
@@ -50,12 +51,12 @@ class OwnerLoginScreen extends HookConsumerWidget {
     final usernameError = useState<bool>(false);
     final passwordError = useState<bool>(false);
 
-    // ⭐ FIX: If login failed, force-reset UI
-    if (authState.error != null) {
-      otpTimer.value?.cancel();
-      isTimerRunning.value = false;
-      isOtpSent.value = false;
-    }
+    // // ⭐ FIX: If login failed, force-reset UI
+    // if (authState.error != null) {
+    //   otpTimer.value?.cancel();
+    //   isTimerRunning.value = false;
+    //   isOtpSent.value = false;
+    // }
 
     // 3. Theme Colors
     const primaryBlue = Color(0xFF1976D2);
@@ -476,88 +477,166 @@ class OwnerLoginScreen extends HookConsumerWidget {
                       }
 
                       // ✅ 2. Call login + sendOTP first
-                      Future.microtask(() async {
-                         // ⭐ SHOW LOADING BEFORE VALIDATION
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => const Center(child: CircularProgressIndicator()),
-  );
+                      // Future.microtask(() async {
+                      //   // ⭐ SHOW LOADING BEFORE VALIDATION
+                      //   showDialog(
+                      //     context: context,
+                      //     barrierDismissible: false,
+                      //     builder: (_) =>
+                      //         const Center(child: CircularProgressIndicator()),
+                      //   );
 
-                        try {
-                          // Step 1: Login owner
-                          await ref
-                              .read(authNotifierProvider.notifier)
-                              .loginOwner(
-                                emailController.text.trim(),
-                                passwordController.text.trim(),
-                              );
+                      //   try {
+                      //     // Step 1: Login owner
+                      //     await ref
+                      //         .read(authNotifierProvider.notifier)
+                      //         .loginOwner(
+                      //           emailController.text.trim(),
+                      //           passwordController.text.trim(),
+                      //         );
 
-                          // Step 2: Send OTP
-                          await ref
-                              .read(authNotifierProvider.notifier)
-                              .sendOTP(selectedOtpMethod.value!.toLowerCase());
+                      //     // Step 2: Send OTP
+                      //     await ref
+                      //         .read(authNotifierProvider.notifier)
+                      //         .sendOTP(selectedOtpMethod.value!.toLowerCase());
 
-                              
-    // ⭐ CLOSE LOADING
-    if (context.mounted) Navigator.of(context).pop();
+                      //     // ⭐ CLOSE LOADING
+                      //     if (context.mounted) Navigator.of(context).pop();
 
-                          if (!context.mounted) return;
+                      //     if (!context.mounted) return;
 
-                          // Show OTP UI only after success
-                          isOtpSent.value = true;
+                      //     // Show OTP UI only after success
+                      //     isOtpSent.value = true;
 
-                          // Start timer
-                          secondsLeft.value = 300;
-                          isTimerRunning.value = true;
+                      //     // Start timer
+                      //     secondsLeft.value = 300;
+                      //     isTimerRunning.value = true;
 
-                          otpTimer.value = Timer.periodic(
-                            const Duration(seconds: 1),
-                            (timer) {
-                              if (secondsLeft.value == 0) {
-                                timer.cancel();
-                                isTimerRunning.value = false;
-                              } else {
-                                secondsLeft.value--;
-                              }
-                            },
+                      //     otpTimer.value = Timer.periodic(
+                      //       const Duration(seconds: 1),
+                      //       (timer) {
+                      //         if (secondsLeft.value == 0) {
+                      //           timer.cancel();
+                      //           isTimerRunning.value = false;
+                      //         } else {
+                      //           secondsLeft.value--;
+                      //         }
+                      //       },
+                      //     );
+
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       const SnackBar(
+                      //         content: Text("OTP sent to your email"),
+                      //       ),
+                      //     );
+                      //   } catch (e) {
+                      //     // ⭐ CLOSE LOADING ON ERROR
+                      //     if (context.mounted) Navigator.of(context).pop();
+
+                      //     // Stop everything
+                      //     otpTimer.value?.cancel();
+                      //     isTimerRunning.value = false;
+                      //     isOtpSent.value = false;
+
+                      //     final msg = e.toString().toLowerCase();
+
+                      //     if (msg.contains("wrong password")) {
+                      //       ScaffoldMessenger.of(context).showSnackBar(
+                      //         const SnackBar(
+                      //           content: Text("Incorrect password"),
+                      //         ),
+                      //       );
+                      //     } else if (msg.contains("user not found")) {
+                      //       ScaffoldMessenger.of(context).showSnackBar(
+                      //         const SnackBar(
+                      //           content: Text("Username does not exist"),
+                      //         ),
+                      //       );
+                      //     } else {
+                      //       ScaffoldMessenger.of(
+                      //         context,
+                      //       ).showSnackBar(SnackBar(content: Text(msg)));
+                      //     }
+                      //   }
+                      // });
+
+                      // ⭐ SHOW LOADING
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) =>
+                            const Center(child: CircularProgressIndicator()),
+                      );
+
+                      try {
+                        // Step 1: Login owner
+                        await ref
+                            .read(authNotifierProvider.notifier)
+                            .loginOwner(
+                              emailController.text.trim(),
+                              passwordController.text.trim(),
+                            );
+
+                        // Step 2: Send OTP
+                        await ref
+                            .read(authNotifierProvider.notifier)
+                            .sendOTP(selectedOtpMethod.value!.toLowerCase());
+
+                        // ⭐ CLOSE LOADING
+                        if (context.mounted) Navigator.of(context).pop();
+                        if (!context.mounted) return;
+
+                        // ✅ SHOW OTP UI (THIS WILL NOW STICK)
+                        isOtpSent.value = true;
+
+                        // Start timer
+                        secondsLeft.value = 300;
+                        isTimerRunning.value = true;
+
+                        otpTimer.value = Timer.periodic(
+                          const Duration(seconds: 1),
+                          (timer) {
+                            if (secondsLeft.value == 0) {
+                              timer.cancel();
+                              isTimerRunning.value = false;
+                            } else {
+                              secondsLeft.value--;
+                            }
+                          },
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("OTP sent to your email"),
+                          ),
+                        );
+                      } catch (e) {
+                        // ⭐ CLOSE LOADING ON ERROR
+                        if (context.mounted) Navigator.of(context).pop();
+
+                        // Reset ONLY on login failure
+                        otpTimer.value?.cancel();
+                        isTimerRunning.value = false;
+                        isOtpSent.value = false;
+
+                        final msg = e.toString().toLowerCase();
+
+                        if (msg.contains("wrong password")) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Incorrect password")),
                           );
-
+                        } else if (msg.contains("user not found")) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text("OTP sent to your email"),
+                              content: Text("Username does not exist"),
                             ),
                           );
-                        } catch (e) {
-                           // ⭐ CLOSE LOADING ON ERROR
-    if (context.mounted) Navigator.of(context).pop();
-    
-                          // Stop everything
-                          otpTimer.value?.cancel();
-                          isTimerRunning.value = false;
-                          isOtpSent.value = false;
-
-                          final msg = e.toString().toLowerCase();
-
-                          if (msg.contains("wrong password")) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Incorrect password"),
-                              ),
-                            );
-                          } else if (msg.contains("user not found")) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Username does not exist"),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text(msg)));
-                          }
+                        } else {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(msg)));
                         }
-                      });
+                      }
                     } else {
                       // STATE 2: VERIFY OTP
                       final otp =
@@ -567,29 +646,39 @@ class OwnerLoginScreen extends HookConsumerWidget {
                           otp4Controller.text;
 
                       if (otp.length == 4) {
-                        try {
-                          await ref
-                              .read(authNotifierProvider.notifier)
-                              .verifyOTP(otp);
+                        final success = await ref
+                            .read(authNotifierProvider.notifier)
+                            .verifyOTP(otp);
 
-                          // 🎯 ADD THESE LINES - Navigate to admin dashboard
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AdminDashboard(),
-                            ),
-                          );
+                        if (!success) {
+                          // ❌ WRONG OTP → DO NOT NAVIGATE
+
+                          otp1Controller.clear();
+                          otp2Controller.clear();
+                          otp3Controller.clear();
+                          otp4Controller.clear();
+                          FocusScope.of(context).requestFocus(focus1);
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Login successful!")),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("OTP verification failed: $e"),
+                            const SnackBar(
+                              content: Text("Incorrect OTP. Please try again."),
+                              backgroundColor: Colors.red,
                             ),
                           );
+                          return;
                         }
+
+                        // ✅ ONLY ON SUCCESS
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AdminDashboard(),
+                          ),
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Login successful!")),
+                        );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
