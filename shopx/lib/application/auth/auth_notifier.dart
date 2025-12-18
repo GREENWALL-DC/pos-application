@@ -13,7 +13,7 @@ class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
     // Start with loading state until we verify stored token
-    // _initAuth();   // 🔥 auto check stored token
+     _initAuth();   // 🔥 auto check stored token
     return const AuthState.unauthenticated();
   }
 
@@ -231,12 +231,6 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-
-
-
-
-
-
   // ✅ STEP 3: Verify OTP (works for ALL methods)
   // Future<void> verifyOTP(String otp) async {
   //   if (_tempToken == null) {
@@ -266,42 +260,36 @@ class AuthNotifier extends Notifier<AuthState> {
   //     state = AuthState.error(e.toString());
   //   }
   // }
-Future<bool> verifyOTP(String otp) async {
-  if (_tempToken == null) {
-    state = AuthState.error("Session expired. Please login again");
-    return false;
+  Future<bool> verifyOTP(String otp) async {
+    if (_tempToken == null) {
+      state = AuthState.error("Session expired. Please login again");
+      return false;
+    }
+
+    state = const AuthState.loading();
+
+    try {
+      final result = await ref
+          .read(authRepositoryProvider)
+          .verifyOTP(_tempToken!, otp);
+
+      // ✅ CORRECT OTP
+      final user = result['user'] as UserModel;
+      final permanentToken = result['token'] as String;
+
+      _jwtToken = permanentToken;
+      _tempToken = null;
+      _selectedOtpMethod = null;
+      await _saveToken(permanentToken);
+
+      state = AuthState.authenticated(user, token: permanentToken);
+      return true;
+    } catch (e) {
+      // ❌ WRONG OTP or server error
+      state = AuthState.error("Incorrect OTP");
+      return false;
+    }
   }
-
-  state = const AuthState.loading();
-
-  try {
-    final result = await ref
-        .read(authRepositoryProvider)
-        .verifyOTP(_tempToken!, otp);
-
-    // ✅ CORRECT OTP
-    final user = result['user'] as UserModel;
-    final permanentToken = result['token'] as String;
-
-    _jwtToken = permanentToken;
-    _tempToken = null;
-    _selectedOtpMethod = null;
-    await _saveToken(permanentToken);
-
-    state = AuthState.authenticated(user, token: permanentToken);
-    return true;
-  } catch (e) {
-    // ❌ WRONG OTP or server error
-    state = AuthState.error("Incorrect OTP");
-    return false;
-  }
-}
-
-
-
-
-
-  
 
   // 🧹 CLEAR ERROR: Clear any error message
   void clearError() {

@@ -28,16 +28,16 @@ class SelectionScreen extends HookConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // LEFT: Back Button
-                  InkWell(
-                    // onTap: () => Navigator.of(context).pop(),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      "assets/images/backbutton.png",
-                      height: 35,
-                      width: 35,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                  // InkWell(
+                  //   // onTap: () => Navigator.of(context).pop(),
+                  //   borderRadius: BorderRadius.circular(12),
+                  //   child: Image.asset(
+                  //     "assets/images/backbutton.png",
+                  //     height: 35,
+                  //     width: 35,
+                  //     fit: BoxFit.cover,
+                  //   ),
+                  // ),
 
                   // CENTER: Title
                   const Expanded(
@@ -149,30 +149,30 @@ class SelectionScreen extends HookConsumerWidget {
               kHeight40,
 
               // 7. Footer - Create Account
-              Column(
-                children: [
-                  Text(
-                    "You don't have an account?",
-                    style: TextStyle(color: subtitleColor, fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  InkWell(
-                    onTap: () {
-                      // Navigate to Sign Up
-                    },
-                    child: const Text(
-                      'Create a new account',
-                      style: TextStyle(
-                        color: primaryBlue,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
-                        decorationColor: primaryBlue,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Column(
+              //   children: [
+              //     Text(
+              //       "You don't have an account?",
+              //       style: TextStyle(color: subtitleColor, fontSize: 16),
+              //     ),
+              //     const SizedBox(height: 4),
+              //     InkWell(
+              //       onTap: () {
+              //         // Navigate to Sign Up
+              //       },
+              //       child: const Text(
+              //         'Create a new account',
+              //         style: TextStyle(
+              //           color: primaryBlue,
+              //           fontSize: 16,
+              //           fontWeight: FontWeight.bold,
+              //           decoration: TextDecoration.underline,
+              //           decorationColor: primaryBlue,
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
 
               kHeight20,
             ],

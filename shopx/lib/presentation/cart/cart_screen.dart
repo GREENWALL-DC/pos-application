@@ -112,11 +112,15 @@ for (var item in cartItems) {
         print("🟢 SALE CREATED! Sale ID = $saleId");
 
 
-        // 5. Navigate to success screen with ONLY saleId
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => SuccessScreen(saleId: saleId,)),
-        );
+       // 5. Navigate to success screen (CLEAR STACK – POS SAFE)
+Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(
+    builder: (context) => SuccessScreen(saleId: saleId),
+  ),
+  (route) => false,
+);
+
       } catch (e) {
         ScaffoldMessenger.of(
           context,

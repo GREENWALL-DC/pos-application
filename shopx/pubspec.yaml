@@ -53,6 +53,7 @@ dependencies:
   syncfusion_flutter_charts: ^31.1.19
   print_bluetooth_thermal: ^1.1.9
   path_provider: ^2.1.5
+  image: ^4.5.4
   
 
 dev_dependencies:
