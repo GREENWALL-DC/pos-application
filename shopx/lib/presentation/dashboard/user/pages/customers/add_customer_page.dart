@@ -16,6 +16,13 @@ class AddCustomerPage extends HookConsumerWidget {
     final tinController = useTextEditingController();
     final addressController = useTextEditingController();
 
+
+    final nameError = useState<String?>(null);
+final phoneError = useState<String?>(null);
+final tinError = useState<String?>(null);
+final addressError = useState<String?>(null);
+
+
     // 2. Form Validity State
     final isFormValid = useState(false);
 
@@ -40,16 +47,34 @@ bool isValidTin(String tin) {
   final tin = tinController.text.trim();
   final address = addressController.text.trim();
 
-  if (name.isNotEmpty &&
-      isValidPhone(phone) &&
-     
-      isValidTin(tin) &&
-      address.isNotEmpty) {
-    isFormValid.value = true;
-  } else {
-    isFormValid.value = false;
-  }
+  // NAME
+  nameError.value = name.isEmpty ? "Name is required" : null;
+
+  // PHONE
+  phoneError.value = phone.isEmpty
+      ? "Phone number is required"
+      : !isValidPhone(phone)
+          ? "Phone must be exactly 10 digits"
+          : null;
+
+  // TIN
+  tinError.value = tin.isEmpty
+      ? "TIN / Tax ID is required"
+      : !isValidTin(tin)
+          ? "Minimum 6 characters required"
+          : null;
+
+  // ADDRESS
+  addressError.value =
+      address.isEmpty ? "Address is required" : null;
+
+  isFormValid.value =
+      nameError.value == null &&
+      phoneError.value == null &&
+      tinError.value == null &&
+      addressError.value == null;
 }
+
 
 
     // 4. Watch for Loading/Success
@@ -129,29 +154,36 @@ bool isValidTin(String tin) {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    buildInputGroup(
-                      "Name",
-                      nameController,
-                      validateForm,
-                    ),
-                    buildInputGroup(
-                      "Phone",
-                      phoneController,
-                      validateForm,
-                      isPhone: true,
-                    ),
-                  
-                    buildInputGroup(
-                      "TIN / Tax ID",
-                      tinController,
-                      validateForm,
-                    ),
-                    buildInputGroup(
-                      "Address",
-                      addressController,
-                      validateForm,
-                      maxLines: 3,
-                    ),
+                   buildInputGroup(
+  "Name",
+  nameController,
+  validateForm,
+  errorText: nameError.value,
+),
+
+buildInputGroup(
+  "Phone",
+  phoneController,
+  validateForm,
+  isPhone: true,
+  errorText: phoneError.value,
+),
+
+buildInputGroup(
+  "TIN / Tax ID",
+  tinController,
+  validateForm,
+  errorText: tinError.value,
+),
+
+buildInputGroup(
+  "Address",
+  addressController,
+  validateForm,
+  maxLines: 3,
+  errorText: addressError.value,
+),
+
                   ],
                 ),
               ),

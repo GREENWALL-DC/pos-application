@@ -89,56 +89,68 @@ final totalCustomers = dashboard.totalCustomers;
         ),
       
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // --- METRICS SECTION ---
-            _MetricCard(
-              title: "Total Revenue",
-              value: "\$${totalRevenue.toStringAsFixed(2)}",
-              icon: Icons.monetization_on_outlined,
-            ),
-            const SizedBox(height: 12),
-            _MetricCard(
-              title: "Total Sales",
-              value: "$totalSales",
-              icon: Icons.shopping_cart_outlined,
-            ),
-            const SizedBox(height: 12),
-           _MetricCard(
-  title: "Avg. Order value",
-  value: "\$${avgOrder.toStringAsFixed(2)}",
-  icon: Icons.show_chart,
-            ),
-            const SizedBox(height: 12),
-            _MetricCard(
-              title: "Total Customers",
-              value: "$totalCustomers",
-              icon: Icons.people_outline,
-            ),
 
-            const SizedBox(height: 24),
-
-            // --- WEEKLY SUMMARY CHART ---
-_WeeklySummarySection(
-  weekly: dashboard.weeklySummary,
-  grossRevenue: dashboard.grossRevenue,
-  netSales: dashboard.netSales,
-  totalDiscount: dashboard.totalDiscount,
-),
-
-
-            const SizedBox(height: 24),
-
-            // --- LATEST TRANSACTIONS ---
-_LatestTransactionsSection(recentSales: dashboard.recentSales),
-            
-            // Bottom padding for scrolling
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+      
+      body:
+      
+       RefreshIndicator(
+        onRefresh: ()async{
+          await ref 
+          .read(adminDashboardNotifierProvider.notifier)
+        .fetchDashboard();
+        },
+         child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // --- METRICS SECTION ---
+              _MetricCard(
+                title: "Total Revenue",
+                value: "\$${totalRevenue.toStringAsFixed(2)}",
+                icon: Icons.monetization_on_outlined,
+              ),
+              const SizedBox(height: 12),
+              _MetricCard(
+                title: "Total Sales",
+                value: "$totalSales",
+                icon: Icons.shopping_cart_outlined,
+              ),
+              const SizedBox(height: 12),
+             _MetricCard(
+           title: "Avg. Order value",
+           value: "\$${avgOrder.toStringAsFixed(2)}",
+           icon: Icons.show_chart,
+              ),
+              const SizedBox(height: 12),
+              _MetricCard(
+                title: "Total Customers",
+                value: "$totalCustomers",
+                icon: Icons.people_outline,
+              ),
+         
+              const SizedBox(height: 24),
+         
+              // --- WEEKLY SUMMARY CHART ---
+         _WeeklySummarySection(
+           weekly: dashboard.weeklySummary,
+           grossRevenue: dashboard.grossRevenue,
+           netSales: dashboard.netSales,
+           totalDiscount: dashboard.totalDiscount,
+         ),
+         
+         
+              const SizedBox(height: 24),
+         
+              // --- LATEST TRANSACTIONS ---
+         _LatestTransactionsSection(recentSales: dashboard.recentSales),
+              
+              // Bottom padding for scrolling
+              const SizedBox(height: 20),
+            ],
+          ),
+               ),
+       ),
     );
   }
 }

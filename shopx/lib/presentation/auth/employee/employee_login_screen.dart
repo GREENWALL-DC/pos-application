@@ -15,8 +15,7 @@ class EmployeeLoginScreen extends HookConsumerWidget {
     final passwordController = useTextEditingController();
 
     final usernameError = useState<String?>(null);
-final passwordError = useState<String?>(null);
-
+    final passwordError = useState<String?>(null);
 
     // 2. Define Colors based on design
     const primaryBlue = Color(0xFF1976D2);
@@ -25,7 +24,7 @@ final passwordError = useState<String?>(null);
       0xFFEBF4FF,
     ); // Very light blue for the bottom box
     const textLabelColor = Color(0xFF1F2937);
-  
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -81,181 +80,157 @@ final passwordError = useState<String?>(null);
               kHeight40,
 
               // --- Employee ID Input ---
-             const Text(
-  'Username',
-  style: TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: textLabelColor,
-  ),
-),
-const SizedBox(height: 8),
+              const Text(
+                'Username',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: textLabelColor,
+                ),
+              ),
+              const SizedBox(height: 8),
 
-// ORIGINAL INPUT – unchanged
-TextField(
-  controller: employeeIdController,
-  decoration: InputDecoration(
-    hintText: 'ABC23654',
-    hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-    filled: true,
-    fillColor: inputFillColor,
-    contentPadding: EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: 18,
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
-    ),
-  ),
-),
+              // ORIGINAL INPUT – unchanged
+              TextField(
+                controller: employeeIdController,
+                decoration: InputDecoration(
+                  hintText: 'ABC23654',
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  filled: true,
+                  fillColor: inputFillColor,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
 
-// NEW ERROR TEXT (this does not change your design)
-if (usernameError.value != null) ...[
-  SizedBox(height: 6),
-  Text(
-    usernameError.value!,
-    style: TextStyle(color: Colors.red, fontSize: 13),
-  ),
-],
-
+              // NEW ERROR TEXT (this does not change your design)
+              if (usernameError.value != null) ...[
+                SizedBox(height: 6),
+                Text(
+                  usernameError.value!,
+                  style: TextStyle(color: Colors.red, fontSize: 13),
+                ),
+              ],
 
               const SizedBox(height: 24),
 
               // --- Password Input ---
               const Text(
-  'Password',
-  style: TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: textLabelColor,
-  ),
-),
-SizedBox(height: 8),
+                'Password',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: textLabelColor,
+                ),
+              ),
+              SizedBox(height: 8),
 
-TextField(
-  controller: passwordController,
-  obscureText: true,
-  decoration: InputDecoration(
-    hintText: 'Minimum 8 characters',
-    hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-    filled: true,
-    fillColor: inputFillColor,
-    contentPadding: EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: 18,
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
-    ),
-  ),
-),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  hintText: 'Minimum 8 characters',
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  filled: true,
+                  fillColor: inputFillColor,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
 
-if (passwordError.value != null) ...[
-  SizedBox(height: 6),
-  Text(
-    passwordError.value!,
-    style: TextStyle(color: Colors.red, fontSize: 13),
-  ),
-],
-
+              if (passwordError.value != null) ...[
+                SizedBox(height: 6),
+                Text(
+                  passwordError.value!,
+                  style: TextStyle(color: Colors.red, fontSize: 13),
+                ),
+              ],
 
               kHeight30,
 
-            // --- Log In Button ---
-SizedBox(
-  width: double.infinity,
-  height: 56,
-  child: ElevatedButton(
-   onPressed: () async {
-  usernameError.value = null;
-  passwordError.value = null;
+              // --- Log In Button ---
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    usernameError.value = null;
+                    passwordError.value = null;
 
-  if (employeeIdController.text.isEmpty) {
-    usernameError.value = "Username required";
-    return;
-  }
+                    if (employeeIdController.text.isEmpty) {
+                      usernameError.value = "Username required";
+                      return;
+                    }
 
-  if (passwordController.text.isEmpty) {
-    passwordError.value = "Password required";
-    return;
-  }
+                    if (passwordController.text.isEmpty) {
+                      passwordError.value = "Password required";
+                      return;
+                    }
 
+                    try {
+                      await ref
+                          .read(authNotifierProvider.notifier)
+                          .loginUser(
+                            employeeIdController.text.trim(),
+                            passwordController.text.trim(),
+                          );
 
+                      final auth = ref.read(authNotifierProvider);
 
+                      // Success → go to dashboard
+                      if (auth.user != null) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const UserDashboard(),
+                          ),
+                        );
+                        return;
+                      }
 
+                      // Error handling
+                      final message = auth.error?.toLowerCase() ?? "";
 
-
-
-
-
-
-
-
-  try {
-  await ref.read(authNotifierProvider.notifier).loginUser(
-    employeeIdController.text.trim(),
-    passwordController.text.trim(),
-  );
-
-  final auth = ref.read(authNotifierProvider);
-
-  // Success → go to dashboard
-  if (auth.user != null) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const UserDashboard()),
-    );
-    return;
-  }
-
-  // Error handling
-  final message = auth.error?.toLowerCase() ?? "";
-
-  if (message.contains("wrong password")) {
-    passwordError.value = "Incorrect password";
-  } else if (message.contains("user not found")) {
-    usernameError.value = "Username does not exist";
-  } else {
-    passwordError.value = "Invalid credentials";
-  }
-
-} catch (e) {
-  passwordError.value = "Invalid credentials";
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-}
-,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: primaryBlue,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      elevation: 0,
-    ),
-    child: const Text(
-      'Log in',
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-),
+                      if (message.contains("wrong password")) {
+                        passwordError.value = "Incorrect password";
+                      } else if (message.contains("user not found")) {
+                        usernameError.value = "Username does not exist";
+                      } else {
+                        passwordError.value = "Invalid credentials";
+                      }
+                    } catch (e) {
+                      passwordError.value = "Invalid credentials";
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBlue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Log in',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
 
               kHeight30,
               // --- Info Box ---

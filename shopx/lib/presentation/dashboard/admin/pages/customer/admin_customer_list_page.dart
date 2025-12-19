@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -14,37 +13,51 @@ class AdminCustomerListPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authNotifierProvider);
 
+    final searchQuery = useState('');
+
     // STATE: Track expanded row
     final expandedCustomerId = useState<int?>(null);
     final customerState = ref.watch(customerNotifierProvider);
 
+    final customers = customerState.customers;
 
+    final filteredCustomers = customers.where((customer) {
+      final query = searchQuery.value.toLowerCase();
+      return customer.name.toLowerCase().contains(query) ||
+          customer.phone.toLowerCase().contains(query) ||
+          (customer.email?.toLowerCase().contains(query) ?? false);
+    }).toList();
 
-  useEffect(() {
-  if (auth.token != null) {
-    Future.microtask(() => 
-      ref.read(customerNotifierProvider.notifier).fetchCustomers());
-  }
-  return null;
-}, [auth.token]);
+    useEffect(() {
+      if (auth.token != null) {
+        Future.microtask(
+          () => ref.read(customerNotifierProvider.notifier).fetchCustomers(),
+        );
+      }
+      return null;
+    }, [auth.token]);
 
     // LISTENER: Handle side effects (Success/Error)
     ref.listen(customerNotifierProvider, (previous, next) {
       if (!next.isLoading && next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${next.error}'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: ${next.error}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
 
-
       // If delete was successful, refresh list
-      if (previous?.isLoading == true && next.isLoading == false && next.success == true) {
-         ref.read(customerNotifierProvider.notifier).fetchCustomers();
+      if (previous?.isLoading == true &&
+          next.isLoading == false &&
+          next.success == true) {
+        ref.read(customerNotifierProvider.notifier).fetchCustomers();
       }
     });
 
     return Scaffold(
-      backgroundColor:  Colors.white,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Customers",
@@ -69,13 +82,20 @@ class AdminCustomerListPage extends HookConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey.shade300),
               ),
-              child: const TextField(
-                decoration: InputDecoration(
+
+              child: TextField(
+                onChanged: (value) {
+                  searchQuery.value = value;
+                },
+                decoration: const InputDecoration(
                   hintText: "Search for a name, contact, or email",
                   prefixIcon: Icon(Icons.search, color: Colors.grey),
                   suffixIcon: Icon(Icons.search, color: Colors.blue),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 10,
+                  ),
                 ),
               ),
             ),
@@ -86,23 +106,28 @@ class AdminCustomerListPage extends HookConsumerWidget {
             child: customerState.isLoading && customerState.customers.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : customerState.customers.isEmpty
-                    ? const Center(child: Text("No customers found"))
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        itemCount: customerState.customers.length,
-                        itemBuilder: (context, index) {
-                          final customer = customerState.customers[index];
-                          final isExpanded = expandedCustomerId.value == customer.id;
+                ? const Center(child: Text("No customers found"))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    itemCount: filteredCustomers.length,
+                    itemBuilder: (context, index) {
+                      final customer = filteredCustomers[index];
 
-                          return _buildCustomerCard(
-                            context, 
-                            ref, 
-                            customer, 
-                            isExpanded, 
-                            expandedCustomerId
-                          );
-                        },
-                      ),
+                      final isExpanded =
+                          expandedCustomerId.value == customer.id;
+
+                      return _buildCustomerCard(
+                        context,
+                        ref,
+                        customer,
+                        isExpanded,
+                        expandedCustomerId,
+                      );
+                    },
+                  ),
           ),
 
           // Add New Customer Button
@@ -129,7 +154,11 @@ class AdminCustomerListPage extends HookConsumerWidget {
                 },
                 child: const Text(
                   "Add a new customer",
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -140,16 +169,18 @@ class AdminCustomerListPage extends HookConsumerWidget {
   }
 
   Widget _buildCustomerCard(
-    BuildContext context, 
-    WidgetRef ref, 
-    Customer customer, 
-    bool isExpanded, 
-    ValueNotifier<int?> expandedState
+    BuildContext context,
+    WidgetRef ref,
+    Customer customer,
+    bool isExpanded,
+    ValueNotifier<int?> expandedState,
   ) {
     return GestureDetector(
       onTap: () {
         // Toggle expansion logic
-        expandedState.value = (expandedState.value == customer.id) ? null : customer.id;
+        expandedState.value = (expandedState.value == customer.id)
+            ? null
+            : customer.id;
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -163,7 +194,7 @@ class AdminCustomerListPage extends HookConsumerWidget {
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -198,9 +229,9 @@ class AdminCustomerListPage extends HookConsumerWidget {
                   customer.email!,
                   style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Action Buttons
               Row(
                 children: [
@@ -218,11 +249,15 @@ class AdminCustomerListPage extends HookConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AdminCustomerPage(customer: customer),
+                            builder: (context) =>
+                                AdminCustomerPage(customer: customer),
                           ),
                         );
                       },
-                      child: const Text("Modify", style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        "Modify",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -236,52 +271,67 @@ class AdminCustomerListPage extends HookConsumerWidget {
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                     onPressed: () async {
-  final shouldDelete = await showDialog<bool>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        content: const Text(
-          "Do you want to delete?",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              "NO",
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              "YES",
-              style: TextStyle(fontSize: 16, color: Colors.red),
-            ),
-          ),
-        ],
-      );
-    },
-  );
+                      onPressed: () async {
+                        final shouldDelete = await showDialog<bool>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              content: const Text(
+                                "Do you want to delete?",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              actionsAlignment: MainAxisAlignment.spaceEvenly,
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text(
+                                    "NO",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text(
+                                    "YES",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
 
-  if (shouldDelete == true) {
-    await ref.read(customerNotifierProvider.notifier).deleteCustomer(customer.id);
-  }
-},
+                        if (shouldDelete == true) {
+                          await ref
+                              .read(customerNotifierProvider.notifier)
+                              .deleteCustomer(customer.id);
+                        }
+                      },
 
-                      child: const Text("Delete", style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        "Delete",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
-              )
-            ]
+              ),
+            ],
           ],
         ),
       ),

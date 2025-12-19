@@ -10,32 +10,32 @@ class AuthNotifier extends Notifier<AuthState> {
   String? _selectedOtpMethod; // ✅ ADD: Store selected method
   String? _jwtToken; // ✅ ADD THIS: Store permanent JWT token
 
-  @override
-  AuthState build() {
-    // Start with loading state until we verify stored token
-     _initAuth();   // 🔥 auto check stored token
-    return const AuthState.unauthenticated();
+ @override
+AuthState build() {
+  _initAuth(); // async init
+  return const AuthState.initial(); // 🔥 IMPORTANT
+}
+
+Future<void> _initAuth() async {
+  final storedToken = await _loadToken();
+
+  if (storedToken == null) {
+    state = const AuthState.unauthenticated(); // init DONE
+    return;
   }
 
-  Future<void> _initAuth() async {
-    final storedToken = await _loadToken();
+  try {
+    final user = await ref
+        .read(authRepositoryProvider)
+        .getCurrentUser(storedToken);
 
-    if (storedToken == null) {
-      state = const AuthState.unauthenticated();
-      return;
-    }
-
-    try {
-      final user = await ref
-          .read(authRepositoryProvider)
-          .getCurrentUser(storedToken);
-
-      _jwtToken = storedToken; // restore token to memory
-      state = AuthState.authenticated(user, token: storedToken);
-    } catch (_) {
-      await logout();
-    }
+    _jwtToken = storedToken;
+    state = AuthState.authenticated(user, token: storedToken);
+  } catch (_) {
+    await logout();
   }
+}
+
 
   // 🔥 LOCAL TOKEN STORAGE (SharedPreferences)
   Future<void> _saveToken(String token) async {

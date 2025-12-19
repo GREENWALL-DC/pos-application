@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/customers/customer_notifier.dart';
+import 'package:shopx/core/constants.dart';
 import 'package:shopx/presentation/dashboard/user/pages/customers/add_customer_page.dart';
 
 class CustomerListPage extends HookConsumerWidget {
@@ -17,9 +18,18 @@ class CustomerListPage extends HookConsumerWidget {
       return null;
     }, []);
 
+    final searchQuery = useState('');
+
+
     // 2. Watch State
     final customerState = ref.watch(customerNotifierProvider);
     final customers = customerState.customers;
+
+    
+final filteredCustomers = customers.where((customer) {
+  final query = searchQuery.value.toLowerCase();
+  return customer.name.toLowerCase().contains(query);
+}).toList();
 
     // UI Constants
     const primaryBlue = Color(0xFF1976D2);
@@ -55,29 +65,33 @@ class CustomerListPage extends HookConsumerWidget {
               ),
             ),
 
-            // --- SEARCH BAR (Visual Only) ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: const TextField(
-                  enabled: false, // Non-functional as per prompt
-                  decoration: InputDecoration(
-                    hintText: "Search for a name, contact, or email",
-                    hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    suffixIcon: Icon(Icons.search, color: Color(0xFF1F2937)),
-                  ),
-                ),
-              ),
-            ),
+           // --- SEARCH BAR (Visual Only) ---
+  Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+  child: Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+    ),
+    child: TextField(
+      onChanged: (value) {
+        searchQuery.value = value;
+      },
+      decoration: const InputDecoration(
+        hintText: "Search for a name",
+        hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        suffixIcon: Icon(Icons.search, color: Color(0xFF1F2937)),
+      ),
+    ),
+  ),
+),
 
-            const SizedBox(height: 10),
+
+
+           kHeight10,
 
             // --- CUSTOMER LIST ---
             Expanded(
@@ -97,10 +111,10 @@ class CustomerListPage extends HookConsumerWidget {
 
                   return ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    itemCount: customers.length,
+                   itemCount: filteredCustomers.length,
                     separatorBuilder: (ctx, i) => const Divider(height: 1),
                     itemBuilder: (context, index) {
-                      final customer = customers[index];
+                      final customer = filteredCustomers[index];
                       return Container(
                         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
                         color: Colors.white, // Background per item for clean look

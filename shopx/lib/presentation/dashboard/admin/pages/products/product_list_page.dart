@@ -25,6 +25,12 @@ class adminProductListPage extends HookConsumerWidget {
     // Local State for Search
     final searchController = useTextEditingController();
     final searchText = useState("");
+    final selectedCategory = useState<String>("All");
+
+    final categories = {
+      "All",
+      ...productState.products.map((p) => p.category),
+    }.toList();
 
     // Listener for search text changes
     useEffect(() {
@@ -51,10 +57,15 @@ class adminProductListPage extends HookConsumerWidget {
     // 3. FILTER LOGIC
     // -------------------------------------------------------------------------
     final filteredProducts = productState.products.where((product) {
-      if (searchText.value.isEmpty) return true;
-      return product.name.toLowerCase().contains(
-        searchText.value.toLowerCase(),
-      );
+      final matchesSearch =
+          searchText.value.isEmpty ||
+          product.name.toLowerCase().contains(searchText.value.toLowerCase());
+
+      final matchesCategory =
+          selectedCategory.value == "All" ||
+          product.category == selectedCategory.value;
+
+      return matchesSearch && matchesCategory;
     }).toList();
 
     return Scaffold(
@@ -156,21 +167,39 @@ class adminProductListPage extends HookConsumerWidget {
                                 ),
                               ),
                               const SizedBox(height: 4),
+
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
-                                children: const [
+                                children: [
                                   Text(
-                                    "All Category",
-                                    style: TextStyle(
+                                    selectedCategory.value == "All"
+                                        ? "All Category"
+                                        : selectedCategory.value,
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  Icon(
-                                    Icons.keyboard_arrow_down,
+
+                                  PopupMenuButton<String>(
                                     color: Colors.white,
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.white,
+                                    ),
+                                    onSelected: (value) {
+                                      selectedCategory.value = value;
+                                    },
+                                    itemBuilder: (context) {
+                                      return categories.map((category) {
+                                        return PopupMenuItem<String>(
+                                          value: category,
+                                          child: Text(category),
+                                        );
+                                      }).toList();
+                                    },
                                   ),
                                 ],
                               ),
@@ -329,7 +358,8 @@ class adminProductListPage extends HookConsumerWidget {
                                                       context: context,
                                                       builder: (context) {
                                                         return AlertDialog(
-                                                          backgroundColor: Colors.white,
+                                                          backgroundColor:
+                                                              Colors.white,
                                                           title: const Text(
                                                             "Delete Product",
                                                           ),

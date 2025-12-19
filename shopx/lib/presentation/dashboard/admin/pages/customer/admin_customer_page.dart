@@ -46,10 +46,16 @@ class AdminCustomerPage extends HookConsumerWidget {
     }, []);
 
     // BUTTON ENABLED?
-    final isButtonEnabled =
-        name.value.isNotEmpty &&
-        phone.value.isNotEmpty &&
-        address.value.isNotEmpty;
+   bool isValidPhone(String phone) =>
+    RegExp(r'^[0-9]{10}$').hasMatch(phone);
+
+bool isValidTin(String tin) => tin.length >= 6;
+
+final isButtonEnabled =
+    name.value.trim().isNotEmpty &&
+    isValidPhone(phone.value.trim()) &&
+    isValidTin(tin.value.trim()) &&
+    address.value.trim().isNotEmpty;
 
     // -----------------------------
     // LISTENER FOR SUCCESS/ERROR
@@ -218,12 +224,31 @@ class AdminCustomerPage extends HookConsumerWidget {
         controller: controller,
         maxLines: maxLines,
         keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-        validator: (value) {
-          if (required && (value == null || value.isEmpty)) {
-            return "This field is required";
-          }
-          return null;
-        },
+
+validator: (value) {
+  final text = value?.trim() ?? "";
+
+  if (required && text.isEmpty) {
+    return "This field is required";
+  }
+
+  if (isPhone) {
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(text)) {
+      return "Phone number must be exactly 10 digits";
+    }
+  }
+
+  if (hint.toLowerCase().contains("tin")) {
+    if (text.length < 6) {
+      return "TIN must be at least 6 characters";
+    }
+  }
+
+  return null;
+},
+
+
+
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),

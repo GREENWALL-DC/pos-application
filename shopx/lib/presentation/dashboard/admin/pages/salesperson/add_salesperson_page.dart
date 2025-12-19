@@ -207,6 +207,7 @@ class AddSalespersonPage extends HookConsumerWidget {
             _buildTextField(
               phoneController,
               "Phone",
+              isPhone: true,
               keyboardType: TextInputType.phone,
               errorMessage: phoneError.value,
             ),
@@ -301,14 +302,15 @@ class AddSalespersonPage extends HookConsumerWidget {
       ),
     );
   }
-
-  Widget _buildTextField(
-    TextEditingController controller,
-    String hint, {
-    bool isPassword = false,
-    TextInputType keyboardType = TextInputType.text,
-    String? errorMessage,
-  }) {
+Widget _buildTextField(
+  TextEditingController controller,
+  String hint, {
+  bool isPassword = false,
+  bool isPhone = false, // ⭐ ADD THIS
+  TextInputType keyboardType = TextInputType.text,
+  String? errorMessage,
+})
+ {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -321,26 +323,30 @@ class AddSalespersonPage extends HookConsumerWidget {
               width: 1.5,
             ),
           ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10), // 👈 STOP at 10 numbers
-            ],
-            keyboardType: keyboardType,
+          child: 
+          
+       TextField(
+  controller: controller,
+  obscureText: isPassword,
+  keyboardType: keyboardType,
+  inputFormatters: isPhone
+      ? [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(10),
+        ]
+      : null, // ⭐ KEY FIX
+  style: const TextStyle(fontSize: 14, color: Colors.black87),
+  decoration: InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+    border: InputBorder.none,
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 14,
+    ),
+  ),
+)
 
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-            ),
-          ),
         ),
 
         if (errorMessage != null)

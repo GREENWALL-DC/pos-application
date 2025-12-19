@@ -132,7 +132,29 @@ DrawerMenuItem(
               // --- BOTTOM SPACER ---
               const Spacer(),
 
-              // --- BOTTOM "Last Connection" SECTION ---
+           
+
+              // LOGOUT BUTTON
+              InkWell(
+  onTap: () => _showLogoutDialog(context, ref),
+  child: Row(
+    children: const [
+      Icon(Icons.logout, color: Colors.white),
+      SizedBox(width: 12),
+      Text(
+        "Logout",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ],
+  ),
+),
+kHeight20,
+
+   // --- BOTTOM "Last Connection" SECTION ---
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -178,26 +200,6 @@ DrawerMenuItem(
                 ],
               ),
              kHeight10,
-
-              // LOGOUT BUTTON
-              InkWell(
-  onTap: () => _showLogoutDialog(context, ref),
-  child: Row(
-    children: const [
-      Icon(Icons.logout, color: Colors.white),
-      SizedBox(width: 12),
-      Text(
-        "Logout",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ],
-  ),
-),
-kHeight20,
             ],
           ),
         ),

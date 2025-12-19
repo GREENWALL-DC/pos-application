@@ -100,11 +100,17 @@ netSales: parseRequired(totals['net_sales'], "net_sales"),
 
       );
     } catch (e) {
+      
       state = state.copyWith(
         loading: false,
         error: e.toString(),
       );
     }
   }
+
+  Future<void> fetchDashboard() async {
+  await loadDashboard();
+}
+
 
 }

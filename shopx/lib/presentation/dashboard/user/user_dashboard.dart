@@ -29,7 +29,6 @@ import 'package:shopx/presentation/dashboard/user/user_side_nav.dart'; // Ensure
 
 class UserDashboard extends HookConsumerWidget {
   const UserDashboard({Key? key}) : super(key: key);
-  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,6 +43,7 @@ class UserDashboard extends HookConsumerWidget {
     // 2. Watch State
     final productState = ref.watch(productNotifierProvider);
     final user = ref.watch(authNotifierProvider).user;
+    final cartState = ref.watch(cartProvider);
 
     // 3. Local UI State (Hooks)
     final isGridView = useState(true); // Toggle Grid/List
@@ -88,7 +88,7 @@ class UserDashboard extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer:  UserSideNav(
+      drawer: UserSideNav(
         onChangeTab: (tabIndex) {
           currentTab.value = tabIndex;
         },
@@ -97,34 +97,37 @@ class UserDashboard extends HookConsumerWidget {
         child: Column(
           children: [
             // --- HEADER (Time, Menu, Username) ---
-         // Show header ONLY for tabs 0 and 1
-if (currentTab.value == 0 || currentTab.value == 1)
-  Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.blue),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
+            // Show header ONLY for tabs 0 and 1
+            if (currentTab.value == 0 || currentTab.value == 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.blue),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
 
-        // ✅ SHOW USERNAME HERE
-        Text(
-          user?.username ?? "UserName",
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue,
-          ),
-        ),
+                    // ✅ SHOW USERNAME HERE
+                    Text(
+                      user?.username ?? "UserName",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
 
-        const SizedBox(width: 40),
-      ],
-    ),
-  ),
+                    const SizedBox(width: 40),
+                  ],
+                ),
+              ),
 
             // --- SHOW CONTROLS ONLY IN PRODUCTS TAB ---
             if (currentTab.value == 0)
@@ -178,36 +181,39 @@ if (currentTab.value == 0 || currentTab.value == 1)
               ),
 
             // --- PRODUCT CONTENT ---
-          Expanded(
-  child: Builder(
-    builder: (context) {
-      if (currentTab.value == 0) {
-        return _buildProductsUI(
-          productState,
-          displayProducts,
-          ref,
-          isGridView,
-          showCodes,
-        );
-      } else if (currentTab.value == 1) {
-        return const ManualEntryPage();   // bottom nav item
-      } else if (currentTab.value == 2) {
-        return const userProductListPage();   // from drawer
-      } else if (currentTab.value == 3) {
-        return const TransactionHistoryPage();  // from drawer
-      } else if (currentTab.value == 4) {
-        return const CustomerListPage();  // from drawer
-      } else {
-        return const SizedBox.shrink();
-      }
-    },
-  ),
-),
-
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  if (currentTab.value == 0) {
+                    return _buildProductsUI(
+                      productState,
+                      displayProducts,
+                      ref,
+                      isGridView,
+                      showCodes,
+                    );
+                  } else if (currentTab.value == 1) {
+                    return const ManualEntryPage(); // bottom nav item
+                  } else if (currentTab.value == 2) {
+                    return const userProductListPage(); // from drawer
+                  } else if (currentTab.value == 3) {
+                    return const TransactionHistoryPage(); // from drawer
+                  } else if (currentTab.value == 4) {
+                    return const CustomerListPage(); // from drawer
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                },
+              ),
+            ),
 
             // --- BOTTOM CART BAR ---
-            if (currentTab.value == 0)
-              _buildBottomCartBar(context, displayProducts.length),
+            if (currentTab.value == 0 && cartState.items.isNotEmpty)
+              _buildBottomCartBar(
+                context,
+                cartState.items.length,
+                cartState.totalPrice,
+              ),
           ],
         ),
       ),
@@ -331,6 +337,7 @@ if (currentTab.value == 0 || currentTab.value == 1)
     ValueNotifier<bool> showCodes,
   ) {
     return GridView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 10, bottom: 80),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -426,11 +433,13 @@ if (currentTab.value == 0 || currentTab.value == 1)
                       ),
                     ),
                     InkWell(
-                      onTap: ()async {
-                          // 1️⃣ Load backend stock BEFORE using dialog
-  await ref.read(stockNotifierProvider.notifier).loadStockForProduct(product.id!);
+                      onTap: () async {
+                        // 1️⃣ Load backend stock BEFORE using dialog
+                        await ref
+                            .read(stockNotifierProvider.notifier)
+                            .loadStockForProduct(product.id!);
 
-                      // 2️⃣ Show dialog WITH real stock
+                        // 2️⃣ Show dialog WITH real stock
                         showDialog(
                           context: context,
                           builder: (_) => AddQuantityDialog(
@@ -483,6 +492,7 @@ if (currentTab.value == 0 || currentTab.value == 1)
     ValueNotifier<bool> showCodes,
   ) {
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 10, bottom: 80),
       itemCount: products.length,
       separatorBuilder: (c, i) => const SizedBox(height: 15),
@@ -570,15 +580,17 @@ if (currentTab.value == 0 || currentTab.value == 1)
               ),
               // Add Button
               InkWell(
-                onTap: () async{
-                    // 1️⃣ Load backend stock BEFORE using dialog
-  await ref.read(stockNotifierProvider.notifier).loadStockForProduct(product.id!);
-// 2️⃣ Show dialog WITH real stock
+                onTap: () async {
+                  // 1️⃣ Load backend stock BEFORE using dialog
+                  await ref
+                      .read(stockNotifierProvider.notifier)
+                      .loadStockForProduct(product.id!);
+                  // 2️⃣ Show dialog WITH real stock
                   showDialog(
                     context: context,
                     builder: (_) => AddQuantityDialog(
                       product: product,
-                   
+
                       onAddToCart: (qty) {
                         // 1️⃣ Add to cart provider
                         ref.read(cartProvider.notifier).addToCart(product, qty);
@@ -613,7 +625,11 @@ if (currentTab.value == 0 || currentTab.value == 1)
   }
 
   // --- BOTTOM CART SUMMARY BAR ---
-  Widget _buildBottomCartBar(BuildContext context, int count) {
+  Widget _buildBottomCartBar(
+    BuildContext context,
+    int count,
+    double totalPrice,
+  ) {
     // Note: 'Total' is hardcoded or sum of displayed items for UI purposes.
     // In real app, connect this to a CartProvider
     return Container(
@@ -648,9 +664,12 @@ if (currentTab.value == 0 || currentTab.value == 1)
             ),
           ),
 
-          const Text(
-            "Total: SAR 0.00",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          Text(
+            "Total: SAR ${totalPrice.toStringAsFixed(2)}",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -678,31 +697,19 @@ if (currentTab.value == 0 || currentTab.value == 1)
           ),
         ],
       ),
+
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // 🟦 PRODUCTS TAB (current screen)
-          InkWell(
-            onTap: () {
-              currentTab.value = 0; // Switch to products
-            },
-            child: Icon(
-              Icons.grid_view_rounded,
-              color: currentTab.value == 0 ? Colors.blue : Colors.grey,
-              size: 38,
-            ),
+          _navIcon(
+            icon: Icons.grid_view_rounded,
+            isActive: currentTab.value == 0,
+            onTap: () => currentTab.value = 0,
           ),
-
-          // 📝 MANUAL ENTRY TAB (navigate here)
-          InkWell(
-            onTap: () {
-              currentTab.value = 1; // Switch to Manual Entry tab
-            },
-            child: Icon(
-              Icons.edit_note,
-              color: currentTab.value == 1 ? Colors.blue : Colors.grey,
-              size: 38,
-            ),
+          _navIcon(
+            icon: Icons.edit_note,
+            isActive: currentTab.value == 1,
+            onTap: () => currentTab.value = 1,
           ),
         ],
       ),
@@ -726,11 +733,38 @@ if (currentTab.value == 0 || currentTab.value == 1)
       return const Center(child: Text("No products found."));
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: isGridView.value
-          ? _buildGridView(displayProducts, ref, showCodes)
-          : _buildListView(displayProducts, ref, showCodes),
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(productNotifierProvider.notifier).fetchProducts();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: isGridView.value
+            ? _buildGridView(displayProducts, ref, showCodes)
+            : _buildListView(displayProducts, ref, showCodes),
+      ),
+    );
+  }
+
+  //widget same size
+  Widget _navIcon({
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Center(
+          child: Icon(
+            icon,
+            size: 28, // smaller icon, consistent visual weight
+            color: isActive ? Colors.blue : Colors.grey,
+          ),
+        ),
+      ),
     );
   }
 }

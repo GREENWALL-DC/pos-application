@@ -4,6 +4,7 @@ class AuthState {
   final UserModel? user;
   final String? token;
   final bool isLoading;
+  final bool isInitializing; // ⭐ ADD THIS
   final String? error;
   
 
@@ -11,6 +12,7 @@ class AuthState {
     this.user,
      this.token,  // ✅ NEW
     this.isLoading = false,
+    this.isInitializing = true, // ⭐ DEFAULT TRUE
     this.error,
   });
 
@@ -19,6 +21,7 @@ class AuthState {
       : user = null,
         token = null,  // ✅ NEW
         isLoading = false,
+          isInitializing = true, // ✅ MUST BE TRUE
         error = null;
 
        // 2. 🔄 LOADING STATE: Login/Register operation in progress, show spinner
@@ -26,6 +29,7 @@ class AuthState {
       : user = null,
         token = null,  // ✅ NEW
         isLoading = true,
+        isInitializing = false,
         error = null;
 
       // 3. ✅ AUTHENTICATED STATE: User successfully logged in, store user data
@@ -33,6 +37,7 @@ class AuthState {
       : user = user,
         token = token,  // ✅ NEW
         isLoading = false,
+         isInitializing = false, // ⭐ DONE INITIALIZING
         error = null;
 
 
@@ -41,6 +46,7 @@ class AuthState {
       : user = null,
          token = null,  // ✅ NEW - Clear token on logout
         isLoading = false,
+        isInitializing = false, // ⭐ DONE INITIALIZING
         error = null;
 
      // 5. ⚠️ ERROR STATE: Something went wrong, show error message to user
@@ -48,23 +54,27 @@ class AuthState {
       : user = null,
        token = null,  // ✅ NEW
         isLoading = false,
+          isInitializing = false, // ✅ INIT IS DONE
         error = error;
 
               
   // 📊 Copy with method for easy state updates
-  AuthState copyWith({
-    UserModel? user,
-     String? token,  // ✅ NEW
-    bool? isLoading,
-    String? error,
-  }) {
-    return AuthState(
-      user: user ?? this.user,
-       token: token ?? this.token,  // ✅ NEW
-      isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
-    );
-  }
+ AuthState copyWith({
+  UserModel? user,
+  String? token,
+  bool? isLoading,
+  bool? isInitializing, // ⭐ ADD
+  String? error,
+}) {
+  return AuthState(
+    user: user ?? this.user,
+    token: token ?? this.token,
+    isLoading: isLoading ?? this.isLoading,
+    isInitializing: isInitializing ?? this.isInitializing, // ⭐
+    error: error ?? this.error,
+  );
+}
+
 
      // 📋 Equality check for state comparison
   @override
@@ -75,11 +85,12 @@ class AuthState {
         other.user == user &&
          other.token == token &&  // ✅ NEW
         other.isLoading == isLoading &&
+        other.isInitializing == isInitializing && // ✅ ADD
         other.error == error;
   }
 
   @override
-  int get hashCode => user.hashCode ^ token.hashCode ^  isLoading.hashCode ^ error.hashCode;
+  int get hashCode => user.hashCode ^ token.hashCode ^  isLoading.hashCode ^  isInitializing.hashCode ^  error.hashCode;
 
   // 🖨️ String representation for debugging
   @override
