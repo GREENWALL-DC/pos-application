@@ -191,12 +191,14 @@ class EmployeeLoginScreen extends HookConsumerWidget {
 
                       // Success → go to dashboard
                       if (auth.user != null) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const UserDashboard(),
-                          ),
-                        );
+                       Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(
+    builder: (_) => const UserDashboard(),
+  ),
+  (route) => false, // 🔥 clears entire back stack
+);
+
                         return;
                       }
 

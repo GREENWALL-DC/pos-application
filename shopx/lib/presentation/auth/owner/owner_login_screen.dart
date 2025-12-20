@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui'; // Required for ImageFilter
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -57,7 +57,18 @@ class OwnerLoginScreen extends HookConsumerWidget {
     //   otpTimer.value?.cancel();
     //   isTimerRunning.value = false;
     //   isOtpSent.value = false;
-    // }
+    // } 
+
+    
+Future<bool> hasRealInternet() async {
+  try {
+    final result = await InternetAddress.lookup('google.com')
+        .timeout(const Duration(seconds: 3));
+    return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+  } catch (_) {
+    return false;
+  }
+}
 
     // 3. Theme Colors
     const primaryBlue = Color(0xFF1976D2);
@@ -448,195 +459,494 @@ class OwnerLoginScreen extends HookConsumerWidget {
                 const SizedBox(height: 60),
               ],
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
               // --- ACTION BUTTON (GET OTP / LOG IN) ---
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (!isOtpSent.value) {
-                      // ✅ STEP 0: CHECK INTERNET FIRST
-                      final connectivityResult = await Connectivity()
-                          .checkConnectivity();
+// --- ACTION BUTTON (GET OTP / LOG IN) ---
+// --- ACTION BUTTON (GET OTP / LOG IN) ---
+SizedBox(
+  width: double.infinity,
+  height: 56,
+  child: ElevatedButton(
+    onPressed: () async {
+      // =========================
+      // CHECK INTERNET FIRST (FOR BOTH STATES)
+      // =========================
+     final hasInternet = await hasRealInternet();
+if (!hasInternet) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        "No internet connection. Please switch on mobile data or Wi-Fi.",
+      ),
+    ),
+  );
+  return; // ❌ STOP HERE — OTP WILL NOT APPEAR
+}
 
-                      if (connectivityResult == ConnectivityResult.none) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              "No internet connection. Please switch on mobile data or Wi-Fi.",
-                            ),
-                          ),
-                        );
-                        return; // ❌ STOP HERE
-                      }
 
-                      // STATE 1: GET OTP
+      // =========================
+      // STATE 1: GET OTP
+      // =========================
+      if (!isOtpSent.value) {
+        // ✅ VALIDATE INPUTS
+        if (emailController.text.isEmpty ||
+            passwordController.text.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Please enter email and password"),
+            ),
+          );
+          return;
+        }
 
-                      // ✅ 1. Validate inputs
-                      if (emailController.text.isEmpty ||
-                          passwordController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please enter email and password"),
-                          ),
-                        );
-                        return;
-                      }
+        if (selectedOtpMethod.value == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Please select an OTP method"),
+            ),
+          );
+          return;
+        }
 
-                      if (selectedOtpMethod.value == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please select an OTP method"),
-                          ),
-                        );
-                        return;
-                      }
+        // ⭐ SHOW LOADING
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) =>
+              const Center(child: CircularProgressIndicator()),
+        );
 
-                      // ⭐ SHOW LOADING
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) =>
-                            const Center(child: CircularProgressIndicator()),
-                      );
+        try {
+          // 🔐 LOGIN
+          await ref
+              .read(authNotifierProvider.notifier)
+              .loginOwner(
+                emailController.text.trim(),
+                passwordController.text.trim(),
+              );
 
-                      try {
-                        // Step 1: Login owner
-                        await ref
-                            .read(authNotifierProvider.notifier)
-                            .loginOwner(
-                              emailController.text.trim(),
-                              passwordController.text.trim(),
-                            );
+          // 📩 SEND OTP
+          await ref
+              .read(authNotifierProvider.notifier)
+              .sendOTP(
+                selectedOtpMethod.value!.toLowerCase(),
+              );
 
-                        // Step 2: Send OTP
-                        await ref
-                            .read(authNotifierProvider.notifier)
-                            .sendOTP(selectedOtpMethod.value!.toLowerCase());
+          // ⭐ CLOSE LOADING
+          if (context.mounted) Navigator.of(context).pop();
 
-                        // ⭐ CLOSE LOADING
-                        if (context.mounted) Navigator.of(context).pop();
-                        if (!context.mounted) return;
+          // ✅ CHANGE UI ONLY AFTER SUCCESS
+          isOtpSent.value = true;
 
-                        // ✅ SHOW OTP UI (THIS WILL NOW STICK)
-                        isOtpSent.value = true;
+          secondsLeft.value = 300;
+          isTimerRunning.value = true;
 
-                        // Start timer
-                        secondsLeft.value = 300;
-                        isTimerRunning.value = true;
+          otpTimer.value = Timer.periodic(
+            const Duration(seconds: 1),
+            (timer) {
+              if (secondsLeft.value == 0) {
+                timer.cancel();
+                isTimerRunning.value = false;
+              } else {
+                secondsLeft.value--;
+              }
+            },
+          );
 
-                        otpTimer.value = Timer.periodic(
-                          const Duration(seconds: 1),
-                          (timer) {
-                            if (secondsLeft.value == 0) {
-                              timer.cancel();
-                              isTimerRunning.value = false;
-                            } else {
-                              secondsLeft.value--;
-                            }
-                          },
-                        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("OTP sent to your email")),
+          );
+        } catch (e) {
+          // ⭐ CLOSE LOADING IF OPEN
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("OTP sent to your email"),
-                          ),
-                        );
-                      } catch (e) {
-                        // ⭐ CLOSE LOADING ON ERROR
-                        if (context.mounted) Navigator.of(context).pop();
+          // 🔁 RESET STATE
+          otpTimer.value?.cancel();
+          isTimerRunning.value = false;
+          isOtpSent.value = false;
 
-                        // Reset ONLY on login failure
-                        otpTimer.value?.cancel();
-                        isTimerRunning.value = false;
-                        isOtpSent.value = false;
-
-                        final msg = e.toString().toLowerCase();
-
-                        if (msg.contains("wrong password")) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Incorrect password")),
-                          );
-                        } else if (msg.contains("user not found")) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Username does not exist"),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(msg)));
-                        }
-                      }
-                    } else {
-                      // STATE 2: VERIFY OTP
-                      final otp =
-                          otp1Controller.text +
-                          otp2Controller.text +
-                          otp3Controller.text +
-                          otp4Controller.text;
-
-                      if (otp.length == 4) {
-                        final success = await ref
-                            .read(authNotifierProvider.notifier)
-                            .verifyOTP(otp);
-
-                        if (!success) {
-                          // ❌ WRONG OTP → DO NOT NAVIGATE
-
-                          otp1Controller.clear();
-                          otp2Controller.clear();
-                          otp3Controller.clear();
-                          otp4Controller.clear();
-                          FocusScope.of(context).requestFocus(focus1);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Incorrect OTP. Please try again."),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        // ✅ ONLY ON SUCCESS
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AdminDashboard(),
-                          ),
-                        );
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Login successful!")),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please enter 4-digit OTP"),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    isOtpSent.value ? 'Log in' : 'Get OTP',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Something went wrong. Please check your internet connection.",
               ),
+            ),
+          );
+        }
+      }
+      // =========================
+      // STATE 2: VERIFY OTP
+      // =========================
+      else {
+        final otp = otp1Controller.text +
+            otp2Controller.text +
+            otp3Controller.text +
+            otp4Controller.text;
+
+        if (otp.length != 4) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Please enter 4-digit OTP"),
+            ),
+          );
+          return;
+        }
+
+        // ⭐ SHOW LOADING FOR OTP VERIFICATION TOO
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+
+        try {
+          final success = await ref
+              .read(authNotifierProvider.notifier)
+              .verifyOTP(otp);
+
+          // ⭐ CLOSE LOADING
+          if (context.mounted) Navigator.of(context).pop();
+
+          if (!success) {
+            otp1Controller.clear();
+            otp2Controller.clear();
+            otp3Controller.clear();
+            otp4Controller.clear();
+            FocusScope.of(context).requestFocus(focus1);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Incorrect OTP. Please try again."),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+
+        // ✅ LOGIN SUCCESS (CLEAR BACK STACK)
+Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(
+    builder: (_) => const AdminDashboard(),
+  ),
+  (route) => false, // 🔥 removes ALL previous routes
+);
+
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Login successful!")),
+          );
+        } catch (e) {
+          // ⭐ CLOSE LOADING IF OPEN
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Failed to verify OTP. Check your internet connection.",
+              ),
+            ),
+          );
+        }
+      }
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: primaryBlue,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      elevation: 0,
+    ),
+    child: Text(
+      isOtpSent.value ? 'Log in' : 'Get OTP',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
+
+              // SizedBox(
+              //   width: double.infinity,
+              //   height: 56,
+              //   child: ElevatedButton(
+              //     onPressed: () async {
+              //       if (!isOtpSent.value) {
+              //         // ✅ STEP 0: CHECK INTERNET FIRST
+              //         final connectivityResult = await Connectivity()
+              //             .checkConnectivity();
+
+              //         if (connectivityResult == ConnectivityResult.none) {
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //             const SnackBar(
+              //               content: Text(
+              //                 "No internet connection. Please switch on mobile data or Wi-Fi.",
+              //               ),
+              //             ),
+              //           );
+              //           return; // ❌ STOP HERE
+              //         }
+
+              //         // STATE 1: GET OTP
+
+              //         // ✅ 1. Validate inputs
+              //         if (emailController.text.isEmpty ||
+              //             passwordController.text.isEmpty) {
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //             const SnackBar(
+              //               content: Text("Please enter email and password"),
+              //             ),
+              //           );
+              //           return;
+              //         }
+
+              //         if (selectedOtpMethod.value == null) {
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //             const SnackBar(
+              //               content: Text("Please select an OTP method"),
+              //             ),
+              //           );
+              //           return;
+              //         }
+
+              //         // ⭐ SHOW LOADING
+              //         showDialog(
+              //           context: context,
+              //           barrierDismissible: false,
+              //           builder: (_) =>
+              //               const Center(child: CircularProgressIndicator()),
+              //         );
+
+              //         try {
+              //           // Step 1: Login owner
+              //           await ref
+              //               .read(authNotifierProvider.notifier)
+              //               .loginOwner(
+              //                 emailController.text.trim(),
+              //                 passwordController.text.trim(),
+              //               );
+
+              //           // Step 2: Send OTP
+              //           await ref
+              //               .read(authNotifierProvider.notifier)
+              //               .sendOTP(selectedOtpMethod.value!.toLowerCase());
+
+              //           // ⭐ CLOSE LOADING
+              //           if (context.mounted) Navigator.of(context).pop();
+              //           if (!context.mounted) return;
+
+              //           // ✅ SHOW OTP UI (THIS WILL NOW STICK)
+              //           isOtpSent.value = true;
+
+              //           // Start timer
+              //           secondsLeft.value = 300;
+              //           isTimerRunning.value = true;
+
+              //           otpTimer.value = Timer.periodic(
+              //             const Duration(seconds: 1),
+              //             (timer) {
+              //               if (secondsLeft.value == 0) {
+              //                 timer.cancel();
+              //                 isTimerRunning.value = false;
+              //               } else {
+              //                 secondsLeft.value--;
+              //               }
+              //             },
+              //           );
+
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //             const SnackBar(
+              //               content: Text("OTP sent to your email"),
+              //             ),
+              //           );
+              //         } catch (e) {
+              //           // ⭐ CLOSE LOADING ON ERROR
+              //           if (context.mounted) Navigator.of(context).pop();
+
+              //           // Reset ONLY on login failure
+              //           otpTimer.value?.cancel();
+              //           isTimerRunning.value = false;
+              //           isOtpSent.value = false;
+
+              //           final msg = e.toString().toLowerCase();
+
+              //           if (msg.contains("wrong password")) {
+              //             ScaffoldMessenger.of(context).showSnackBar(
+              //               const SnackBar(content: Text("Incorrect password")),
+              //             );
+              //           } else if (msg.contains("user not found")) {
+              //             ScaffoldMessenger.of(context).showSnackBar(
+              //               const SnackBar(
+              //                 content: Text("Username does not exist"),
+              //               ),
+              //             );
+              //           } else {
+              //             ScaffoldMessenger.of(
+              //               context,
+              //             ).showSnackBar(SnackBar(content: Text(msg)));
+              //           }
+              //         }
+              //       } else {
+              //         // STATE 2: VERIFY OTP
+              //         final otp =
+              //             otp1Controller.text +
+              //             otp2Controller.text +
+              //             otp3Controller.text +
+              //             otp4Controller.text;
+
+              //         if (otp.length == 4) {
+              //           final success = await ref
+              //               .read(authNotifierProvider.notifier)
+              //               .verifyOTP(otp);
+
+              //           if (!success) {
+              //             // ❌ WRONG OTP → DO NOT NAVIGATE
+
+              //             otp1Controller.clear();
+              //             otp2Controller.clear();
+              //             otp3Controller.clear();
+              //             otp4Controller.clear();
+              //             FocusScope.of(context).requestFocus(focus1);
+
+              //             ScaffoldMessenger.of(context).showSnackBar(
+              //               const SnackBar(
+              //                 content: Text("Incorrect OTP. Please try again."),
+              //                 backgroundColor: Colors.red,
+              //               ),
+              //             );
+              //             return;
+              //           }
+
+              //           // ✅ ONLY ON SUCCESS
+              //           Navigator.pushReplacement(
+              //             context,
+              //             MaterialPageRoute(
+              //               builder: (context) => AdminDashboard(),
+              //             ),
+              //           );
+
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //             const SnackBar(content: Text("Login successful!")),
+              //           );
+              //         } else {
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //             const SnackBar(
+              //               content: Text("Please enter 4-digit OTP"),
+              //             ),
+              //           );
+              //         }
+              //       }
+              //     },
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: primaryBlue,
+              //       shape: RoundedRectangleBorder(
+              //         borderRadius: BorderRadius.circular(16),
+              //       ),
+              //       elevation: 0,
+              //     ),
+              //     child: Text(
+              //       isOtpSent.value ? 'Log in' : 'Get OTP',
+              //       style: const TextStyle(
+              //         color: Colors.white,
+              //         fontSize: 18,
+              //         fontWeight: FontWeight.bold,
+              //       ),
+              //     ),
+              //   ),
+              // ),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
               kHeight20,
 

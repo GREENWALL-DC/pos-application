@@ -6,6 +6,7 @@ import 'package:shopx/application/dashboard/admin_dashboard_notifier.dart';
 import 'package:shopx/presentation/auth/selection/selection_screen.dart';
 import 'package:shopx/presentation/dashboard/admin/admin_dashboard.dart';
 import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
+import 'package:shopx/presentation/splash/splash_screen.dart';
 
 void main() {
   runApp(
@@ -29,7 +30,7 @@ class MyApp extends HookConsumerWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'ShopX',
+      title: 'Sellops',
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
@@ -44,36 +45,39 @@ class MyApp extends HookConsumerWidget {
         "/login": (_) => const SelectionScreen(),
       },
 
-    home: Builder(
-  builder: (context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final authState = ref.watch(authNotifierProvider);
+  home: const SplashScreen(),
 
-        if (authState.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    
+//     Builder(
+//   builder: (context) {
+//     return Consumer(
+//       builder: (context, ref, _) {
+//         final authState = ref.watch(authNotifierProvider);
 
-        // If NOT logged in → show SelectionScreen
-        if (authState.user == null && authState.token == null) {
-          return const SelectionScreen();
-        }
+//         if (authState.isLoading) {
+//           return const Scaffold(
+//             body: Center(child: CircularProgressIndicator()),
+//           );
+//         }
 
-        final user = authState.user;
+//         // If NOT logged in → show SelectionScreen
+//         if (authState.user == null && authState.token == null) {
+//           return const SelectionScreen();
+//         }
 
-        if (user?.userType == "admin") {
+//         final user = authState.user;
 
-          return const AdminDashboard();
-        } else {
-          return const UserDashboard();
-        }
-      },
-    );
+//         if (user?.userType == "admin") {
 
-  },
-),
+//           return const AdminDashboard();
+//         } else {
+//           return const UserDashboard();
+//         }
+//       },
+//     );
+
+//   },
+// ),
 
 
     );
