@@ -17,7 +17,7 @@ module.exports = async (client) => {
       CREATE TABLE stock (
         id SERIAL PRIMARY KEY,
        product_id INTEGER NOT NULL UNIQUE REFERENCES products(id) ON DELETE CASCADE,
-        quantity INTEGER NOT NULL DEFAULT 0,
+       quantity NUMERIC(10,2) NOT NULL DEFAULT 0,
         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);

@@ -18,6 +18,7 @@ import 'package:shopx/domain/sales/sale.dart';
 import 'package:shopx/infrastructure/pdf/pdf_receipt_service.dart';
 import 'package:shopx/infrastructure/printer/thermal_printer_service.dart';
 import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
+import 'package:shopx/presentation/printpreview/reciept_preview_screen.dart';
 
 class SuccessScreen extends HookConsumerWidget {
   final int saleId;
@@ -71,59 +72,8 @@ class SuccessScreen extends HookConsumerWidget {
     // ---------------------------
     final emailController = useTextEditingController();
 
-   //SHARE PDF
-   Future<void> onSendPdfReceipt() async {
-  final receiptItems = sale.items.map((item) {
-    return ReceiptItem(
-      nameEn: item.productName,
-      unitPrice: item.unitPrice,
-      quantity: item.quantity,
-    );
-  }).toList();
-
-  final subTotal = sale.items.fold<double>(
-    0,
-    (sum, item) => sum + item.totalPrice,
-  );
-
-  const vatPercentage = 15.0;
-  final vatAmount = sale.totalAmount - subTotal;
-
-  final receipt = ReceiptData(
-    companyNameEn: CompanyConfig.companyNameEn,
-    companyNameAr: CompanyConfig.companyNameAr,
-    city: CompanyConfig.city,
-    country: CompanyConfig.country,
-    crNumber: CompanyConfig.crNumber,
-    vatNumber: CompanyConfig.vatNumber,
-    mobile: CompanyConfig.mobile,
-    invoiceNumber: sale.id.toString(),
-    invoiceDate: sale.saleDate,
-    customerName: sale.customerName,
-    items: receiptItems,
-    subTotal: subTotal,
-    vatPercentage: vatPercentage,
-    vatAmount: vatAmount,
-    netTotal: sale.totalAmount,
-    qrPayload: 'Invoice:${sale.id}',
-  );
-
-  final file =
-      await PdfReceiptService.generateReceiptPdf(receipt);
-
-  await Share.shareXFiles(
-    [XFile(file.path)],
-    text: 'Invoice ${sale.id}',
-  );
-}
-
-
-    // ---------------------------
-    // 5. Thermal Printer ESC/POS
-    // ---------------------------
-
-    Future<void> onPrintReceipt() async {
-      // 1️⃣ Build receipt items from SaleItem (safe & existing fields)
+    //SHARE PDF
+    Future<void> onSendPdfReceipt() async {
       final receiptItems = sale.items.map((item) {
         return ReceiptItem(
           nameEn: item.productName,
@@ -132,29 +82,60 @@ class SuccessScreen extends HookConsumerWidget {
         );
       }).toList();
 
-      // 2️⃣ Calculate subtotal from sale items
+      final subTotal = sale.items.fold<double>(
+        0,
+        (sum, item) => sum + item.totalPrice,
+      );
+
+      const vatPercentage = 15.0;
+      final vatAmount = sale.totalAmount - subTotal;
+
+      final receipt = ReceiptData(
+        companyNameEn: CompanyConfig.companyNameEn,
+        companyNameAr: CompanyConfig.companyNameAr,
+        city: CompanyConfig.city,
+        country: CompanyConfig.country,
+        crNumber: CompanyConfig.crNumber,
+        vatNumber: CompanyConfig.vatNumber,
+        mobile: CompanyConfig.mobile,
+        invoiceNumber: sale.id.toString(),
+        invoiceDate: sale.saleDate,
+        customerName: sale.customerName,
+        items: receiptItems,
+        subTotal: subTotal,
+        vatPercentage: vatPercentage,
+        vatAmount: vatAmount,
+        netTotal: sale.totalAmount,
+        qrPayload: 'Invoice:${sale.id}',
+      );
+
+      final file = await PdfReceiptService.generateReceiptPdf(receipt);
+
+      await Share.shareXFiles([XFile(file.path)], text: 'Invoice ${sale.id}');
+    }
+
+    // ---------------------------
+    // 5. Thermal Printer ESC/POS
+    // ---------------------------
+
+    void onOpenReceiptPreview() {
+      final receiptItems = sale.items.map((item) {
+        return ReceiptItem(
+          nameEn: item.productName,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+        );
+      }).toList();
+
       final double subTotal = sale.items.fold(
         0.0,
         (sum, item) => sum + item.totalPrice,
       );
 
-      // 3️⃣ VAT handling (FIXED percentage – production-safe)
-      // Adjust this later if backend sends exact value
       const double vatPercentage = 15.0;
-
       final double netTotal = sale.totalAmount;
       final double vatAmount = netTotal - subTotal;
 
-      // 4️⃣ Simple QR payload (NOT ZATCA – just sale info)
-      final String qrPayload =
-          '''
-Sale ID: ${sale.id}
-Customer: ${sale.customerName}
-Total: SAR ${netTotal.toStringAsFixed(2)}
-Date: ${sale.saleDate.toIso8601String()}
-''';
-
-      // 5️⃣ Build ReceiptData (NO nulls, NO errors)
       final receiptData = ReceiptData(
         companyNameEn: CompanyConfig.companyNameEn,
         companyNameAr: CompanyConfig.companyNameAr,
@@ -174,13 +155,14 @@ Date: ${sale.saleDate.toIso8601String()}
         vatAmount: vatAmount,
         netTotal: netTotal,
 
-        qrPayload: qrPayload,
+        qrPayload: 'Invoice:${sale.id}',
       );
 
-      // 6️⃣ Print (Bluetooth handled internally)
-      await ThermalPrinterService.printReceipt(
-        receipt: receiptData,
-        context: context,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RecieptPreviewScreen(receipt: receiptData),
+        ),
       );
     }
 
@@ -361,7 +343,7 @@ Date: ${sale.saleDate.toIso8601String()}
                     width: double.infinity,
                     height: 56,
                     child: OutlinedButton(
-                      onPressed: onPrintReceipt,
+                      onPressed: onOpenReceiptPreview,
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white, width: 1.5),
                         shape: RoundedRectangleBorder(
@@ -369,7 +351,7 @@ Date: ${sale.saleDate.toIso8601String()}
                         ),
                       ),
                       child: const Text(
-                        "PRINT THE RECEIPT",
+                        "PREVIEW RECEIPT",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -380,8 +362,6 @@ Date: ${sale.saleDate.toIso8601String()}
                   ),
 
                   const SizedBox(height: 16),
-
-                  
 
                   // NEXT ORDER
                   SizedBox(

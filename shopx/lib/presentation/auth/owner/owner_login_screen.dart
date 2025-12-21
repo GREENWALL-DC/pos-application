@@ -492,18 +492,18 @@ SizedBox(
     onPressed: () async {
       // =========================
       // CHECK INTERNET FIRST (FOR BOTH STATES)
-      // =========================
-     final hasInternet = await hasRealInternet();
-if (!hasInternet) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text(
-        "No internet connection. Please switch on mobile data or Wi-Fi.",
-      ),
-    ),
-  );
-  return; // ❌ STOP HERE — OTP WILL NOT APPEAR
-}
+//       // =========================
+//      final hasInternet = await hasRealInternet();
+// if (!hasInternet) {
+//   ScaffoldMessenger.of(context).showSnackBar(
+//     const SnackBar(
+//       content: Text(
+//         "No internet connection. Please switch on mobile data or Wi-Fi.",
+//       ),
+//     ),
+//   );
+//   return; // ❌ STOP HERE — OTP WILL NOT APPEAR
+// }this is ansil comenting because need to use later 
 
 
       // =========================

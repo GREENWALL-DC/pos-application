@@ -77,22 +77,18 @@ class CartScreen extends HookConsumerWidget {
         };
       }).toList();
 
-
 final stockMap = ref.read(stockNotifierProvider).stock;
+
+bool hasBackorder = false;
 
 for (var item in cartItems) {
   final available = stockMap[item.product.id] ?? 0.0;
 
-  if (item.quantity > available) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            "Not enough stock for ${item.product.name}. Available: $available"),
-      ),
-    );
-    return; // ❌ stop sale
+  if (available <= 0 || item.quantity > available) {
+    hasBackorder = true;
   }
 }
+
 
 
 
@@ -106,6 +102,16 @@ for (var item in cartItems) {
               items: saleItems,
               paymentMethod: paymentMethod.value,
             );
+
+             // OPTIONAL INFO MESSAGE (correct place)
+  if (hasBackorder) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Order placed with backordered items"),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
 
         // 4. Clear cart
         ref.read(cartProvider.notifier).clearCart();
@@ -122,9 +128,11 @@ Navigator.pushAndRemoveUntil(
 );
 
       } catch (e) {
+        
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Order failed: $e")));
+        
       }
       
     }
@@ -252,7 +260,7 @@ Navigator.pushAndRemoveUntil(
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        "Qty: ${item.quantity.toInt()} x \$${product.price}",
+                                      "Qty: ${item.quantity.toInt()} x SAR ${product.price}",
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey[500],
@@ -260,7 +268,7 @@ Navigator.pushAndRemoveUntil(
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        "\$${itemTotal.toStringAsFixed(2)}", // Item total logic if needed
+                                    "SAR ${itemTotal.toStringAsFixed(2)}", // Item total logic if needed
                                         style: const TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey,
@@ -433,7 +441,7 @@ Navigator.pushAndRemoveUntil(
                           // Cash Option
                           _buildPaymentOption(
                             label: "Cash",
-                            icon: Icons.attach_money,
+                            imageAsset:"assets/images/saudi-arabia-official-riyal-sign.png" ,
                             isSelected: paymentMethod.value == 'cash',
                             onTap: () => paymentMethod.value = 'cash',
                             activeColor: blueColor,
@@ -485,7 +493,7 @@ Navigator.pushAndRemoveUntil(
                                 ),
                               ),
                               Text(
-                                "\$${totalPayable.toStringAsFixed(2)}",
+                              "SAR ${totalPayable.toStringAsFixed(2)}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 16,
@@ -586,7 +594,8 @@ Navigator.pushAndRemoveUntil(
 
   Widget _buildPaymentOption({
     required String label,
-    required IconData icon,
+     IconData? icon,
+    String? imageAsset,
     required bool isSelected,
     required VoidCallback onTap,
     required Color activeColor,
@@ -612,7 +621,18 @@ Navigator.pushAndRemoveUntil(
                 border: Border.all(color: Colors.grey),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: Colors.grey[700], size: 20),
+              // child: Icon(icon, color: Colors.grey[700], size: 20),
+              child: imageAsset != null
+    ? Image.asset(
+        imageAsset,
+        height: 18,
+      )
+    : Icon(
+        icon,
+        color: Colors.grey[700],
+        size: 20,
+      ),
+
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -647,7 +667,7 @@ Navigator.pushAndRemoveUntil(
             ),
           ),
           Text(
-            "\$${amount.toStringAsFixed(2)}",
+         "SAR ${amount.toStringAsFixed(2)}",
             style: TextStyle(
               color: Colors.grey[600],
               fontSize: 14,

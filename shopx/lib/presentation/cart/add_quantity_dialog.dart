@@ -17,23 +17,28 @@ class AddQuantityDialog extends HookConsumerWidget {
     required this.onAddToCart,
   });
 
-
-  
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Load stock AFTER the dialog finishes building
 
-// Load stock AFTER the dialog finishes building
-useEffect(() {
-  if (product.id != null) {
-    ref.read(stockNotifierProvider.notifier)
-       .loadStockForProduct(product.id!);
-  }
-  return null; // runs only once when dialog opens
-}, []);
+    // useEffect(() {
+    //   if (product.id != null) {
+    //     ref.read(stockNotifierProvider.notifier)
+    //        .loadStockForProduct(product.id!);
+    //   }
+    //   return null; // runs only once when dialog opens
+    // }, []);
 
-
-
+    useEffect(() {
+      if (product.id != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(stockNotifierProvider.notifier)
+              .loadStockForProduct(product.id!);
+        });
+      }
+      return null;
+    }, []);
 
     // Hooks
     final quantityController = useTextEditingController();
@@ -45,13 +50,20 @@ useEffect(() {
     final double enteredQty = double.tryParse(textValue) ?? 0.0;
     final stockState = ref.watch(stockNotifierProvider);
 
-//     if (stockState.isLoading) {
-//   return const Center(child: CircularProgressIndicator());
-// }
+    //     if (stockState.isLoading) {
+    //   return const Center(child: CircularProgressIndicator());
+    // }
 
     final availableStock = stockState.stock[product.id] ?? 0.0;
-    final bool isOverStock = enteredQty > availableStock;
-    final bool isValid = enteredQty > 0 && !isOverStock;
+    // final bool isOverStock = enteredQty > availableStock;
+    // final bool isValid = enteredQty > 0 && !isOverStock;
+
+
+    final bool isBackorder =
+    availableStock <= 0 || enteredQty > availableStock;
+
+final bool isValid = enteredQty > 0;
+
 
 
     return Dialog(
@@ -94,14 +106,13 @@ useEffect(() {
                   ),
                 ),
                 Text(
-  "$availableStock Kg",   // always KG now
-  style: TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.bold,
-    color: availableStock > 0 ? Colors.green[700] : Colors.red,
-  ),
-),
-
+                  "$availableStock Kg", // always KG now
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: availableStock > 0 ? Colors.green[700] : Colors.orange,
+                  ),
+                ),
               ],
             ),
 
@@ -130,7 +141,7 @@ useEffect(() {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                 ],
                 style: TextStyle(
-                  color: isOverStock ? Colors.red : Colors.black,
+                  color: isBackorder ? Colors.red : Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
                 decoration: InputDecoration(
@@ -143,7 +154,7 @@ useEffect(() {
                     borderSide: BorderSide.none,
                   ),
                   // Error styling
-                  enabledBorder: isOverStock
+                  enabledBorder: isBackorder
                       ? OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
@@ -152,7 +163,7 @@ useEffect(() {
                           ),
                         )
                       : InputBorder.none,
-                  focusedBorder: isOverStock
+                  focusedBorder: isBackorder
                       ? OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
@@ -170,7 +181,7 @@ useEffect(() {
 
                   hintText: "Enter Quantity",
                   // Dynamic Unit Suffix (KG / Nos)
-                  suffixText:"Kg",
+                  suffixText: "Kg",
                   suffixStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.grey,
@@ -180,14 +191,30 @@ useEffect(() {
             ),
 
             // Validation Error Message
-            if (isOverStock)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, left: 5),
-                child: Text(
-                  "Quantity cannot exceed available stock!",
-                  style: TextStyle(color: Colors.red[700], fontSize: 12),
-                ),
-              ),
+            if (isBackorder)
+  Padding(
+    padding: const EdgeInsets.only(top: 8.0, left: 5),
+    child: Text(
+      availableStock <= 0
+          ? "Out of stock. This order will be placed as backorder."
+          : "Only $availableStock Kg available. Remaining quantity will be backordered.",
+      style: TextStyle(
+        color: Colors.orange,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
+
+
+            // if (isOverStock)
+            //   Padding(
+            //     padding: const EdgeInsets.only(top: 8.0, left: 5),
+            //     child: Text(
+            //       "Quantity cannot exceed available stock!",
+            //       style: TextStyle(color: Colors.red[700], fontSize: 12),
+            //     ),
+            //   ),
 
             const SizedBox(height: 25),
 
@@ -196,25 +223,27 @@ useEffect(() {
               width: double.infinity,
               height: 45,
               child: ElevatedButton(
-                onPressed: isValid
-                    ? () {
-                        // 1️⃣ Add product to cart provider
-                        ref
-                            .read(cartProvider.notifier)
-                            .addToCart(product, enteredQty);
+              onPressed: isValid
+    ? () {
+        ref
+            .read(cartProvider.notifier)
+            .addToCart(product, enteredQty);
 
-                        // 2️⃣ Close dialog
-                        Navigator.of(context).pop();
+        Navigator.of(context).pop();
 
-                        // 3️⃣ Show success message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Added to cart"),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    : null,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isBackorder
+                  ? "Added to cart as backorder"
+                  : "Added to cart",
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    : null,
+
 
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[700],

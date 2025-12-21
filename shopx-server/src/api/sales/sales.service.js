@@ -23,12 +23,11 @@ exports.createSale = async (data) => {
     }
 
     // 2️⃣ CALCULATE TOTAL
-   let total_amount = 0;
-data.items.forEach((i) => {
-  const discount = i.discount || 0;
-  total_amount += i.quantity * (i.unit_price - discount);
-});
-
+    let total_amount = 0;
+    data.items.forEach((i) => {
+      const discount = i.discount || 0;
+      total_amount += i.quantity * (i.unit_price - discount);
+    });
 
     // 3️⃣ CREATE MAIN SALE
     const sale = await repo.createSale(client, {
@@ -37,25 +36,56 @@ data.items.forEach((i) => {
       total_amount,
     });
 
-   // 5️⃣ INSERT SALE ITEMS + REDUCE STOCK (correct way)
-for (const item of data.items) {
-  await repo.addSaleItem(client, sale.id, item);
+    let isBackorder = false;
 
-  // Use REAL stock logic (prevents negative stock, checks availability)
-  await stockService.adjustStock(item.product_id, -item.quantity, "sale");
-}
+    // 5️⃣ INSERT SALE ITEMS
+    for (const item of data.items) {
+      const stock = await stockService.getStock(item.product_id);
+      const availableQty = stock?.quantity || 0;
 
+      // Fulfill only what is available
+      const fulfillQty = Math.min(availableQty, item.quantity);
+      const pendingQty = item.quantity - fulfillQty;
 
-    // 6️⃣ CREATE ONE FULL PAYMENT
+      // Insert sale item with fulfilled_quantity
+      await client.query(
+        `INSERT INTO sale_items 
+     (sale_id, product_id, quantity, fulfilled_quantity, unit_price, discount, total_price)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          sale.id,
+          item.product_id,
+          item.quantity,
+          fulfillQty,
+          item.unit_price,
+          item.discount || 0,
+          item.quantity * (item.unit_price - (item.discount || 0)),
+        ]
+      );
+
+      // Deduct only fulfilled quantity
+      if (fulfillQty > 0) {
+        await stockService.adjustStock(item.product_id, -fulfillQty, "sale");
+      }
+
+      // If anything pending → backorder
+      if (pendingQty > 0) {
+        isBackorder = true;
+      }
+    }
+
+    // 6️⃣ UPDATE SALE STATUS (FINAL & ONLY PLACE)
+    const saleStatus = isBackorder ? "backorder" : "completed";
+    await repo.updateSaleStatus(client, sale.id, saleStatus);
+
+    // 7️⃣ CREATE ONE FULL PAYMENT (ALWAYS PAID – CLIENT RULE)
     const payment = await paymentsRepo.createPayment(client, {
       saleId: sale.id,
       customerId: data.customer_id,
+
       amount: total_amount, // always full
       method: data.payment_method || "cash",
     });
-
-    // 7️⃣ SET SALE AS PAID
-    await paymentsRepo.updateSaleStatus(sale.id, "paid");
 
     await client.query("COMMIT");
 

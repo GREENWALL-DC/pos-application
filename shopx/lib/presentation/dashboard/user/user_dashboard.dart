@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/cart/cart_notifier.dart';
 import 'package:shopx/application/products/product_state.dart';
@@ -336,18 +337,29 @@ class UserDashboard extends HookConsumerWidget {
     WidgetRef ref,
     ValueNotifier<bool> showCodes,
   ) {
-    return GridView.builder(
+    // return GridView.builder(
+    //   physics: const AlwaysScrollableScrollPhysics(),
+    //   padding: const EdgeInsets.only(top: 10, bottom: 80),
+    //   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+    //     crossAxisCount: 2,
+    //     childAspectRatio: 0.75, // Adjust height ratio
+    //     crossAxisSpacing: 15,
+    //     mainAxisSpacing: 15,
+    //   ),
+    //   itemCount: products.length,
+    //   itemBuilder: (context, index) {
+    //     final product = products[index];
+
+    return MasonryGridView.count(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 10, bottom: 80),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.75, // Adjust height ratio
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
-      ),
+      crossAxisCount: 2,
+      mainAxisSpacing: 15,
+      crossAxisSpacing: 15,
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
+
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -362,36 +374,36 @@ class UserDashboard extends HookConsumerWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
+
+            // Product Image (Placeholder)
+            // Expanded(
+            //   child: Center(
+            //     child: Container(
+            //       decoration: BoxDecoration(
+            //         color: Colors.grey[100],
+            //         borderRadius: BorderRadius.circular(15),
+            //       ),
+            //       child: product.images.isEmpty
+            //           ? const Icon(
+            //               Icons.image_not_supported,
+            //               size: 40,
+            //               color: Colors.grey,
+            //             )
+            //           : ClipRRect(
+            //               borderRadius: BorderRadius.circular(15),
+            //               child: Image.network(
+            //                 "http://localhost:5000" + product.images.first,
+            //                 fit: BoxFit.cover,
+            //                 width: double.infinity,
+            //                 height: double.infinity,
+            //               ),
+            //             ),
+            //     ),
+            //   ),
+            // ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product Image (Placeholder)
-                Expanded(
-                  child: Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: product.images.isEmpty
-                          ? const Icon(
-                              Icons.image_not_supported,
-                              size: 40,
-                              color: Colors.grey,
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(15),
-                              child: Image.network(
-                                "http://localhost:5000" + product.images.first,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
-
                 kHeight10,
                 Text(
                   product.name,
@@ -515,29 +527,29 @@ class UserDashboard extends HookConsumerWidget {
           child: Row(
             children: [
               // Image
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: product.images.isEmpty
-                    ? const Icon(
-                        Icons.image_not_supported,
-                        size: 40,
-                        color: Colors.grey,
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: Image.network(
-                          "http://localhost:5000" + product.images.first,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-              ),
+              // Container(
+              //   width: 80,
+              //   height: 80,
+              //   decoration: BoxDecoration(
+              //     color: Colors.grey[100],
+              //     borderRadius: BorderRadius.circular(15),
+              //   ),
+              //   child: product.images.isEmpty
+              //       ? const Icon(
+              //           Icons.image_not_supported,
+              //           size: 40,
+              //           color: Colors.grey,
+              //         )
+              //       : ClipRRect(
+              //           borderRadius: BorderRadius.circular(15),
+              //           child: Image.network(
+              //             "http://localhost:5000" + product.images.first,
+              //             fit: BoxFit.cover,
+              //           ),
+              //         ),
+              // ),
 
-              const SizedBox(width: 15),
+              // const SizedBox(width: 15),
               // Details
               Expanded(
                 child: Column(

@@ -15,7 +15,7 @@ module.exports = async (client) => {
       CREATE TABLE stock_movements (
         id SERIAL PRIMARY KEY,
         product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-        change INTEGER NOT NULL,
+       change NUMERIC(10,2) NOT NULL,
         reason VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

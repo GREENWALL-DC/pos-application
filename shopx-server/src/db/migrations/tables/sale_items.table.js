@@ -15,6 +15,7 @@ module.exports = async (client) => {
         sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
         product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
         quantity INTEGER NOT NULL,
+        fulfilled_quantity INTEGER NOT NULL DEFAULT 0,  -- 👈 NEW
         unit_price NUMERIC(10,2) NOT NULL,
         total_price NUMERIC(10,2) NOT NULL,
          discount NUMERIC(10,2) DEFAULT 0 

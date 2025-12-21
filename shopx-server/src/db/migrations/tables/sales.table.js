@@ -18,6 +18,7 @@ module.exports = async (client) => {
         salesperson_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         total_amount NUMERIC(12,2) NOT NULL,
         payment_status VARCHAR(20) DEFAULT 'paid', 
+        sale_status VARCHAR(20) DEFAULT 'completed', -- 👈 NEW
         sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);

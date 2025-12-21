@@ -51,22 +51,62 @@ exports.createProduct = async (data) => {
   return product;
 };
 
+
+
+
 // UPDATE EXISTING PRODUCT
 // This function updates a product and tracks price changes
+
+
+// exports.updateProduct = async (id, data) => {
+//   const oldProduct = await repo.getProductById(id);
+//   if (oldProduct.rows.length === 0) throw new Error("Product not found");
+//   const oldPrice = oldProduct.rows[0].price;
+
+//   const updateRes = await repo.updateProduct(id, data);
+//   const updatedProduct = updateRes.rows[0];
+
+//   if (data.price && data.price != oldPrice) {
+//     await repo.addPriceHistory(id, oldPrice, data.price);
+//   }
+
+//   return updatedProduct;
+// };
+
 exports.updateProduct = async (id, data) => {
-  const oldProduct = await repo.getProductById(id);
-  if (oldProduct.rows.length === 0) throw new Error("Product not found");
-  const oldPrice = oldProduct.rows[0].price;
-
-  const updateRes = await repo.updateProduct(id, data);
-  const updatedProduct = updateRes.rows[0];
-
-  if (data.price && data.price != oldPrice) {
-    await repo.addPriceHistory(id, oldPrice, data.price);
+  const oldProductRes = await repo.getProductById(id);
+  if (oldProductRes.rows.length === 0) {
+    throw new Error("Product not found");
   }
 
-  return updatedProduct;
+  const oldProduct = oldProductRes.rows[0];
+
+  // 1️⃣ Get current stock
+  const stockRes = await repo.getStocksByProduct(id);
+  const currentStock = stockRes.rows[0]?.quantity || 0;
+
+  // 2️⃣ If admin updated quantity → sync stock
+  if (data.quantity != null) {
+    const newQty = Number(data.quantity);
+    const diff = newQty - currentStock;
+
+    if (diff !== 0) {
+      await repo.adjustStock({
+        productId: id,
+        quantityChange: diff,
+        reason: "admin-update",
+      });
+    }
+
+    // ❌ IMPORTANT: remove quantity from product update
+    delete data.quantity;
+  }
+
+  // 3️⃣ Update other product fields
+  const updateRes = await repo.updateProduct(id, data);
+  return updateRes.rows[0];
 };
+
 
 
 

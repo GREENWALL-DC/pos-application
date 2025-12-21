@@ -21,17 +21,26 @@ exports.addSaleItem = async (client, sale_id, item) => {
   const total_price = item.quantity * (item.unit_price - discount);
 
   return await client.query(
-    `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, discount, total_price)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT INTO sale_items 
+     (sale_id, product_id, quantity, fulfilled_quantity, unit_price, discount, total_price)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
       sale_id,
       item.product_id,
       item.quantity,
+      0, // 👈 fulfilled_quantity ALWAYS starts at 0
       item.unit_price,
       discount,
-      total_price
+      total_price,
     ]
   );
+};
+
+exports.updateSaleStatus = async (client, saleId, status) => {
+  await client.query(`UPDATE sales SET sale_status = $1 WHERE id = $2`, [
+    status,
+    saleId,
+  ]);
 };
 
 // FULL INVOICE JOIN
