@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -29,6 +30,14 @@ class PdfReceiptService {
     );
 
     final today = receipt.invoiceDate.toString().split(' ').first;
+
+    final qrData = generateZatcaQr(
+      sellerName: CompanyFixedData.companyNameEn,
+      vatNumber: CompanyFixedData.vatNumber,
+      invoiceDate: receipt.invoiceDate,
+      totalWithVat: receipt.netTotal,
+      vatAmount: receipt.vatAmount,
+    );
 
     pdf.addPage(
       pw.Page(
@@ -64,7 +73,6 @@ class PdfReceiptService {
                           //     fontSize: 9,
                           //   ),
                           // ),
-
                           pw.Text(
                             CompanyFixedData.companyNameEn,
                             style: pw.TextStyle(
@@ -239,7 +247,7 @@ class PdfReceiptService {
                     pw.Expanded(
                       child: pw.BarcodeWidget(
                         barcode: pw.Barcode.qrCode(),
-                        data: receipt.qrPayload,
+                        data: qrData,
                         width: 110,
                         height: 110,
                       ),
@@ -361,5 +369,30 @@ class PdfReceiptService {
     return pw.TableRow(
       children: [_cell(font, label), _cell(font, value.toStringAsFixed(2))],
     );
+  }
+
+  static String generateZatcaQr({
+    required String sellerName,
+    required String vatNumber,
+    required DateTime invoiceDate,
+    required double totalWithVat,
+    required double vatAmount,
+  }) {
+    List<int> bytes = [];
+
+    void addTLV(int tag, String value) {
+      final valueBytes = value.codeUnits;
+      bytes.add(tag);
+      bytes.add(valueBytes.length);
+      bytes.addAll(valueBytes);
+    }
+
+    addTLV(1, sellerName);
+    addTLV(2, vatNumber);
+    addTLV(3, invoiceDate.toIso8601String());
+    addTLV(4, totalWithVat.toStringAsFixed(2));
+    addTLV(5, vatAmount.toStringAsFixed(2));
+
+    return base64Encode(bytes);
   }
 }

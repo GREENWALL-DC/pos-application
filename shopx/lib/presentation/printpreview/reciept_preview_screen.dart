@@ -7,8 +7,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shopx/domain/reciept/receipt_data.dart';
+import 'package:shopx/domain/utils/zatca_qr.dart';
 import 'package:shopx/infrastructure/printer/receipt_image_builder.dart';
 import 'package:shopx/infrastructure/printer/thermal_printer_service.dart'; // Ensure path matches your project structure
 
@@ -19,6 +21,16 @@ class RecieptPreviewScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final qrData = ZatcaQr.generate(
+      sellerName: receipt.companyNameEn,
+      vatNumber: receipt.vatNumber,
+      invoiceDate: receipt.invoiceDate,
+      totalWithVat: receipt.netTotal,
+      vatAmount: receipt.vatAmount,
+    );
+
+    final isPrinting = useState(false);
+
     // Standard thermal paper width (approx 384px for 58mm/80mm)
     const double receiptWidth = 384;
     return Scaffold(
@@ -86,7 +98,7 @@ class RecieptPreviewScreen extends HookConsumerWidget {
                                 _buildCustomerInfo(receipt),
                                 _buildItemsTable(receipt),
                                 _buildTotals(receipt),
-                                _buildFooter(),
+                                _buildFooter(qrData),
                               ],
                             ),
                           ),
@@ -107,14 +119,33 @@ class RecieptPreviewScreen extends HookConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
+
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => _printReceipt(context),
+                              onPressed: isPrinting.value
+                                  ? null
+                                  : () async {
+                                      isPrinting.value = true;
+
+                                      await _printReceipt(context);
+
+                                      // Re-enable after 15 seconds
+                                      Future.delayed(
+                                        const Duration(seconds: 15),
+                                        () {
+                                          isPrinting.value = false;
+                                        },
+                                      );
+                                    },
                               icon: const Icon(Icons.print_outlined),
-                              label: const Text("Print"),
+                              label: Text(
+                                isPrinting.value ? "Printing..." : "Print",
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.black,
                                 foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.grey.shade400,
+                                disabledForegroundColor: Colors.white,
                               ),
                             ),
                           ),
@@ -391,19 +422,14 @@ class RecieptPreviewScreen extends HookConsumerWidget {
   }
 
   // --- FOOTER ---
-  Widget _buildFooter() {
+  Widget _buildFooter(String qrData) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         children: [
           // Simulated QR Code
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black, width: 2),
-            ),
-            child: const Icon(Icons.qr_code_2_rounded, size: 120),
-          ),
+          QrImageView(data: qrData, size: 120, backgroundColor: Colors.white),
+
           const SizedBox(height: 15),
           const Text(
             "Thank You | شكرا لكم",
