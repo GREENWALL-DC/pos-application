@@ -1,59 +1,45 @@
 //Only SQL. No business rules.
 
 const db =require("../../config/db");
-
 exports.getAllProducts = async () => {
   return await db.query(`
-    SELECT 
-      p.*,
-      COALESCE(s.quantity, 0) AS quantity
-    FROM products p
-    LEFT JOIN stock s ON s.product_id = p.id
-    ORDER BY p.id ASC
+    SELECT * 
+    FROM products
+    ORDER BY id ASC
   `);
 };
 
-
 exports.getProductById = async (id) => {
   return await db.query(`
-    SELECT 
-      p.*,
-      COALESCE(s.quantity, 0) AS quantity
-    FROM products p
-    LEFT JOIN stock s ON s.product_id = p.id
-    WHERE p.id = $1
+    SELECT * 
+    FROM products
+    WHERE id = $1
   `, [id]);
 };
 
 
-exports.createProduct = async ({ name, price, category, quantity, code, vat }) => {
+exports.createProduct = async ({ name, price, category, code, vat }) => {
   return await db.query(`
-    INSERT INTO products (name, price, category, quantity, code, vat)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING *`,
-    [name, price, category, quantity, code, vat]
-  );
+    INSERT INTO products (name, price, category, code, vat)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *
+  `, [name, price, category, code, vat]);
 };
 
-
-exports.updateProduct = async (
-  id,
-  { name, price, category, quantity, code, vat }
-) => {
+exports.updateProduct = async (id, { name, price, category, code, vat }) => {
   return await db.query(`
     UPDATE products 
     SET 
       name = COALESCE($1, name),
       price = COALESCE($2, price),
       category = COALESCE($3, category),
-      quantity = COALESCE($4, quantity),
-      code = COALESCE($5, code),
-      vat = COALESCE($6, vat)
-    WHERE id = $7
-    RETURNING *`,
-    [name, price, category, quantity, code, vat, id]
-  );
+      code = COALESCE($4, code),
+      vat = COALESCE($5, vat)
+    WHERE id = $6
+    RETURNING *
+  `, [name, price, category, code, vat, id]);
 };
+
 
 
 

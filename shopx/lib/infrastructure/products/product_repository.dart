@@ -56,33 +56,41 @@ Future<Product> createProduct(Product product, List<Uint8List> images) async {
 // Update product JSON (admin)
 Future<Product> updateProduct(
   String id,
-  Product product,
+  Product updatedProduct,
   List<String> existingUrls,
   List<Uint8List> newImages,
 ) async {
-  // 1️⃣ Update core product fields
-  await api.updateProduct(id, product.toJson());
+  // 1️⃣ Get current product from backend (real stock)
+  final currentJson = await api.getProductById(id);
+  final currentProduct = Product.fromJson(currentJson);
 
-  // 2️⃣ Upload new images
-  List<String> newUrls = [];
+  // 2️⃣ Calculate stock difference
+  final double diff =
+      updatedProduct.quantity - currentProduct.quantity;
+
+  // 3️⃣ Adjust stock ONLY if quantity changed
+  if (diff != 0) {
+    await api.adjustStock(
+      productId: id,
+      quantityChange: diff,
+      reason: "admin-update",
+    );
+  }
+
+  // 4️⃣ Update product metadata (NO quantity)
+  final metaJson = updatedProduct.toJson();
+  metaJson.remove("quantity");
+
+  await api.updateProduct(id, metaJson);
+
+  // 5️⃣ Upload new images if any
   if (newImages.isNotEmpty) {
     await api.uploadImages(int.parse(id), newImages);
   }
 
-  // 3️⃣ Return updated Product for UI
-  return Product(
-    id: id,
-    name: product.name,
-    price: product.price,
-    category: product.category,
-    quantity: product.quantity,
-    code: product.code,
-    vat: product.vat,
-    images: [
-      ...existingUrls, // keep old
-      ...newUrls,      // add new
-    ],
-  );
+  // 6️⃣ Fetch fresh product (backend truth)
+  final freshJson = await api.getProductById(id);
+  return Product.fromJson(freshJson);
 }
 
 

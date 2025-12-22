@@ -2,11 +2,12 @@ exports.validateCreateProduct = (req, res, next) => {
 const { name, price, quantity, category, code, vat } = req.body;
 
   // Removed "unit"
-  if (!name || !price || !quantity || !category || !code || vat == null) {
+ if (!name || !price || !category || !code || vat == null) {
   return res.status(400).json({
-    message: "name, price, category, quantity, code, vat are required",
+    message: "name, price, category, code, vat are required",
   });
 }
+
 
   next();
 };
@@ -14,20 +15,19 @@ const { name, price, quantity, category, code, vat } = req.body;
 
 // VALIDATE UPDATE PRODUCT - allow any one field except unit
 exports.validateUpdateProduct = (req, res, next) => {
- if (
-    !req.body.name &&
-    !req.body.price &&
-    !req.body.quantity &&
-    !req.body.category &&
-    !req.body.code &&
+  if (
+    req.body.name == null &&
+    req.body.price == null &&
+    req.body.category == null &&
+    req.body.code == null &&
     req.body.vat == null
-)
- {
+  ) {
     return res.status(400).json({
       message:
-        "At least one field (name / price / quantity / category / code) must be provided",
+        "At least one field (name / price / category / code / vat) must be provided",
     });
   }
 
   next();
 };
+

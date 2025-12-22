@@ -17,18 +17,12 @@ class ProductApi {
   // ✔ DO NOT create new Dio() here
   ProductApi(this._dio);
 
-
   // POST → Add Product
   Future<int> createProduct(Product product) async {
-  final res = await _dio.post(
-    "/products",
-    data: product.toJson(),
-  );
+    final res = await _dio.post("/products", data: product.toJson());
 
-  return res.data["id"]; // backend returns product id
-}
-
- 
+    return res.data["id"]; // backend returns product id
+  }
 
   // GET → Fetch All Products
   Future<List<dynamic>> getProducts() async {
@@ -42,49 +36,43 @@ class ProductApi {
     return response.data;
   }
 
-  // PUT → Update Product by ID
-  Future<void> updateProduct(
-    String id,
-    Map<String, dynamic> data,
-   
-  ) async {
+  // PUT → Update Product (metadata only)
+  Future<void> updateProduct(String id, Map<String, dynamic> data) async {
     await _dio.put(
       "/products/$id",
-      data: data,
+      data: data, // name, price, category, code, vat ONLY
     );
   }
 
- 
-
+  // POST → Adjust stock for a product
+  Future<void> adjustStock({
+    required String productId,
+    required double quantityChange,
+    String reason = "admin-adjust",
+  }) async {
+    await _dio.post(
+      "/products/$productId/adjust-stock",
+      data: {"quantity": quantityChange, "reason": reason},
+    );
+  }
 
   // DELETE → Remove Product by ID
   Future<void> deleteProduct(String id) async {
-    await _dio.delete(
-      "/products/$id",
-    );
+    await _dio.delete("/products/$id");
   }
 
+  Future<void> uploadImages(int productId, List<Uint8List> images) async {
+    final formData = FormData();
 
+    for (int i = 0; i < images.length; i++) {
+      formData.files.add(
+        MapEntry(
+          "images",
+          MultipartFile.fromBytes(images[i], filename: "image_$i.png"),
+        ),
+      );
+    }
 
-Future<void> uploadImages(int productId, List<Uint8List> images) async {
-  final formData = FormData();
-
-  for (int i = 0; i < images.length; i++) {
-    formData.files.add(
-      MapEntry(
-        "images",
-        MultipartFile.fromBytes(images[i], filename: "image_$i.png"),
-      ),
-    );
+    await _dio.post("/products/$productId/images", data: formData);
   }
-
-  await _dio.post(
-    "/products/$productId/images",
-    data: formData,
-  );
 }
-
- 
-}
-
-

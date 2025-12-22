@@ -9,7 +9,7 @@ exports.getAllProducts = async () => {
 
   for (const product of products) {
     const imgRes = await repo.getImagesByProduct(product.id);
-    product.images = imgRes.rows.map(row => row.image_path);
+    product.images = imgRes.rows.map((row) => row.image_path);
 
     // ⭐ NEW: attach real stock
     const stockRes = await repo.getStocksByProduct(product.id);
@@ -19,7 +19,6 @@ exports.getAllProducts = async () => {
   return products;
 };
 
-
 exports.getProductById = async (id) => {
   const result = await repo.getProductById(id);
   if (result.rows.length === 0) throw new Error("Product not found");
@@ -28,7 +27,7 @@ exports.getProductById = async (id) => {
 
   // Attach images
   const imgRes = await repo.getImagesByProduct(id);
-  product.images = imgRes.rows.map(r => r.image_path);
+  product.images = imgRes.rows.map((r) => r.image_path);
 
   // ⭐ NEW: get real stock
   const stockRes = await repo.getStocksByProduct(id);
@@ -40,53 +39,27 @@ exports.getProductById = async (id) => {
   return product;
 };
 
-
-
-
-
-
-
 // CREATE NEW PRODUCT
 // This function creates a product AND sets up its initial stock
 exports.createProduct = async (data) => {
-  // Create product with quantity + code included
+  const { quantity = 0 } = data;
+
+  // create product WITHOUT quantity
   const createRes = await repo.createProduct(data);
   const product = createRes.rows[0];
 
-  // ✅ Use actual quantity from product
-  const initialQty = Number(product.quantity) || 0;
-
-  // Create initial stock
-  await repo.adjustStock({
-    productId: product.id,
-    quantityChange: initialQty,   // ⭐ Correct
-    reason: "initial-stock",      // ⭐ More meaningful
-  });
+  // create initial stock
+  if (quantity !== 0) {
+    await repo.adjustStock({
+      productId: product.id,
+      quantityChange: Number(quantity),
+      reason: "initial-stock",
+    });
+  }
 
   return product;
 };
 
-
-
-
-// UPDATE EXISTING PRODUCT
-// This function updates a product and tracks price changes
-
-
-// exports.updateProduct = async (id, data) => {
-//   const oldProduct = await repo.getProductById(id);
-//   if (oldProduct.rows.length === 0) throw new Error("Product not found");
-//   const oldPrice = oldProduct.rows[0].price;
-
-//   const updateRes = await repo.updateProduct(id, data);
-//   const updatedProduct = updateRes.rows[0];
-
-//   if (data.price && data.price != oldPrice) {
-//     await repo.addPriceHistory(id, oldPrice, data.price);
-//   }
-
-//   return updatedProduct;
-// };
 
 exports.updateProduct = async (id, data) => {
   const oldProductRes = await repo.getProductById(id);
@@ -96,35 +69,10 @@ exports.updateProduct = async (id, data) => {
 
   const oldProduct = oldProductRes.rows[0];
 
-  // 1️⃣ Get current stock
-  const stockRes = await repo.getStocksByProduct(id);
-  const currentStock = stockRes.rows[0]?.quantity || 0;
-
-  // 2️⃣ If admin updated quantity → sync stock
-  if (data.quantity != null) {
-    const newQty = Number(data.quantity);
-    const diff = newQty - currentStock;
-
-    if (diff !== 0) {
-      await repo.adjustStock({
-        productId: id,
-        quantityChange: diff,
-        reason: "admin-update",
-      });
-    }
-
-    // ❌ IMPORTANT: remove quantity from product update
-    delete data.quantity;
-  }
-
   // 3️⃣ Update other product fields
   const updateRes = await repo.updateProduct(id, data);
   return updateRes.rows[0];
 };
-
-
-
-
 
 exports.deleteProduct = async (id) => {
   const result = await repo.deleteProduct(id);
@@ -135,27 +83,25 @@ exports.deleteProduct = async (id) => {
 };
 
 exports.adjustStock = async ({ productId, quantityChange, reason }) => {
-    const stockRes = await repo.adjustStock({
-        productId,
-        quantityChange,
-        reason,
-    });
+  const stockRes = await repo.adjustStock({
+    productId,
+    quantityChange,
+    reason,
+  });
 
-    return stockRes.rows[0];
+  return stockRes.rows[0];
 };
-
 
 // GET STOCK INFORMATION
 // This function gets current stock levels for a product
-exports.getStockWithHistory = async (productId)=>{
-    const stock = await repo.getStocksByProduct(productId);
-    return stock.rows[0];
-}
-
+exports.getStockWithHistory = async (productId) => {
+  const stock = await repo.getStocksByProduct(productId);
+  return stock.rows[0];
+};
 
 exports.saveProductImages = async (productId, files) => {
   for (const file of files) {
-    const imagePath= `/uploads/products/${file.filename}`;
+    const imagePath = `/uploads/products/${file.filename}`;
     await repo.addProductImage(productId, imagePath);
   }
 };

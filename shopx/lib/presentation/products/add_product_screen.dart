@@ -238,7 +238,19 @@ kHeight16,
             kHeight16,
 
             // Field: Quantity (always in KG)
-            _buildLabel('Quantity (in Kg)'),
+      _buildLabel('Total Stock (in Kg)'),
+      const SizedBox(height: 6),
+const Text(
+  'Enter the TOTAL stock available. '
+  'System will automatically calculate the adjustment.',
+  style: TextStyle(
+    fontSize: 12,
+    color: Colors.grey,
+  ),
+),
+
+
+
             _buildTextField(
               controller: quantityController,
               hintText: 'Enter quantity in Kg',

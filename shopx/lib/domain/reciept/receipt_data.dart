@@ -4,10 +4,10 @@
 
 /// Represents a single line item on the receipt
 class ReceiptItem {
-  final String nameEn;      // Item name in English
-  final String? nameAr;     // Item name in Arabic (optional)
-  final double unitPrice;   // Price per unit
-  final int quantity;       // Quantity sold
+  final String nameEn; // Item name in English
+  final String? nameAr; // Item name in Arabic (optional)
+  final double unitPrice; // Price per unit
+  final int quantity; // Quantity sold
 
   const ReceiptItem({
     required this.nameEn,
@@ -31,6 +31,13 @@ class ReceiptData {
   final String crNumber;
   final String vatNumber;
   final String mobile;
+
+  //customer Information
+  
+  // OPTIONAL — only needed for PDF send
+  final String? customerAddress;
+  final String? customerPhone;
+  final double? discount;
 
   // --------------------
   // Invoice Information
@@ -65,6 +72,9 @@ class ReceiptData {
     required this.crNumber,
     required this.vatNumber,
     required this.mobile,
+     this.customerAddress,
+     this.customerPhone,
+    this.discount,
     required this.invoiceNumber,
     required this.invoiceDate,
     required this.customerName,
