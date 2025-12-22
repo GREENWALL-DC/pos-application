@@ -12,41 +12,35 @@ import 'package:shopx/domain/products/product.dart';
 
 class AddProductScreen extends HookConsumerWidget {
   final Product? productToEdit;
-  const AddProductScreen({super.key,
-  this.productToEdit
-  });
+  const AddProductScreen({super.key, this.productToEdit});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
-
-
-    
     // Hooks for TextFields
-   final nameController = useTextEditingController(
-  text: productToEdit?.name ?? "",
-);
+    final nameController = useTextEditingController(
+      text: productToEdit?.name ?? "",
+    );
 
-final priceController = useTextEditingController(
-  text: productToEdit != null ? productToEdit!.price.toString() : "",
-);
+    final priceController = useTextEditingController(
+      text: productToEdit != null ? productToEdit!.price.toString() : "",
+    );
 
-final categoryController = useTextEditingController(
-  text: productToEdit?.category ?? "",
-);
+    final categoryController = useTextEditingController(
+      text: productToEdit?.category ?? "",
+    );
 
-final codeController = useTextEditingController(
-  text: productToEdit?.code ?? "",
-);
+    final codeController = useTextEditingController(
+      text: productToEdit?.code ?? "",
+    );
 
-final quantityController = useTextEditingController(
-  text: productToEdit != null ? productToEdit!.quantity.toString() : "",
-);
+    final quantityController = useTextEditingController(
+      text: "",
+      //  productToEdit != null ? productToEdit!.quantity.toString() : "",
+    );
 
-final vatController = useTextEditingController(
-  text: productToEdit != null ? productToEdit!.vat.toString() : "",
-);
-
+    final vatController = useTextEditingController(
+      text: productToEdit != null ? productToEdit!.vat.toString() : "",
+    );
 
     final selectedUnit = useState("Kg"); // default
 
@@ -61,11 +55,13 @@ final vatController = useTextEditingController(
     const Color labelColor = Color(0xFF333333); // Dark text color
     const Color removeRed = Color(0xFFE53935);
 
-// OLD SERVER IMAGES (URLs)
-final existingImageUrls = useState<List<String>>(productToEdit?.images ?? []);
+    // OLD SERVER IMAGES (URLs)
+    final existingImageUrls = useState<List<String>>(
+      productToEdit?.images ?? [],
+    );
 
-// NEWLY PICKED IMAGES (bytes)
-final pickedImages = useState<List<Uint8List>>([]);
+    // NEWLY PICKED IMAGES (bytes)
+    final pickedImages = useState<List<Uint8List>>([]);
 
     Future<void> pickFileOrImage() async {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -87,35 +83,32 @@ final pickedImages = useState<List<Uint8List>>([]);
       }
     }
 
-
     useEffect(() {
-  if (productToEdit != null) {
-    nameController.text = productToEdit!.name;
-    priceController.text = productToEdit!.price.toString();
-    categoryController.text = productToEdit!.category;
-    codeController.text = productToEdit!.code;
-    quantityController.text = productToEdit!.quantity.toString();
-    vatController.text = productToEdit!.vat.toString();
-  }
-  return null;
-}, [productToEdit]);
-
+      if (productToEdit != null) {
+        nameController.text = productToEdit!.name;
+        priceController.text = productToEdit!.price.toString();
+        categoryController.text = productToEdit!.category;
+        codeController.text = productToEdit!.code;
+        quantityController.text = productToEdit!.quantity.toString();
+        vatController.text = productToEdit!.vat.toString();
+      }
+      return null;
+    }, [productToEdit]);
 
     void cancelAddProduct() {
-  if (productToEdit == null) {
-    // Reset only in add mode
-    nameController.clear();
-    priceController.clear();
-    categoryController.clear();
-    codeController.clear();
-    quantityController.clear();
-    selectedUnit.value = "Kg";
-    pickedImages.value = [];
-  }
+      if (productToEdit == null) {
+        // Reset only in add mode
+        nameController.clear();
+        priceController.clear();
+        categoryController.clear();
+        codeController.clear();
+        quantityController.clear();
+        selectedUnit.value = "Kg";
+        pickedImages.value = [];
+      }
 
-  Navigator.pop(context);
-}
-
+      Navigator.pop(context);
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -145,17 +138,15 @@ final pickedImages = useState<List<Uint8List>>([]);
               ),
 
               // TITLE (CENTERED)
-               Expanded(
+              Expanded(
                 child: Center(
-                 child: Text(
-  productToEdit == null ? 'Add a product' : 'Edit product',
-  style: TextStyle(
-    color: Colors.blue,
-    fontWeight: FontWeight.bold
-  ),
-  
-),
-
+                  child: Text(
+                    productToEdit == null ? 'Add a product' : 'Edit product',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
 
@@ -214,18 +205,21 @@ final pickedImages = useState<List<Uint8List>>([]);
             kHeight16,
 
             // Field: VAT (%)
-_buildLabel('VAT (%)'),
-_buildTextField(
-  controller: vatController,
-  hintText: 'Enter VAT percentage',
-  fillColor: inputFillColor,
-  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-  inputFormatters: [
-    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')), // only numbers and dot
-  ],
-),
-kHeight16,
-
+            _buildLabel('VAT (%)'),
+            _buildTextField(
+              controller: vatController,
+              hintText: 'Enter VAT percentage',
+              fillColor: inputFillColor,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^\d*\.?\d*$'),
+                ), // only numbers and dot
+              ],
+            ),
+            kHeight16,
 
             // Field: Categories
             _buildLabel('Categories'),
@@ -238,18 +232,25 @@ kHeight16,
             kHeight16,
 
             // Field: Quantity (always in KG)
-      _buildLabel('Total Stock (in Kg)'),
-      const SizedBox(height: 6),
-const Text(
-  'Enter the TOTAL stock available. '
-  'System will automatically calculate the adjustment.',
-  style: TextStyle(
-    fontSize: 12,
-    color: Colors.grey,
-  ),
-),
+            _buildLabel('Adjust Stock (in Kg)'),
+            const SizedBox(height: 6),
 
+            if (productToEdit != null) ...[
+              Text(
+                'Current Stock: ${productToEdit!.quantity} Kg',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+            ],
 
+            const Text(
+              'Enter how much stock to ADD or REMOVE.\n'
+              'Use + to add, - to remove.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
 
             _buildTextField(
               controller: quantityController,
@@ -294,207 +295,243 @@ const Text(
             kHeight12,
 
             // Image Picker Widget
-          Container(
-  height: 100,
-  decoration: BoxDecoration(
-    border: Border.all(color: Colors.grey.shade400),
-    borderRadius: BorderRadius.circular(4),
-  ),
-  padding: const EdgeInsets.all(8),
-  child: Row(
-    children: [
-      // ---------- PLACEHOLDER ----------
-      if (existingImageUrls.value.isEmpty && pickedImages.value.isEmpty)
-        Container(
-          width: 80,
-          decoration: BoxDecoration(
-            color: inputFillColor,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Center(
-            child: Icon(
-              Icons.image_outlined,
-              color: Colors.grey.shade700,
-              size: 30,
-            ),
-          ),
-        )
-      else
-        // ---------- IMAGE LIST VIEW ----------
-        Expanded(
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              // ========= OLD IMAGES (URLs) =========
-              ...existingImageUrls.value.map(
-                (url) => Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.network(
-                      "http://localhost:5000"+url,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
+            Container(
+              height: 100,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  // ---------- PLACEHOLDER ----------
+                  if (existingImageUrls.value.isEmpty &&
+                      pickedImages.value.isEmpty)
+                    Container(
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: inputFillColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          color: Colors.grey.shade700,
+                          size: 30,
+                        ),
+                      ),
+                    )
+                  else
+                    // ---------- IMAGE LIST VIEW ----------
+                    Expanded(
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          // ========= OLD IMAGES (URLs) =========
+                          ...existingImageUrls.value.map(
+                            (url) => Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Image.network(
+                                    "http://localhost:5000" + url,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      final updated = List<String>.from(
+                                        existingImageUrls.value,
+                                      );
+                                      updated.remove(url);
+                                      existingImageUrls.value = updated;
+                                    },
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      padding: const EdgeInsets.all(4),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          // ========= NEW IMAGES (MEMORY) =========
+                          ...pickedImages.value.map(
+                            (bytes) => Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Image.memory(
+                                    bytes,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      final updated = List<Uint8List>.from(
+                                        pickedImages.value,
+                                      );
+                                      updated.remove(bytes);
+                                      pickedImages.value = updated;
+                                    },
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      padding: const EdgeInsets.all(4),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          final updated =
-                              List<String>.from(existingImageUrls.value);
-                          updated.remove(url);
-                          existingImageUrls.value = updated;
-                        },
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          padding: const EdgeInsets.all(4),
-                          child: const Icon(Icons.close,
-                              size: 14, color: Colors.white),
+
+                  const SizedBox(width: 10),
+
+                  // ---------- PICK IMAGE BUTTON ----------
+                  SizedBox(
+                    height: 36,
+                    child: ElevatedButton(
+                      onPressed: pickFileOrImage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: darkBlueButton,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Choose a photo',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-
-              const SizedBox(width: 10),
-
-              // ========= NEW IMAGES (MEMORY) =========
-              ...pickedImages.value.map(
-                (bytes) => Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.memory(
-                        bytes,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          final updated =
-                              List<Uint8List>.from(pickedImages.value);
-                          updated.remove(bytes);
-                          pickedImages.value = updated;
-                        },
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          padding: const EdgeInsets.all(4),
-                          child: const Icon(Icons.close,
-                              size: 14, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-      const SizedBox(width: 10),
-
-      // ---------- PICK IMAGE BUTTON ----------
-      SizedBox(
-        height: 36,
-        child: ElevatedButton(
-          onPressed: pickFileOrImage,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: darkBlueButton,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
             ),
-            elevation: 0,
-          ),
-          child: const Text(
-            'Choose a photo',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
-),
-
 
             kHeight40,
 
             // --- Footer Buttons ---
 
             // Add Button
-           SizedBox(
-  width: double.infinity,
-  height: 50,
-  child: ElevatedButton(
-    onPressed: () async {
-      final images = pickedImages.value;
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final images = pickedImages.value;
 
-      final product = Product(
-        id: productToEdit?.id, // keep old ID in edit mode
-        name: nameController.text,
-        price: double.parse(priceController.text),
-        category: categoryController.text,
-        code: codeController.text,
-        quantity: double.parse(quantityController.text),
-         vat: double.tryParse(vatController.text.trim()) ?? 0.0,
-      );
+                  final product = Product(
+                    id: productToEdit?.id, // keep old ID in edit mode
+                    name: nameController.text,
+                    price: double.parse(priceController.text),
+                    category: categoryController.text,
+                    code: codeController.text,
+                    quantity: double.parse(quantityController.text),
+                    vat: double.tryParse(vatController.text.trim()) ?? 0.0,
+                  );
 
-      if (productToEdit == null) {
-        // CREATE NEW PRODUCT
-        await ref
-            .read(productNotifierProvider.notifier)
-            .createProduct(product, images);
-      } else {
-        // UPDATE EXISTING PRODUCT
-      await ref.read(productNotifierProvider.notifier).updateProduct(
-  productToEdit!.id!,
-  product,
-  existingUrls: existingImageUrls.value,
-  newImages: pickedImages.value,
-);
+                  if (productToEdit == null) {
+                    // CREATE NEW PRODUCT
+                    await ref
+                        .read(productNotifierProvider.notifier)
+                        .createProduct(product, images);
+                  } else {
+                    // UPDATE EXISTING PRODUCT
 
-      }
+                    // 1️⃣ Parse adjustment value
+                    final adjustment =
+                        double.tryParse(quantityController.text.trim()) ?? 0.0;
 
-      Navigator.pop(context);
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: primaryBlue,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      elevation: 0,
-    ),
-    child: Text(
-      productToEdit == null
-          ? 'Add a new product'
-          : 'Update product',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  ),
-),
+                    // 2️⃣ Update product metadata ONLY (no stock change here)
+                    final updatedProduct = Product(
+                      id: productToEdit!.id,
+                      name: nameController.text,
+                      price: double.parse(priceController.text),
+                      category: categoryController.text,
+                      code: codeController.text,
+                      quantity: productToEdit!.quantity, // KEEP existing stock
+                      vat: double.tryParse(vatController.text.trim()) ?? 0.0,
+                    );
 
+                    await ref
+                        .read(productNotifierProvider.notifier)
+                        .updateProduct(
+                          productToEdit!.id!,
+                          updatedProduct,
+                          existingUrls: existingImageUrls.value,
+                          newImages: pickedImages.value,
+                        );
+
+                    // 3️⃣ Adjust stock ONLY if admin entered something
+                    if (adjustment != 0) {
+                      await ref
+                          .read(productNotifierProvider.notifier)
+                          .adjustStock(
+                            productId: productToEdit!.id!,
+                            quantityChange: adjustment,
+                          );
+                    }
+
+                    quantityController.clear();
+                  }
+
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  productToEdit == null
+                      ? 'Add a new product'
+                      : 'Update product',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
 
             kHeight20,
             // Remove Button

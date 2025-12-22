@@ -112,6 +112,44 @@ class ProductNotifier extends Notifier<ProductState> {
       throw Exception(e.toString());
     }
   }
+
+
+// 6️⃣ Adjust stock only (admin action)
+Future<void> adjustStock({
+  required String productId,
+  required double quantityChange,
+}) async {
+  state = state.copyWith(isLoading: true, error: null);
+
+  try {
+    // Call repository → API → backend
+    await ref.read(productRepositoryProvider).api.adjustStock(
+          productId: productId,
+          quantityChange: quantityChange,
+        );
+
+    // Fetch fresh product from backend (source of truth)
+    final updatedProduct =
+        await ref.read(productRepositoryProvider).getProductById(productId);
+
+    // Update product list in state
+    final updatedList = state.products.map((p) {
+      return p.id == productId ? updatedProduct : p;
+    }).toList();
+
+    state = state.copyWith(
+      isLoading: false,
+      products: updatedList,
+    );
+  } catch (e) {
+    state = state.copyWith(
+      isLoading: false,
+      error: e.toString(),
+    );
+  }
+}
+
+
 }
 
 final productNotifierProvider = NotifierProvider<ProductNotifier, ProductState>(
