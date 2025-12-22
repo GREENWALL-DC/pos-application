@@ -119,6 +119,20 @@ Future<void> deleteProduct(String id) async {
   }
 }
 
+// 5️⃣ Fetch SINGLE product (always fresh from backend)
+Future<Product> fetchProductById(String id) async {
+  try {
+    final product =
+        await ref.read(productRepositoryProvider).getProductById(id);
+
+    return product;
+  } catch (e) {
+    throw Exception(e.toString());
+  }
+}
+
+
+
 }
 
 final productNotifierProvider =

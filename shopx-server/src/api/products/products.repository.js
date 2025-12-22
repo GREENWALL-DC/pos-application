@@ -2,13 +2,29 @@
 
 const db =require("../../config/db");
 
-exports.getAllProducts = async()=>{
-    return await db.query("SELECT * FROM products ORDER BY id ASC");
+exports.getAllProducts = async () => {
+  return await db.query(`
+    SELECT 
+      p.*,
+      COALESCE(s.quantity, 0) AS quantity
+    FROM products p
+    LEFT JOIN stock s ON s.product_id = p.id
+    ORDER BY p.id ASC
+  `);
 };
 
-exports.getProductById = async(id)=>{
-    return await db.query("SELECT * FROM products WHERE id =$1",[id]);
+
+exports.getProductById = async (id) => {
+  return await db.query(`
+    SELECT 
+      p.*,
+      COALESCE(s.quantity, 0) AS quantity
+    FROM products p
+    LEFT JOIN stock s ON s.product_id = p.id
+    WHERE p.id = $1
+  `, [id]);
 };
+
 
 exports.createProduct = async ({ name, price, category, quantity, code, vat }) => {
   return await db.query(`

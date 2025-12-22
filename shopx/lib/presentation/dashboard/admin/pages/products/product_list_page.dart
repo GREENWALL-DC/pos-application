@@ -315,14 +315,37 @@ class adminProductListPage extends HookConsumerWidget {
                                           child: SizedBox(
                                             height: 40,
                                             child: ElevatedButton(
-                                              onPressed: () {
+                                              // onPressed: () {
+                                              //   Navigator.push(
+                                              //     context,
+                                              //     MaterialPageRoute(
+                                              //       builder: (_) =>
+                                              //           AddProductScreen(
+                                              //             productToEdit:
+                                              //                 product, // <-- IMPORTANT
+                                              //           ),
+                                              //     ),
+                                              //   );
+                                              // },
+                                              onPressed: () async {
+                                                // 1️⃣ Fetch fresh product from backend
+                                                final freshProduct = await ref
+                                                    .read(
+                                                      productNotifierProvider
+                                                          .notifier,
+                                                    )
+                                                    .fetchProductById(
+                                                      product.id!,
+                                                    );
+
+                                                // 2️⃣ Open edit screen with REAL stock value
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (_) =>
                                                         AddProductScreen(
                                                           productToEdit:
-                                                              product, // <-- IMPORTANT
+                                                              freshProduct, //fresh product
                                                         ),
                                                   ),
                                                 );

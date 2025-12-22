@@ -18,6 +18,10 @@ class AddProductScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+
+
+    
     // Hooks for TextFields
    final nameController = useTextEditingController(
   text: productToEdit?.name ?? "",
@@ -82,6 +86,20 @@ final pickedImages = useState<List<Uint8List>>([]);
         print("Picked ${pickedImages.value.length} images");
       }
     }
+
+
+    useEffect(() {
+  if (productToEdit != null) {
+    nameController.text = productToEdit!.name;
+    priceController.text = productToEdit!.price.toString();
+    categoryController.text = productToEdit!.category;
+    codeController.text = productToEdit!.code;
+    quantityController.text = productToEdit!.quantity.toString();
+    vatController.text = productToEdit!.vat.toString();
+  }
+  return null;
+}, [productToEdit]);
+
 
     void cancelAddProduct() {
   if (productToEdit == null) {
