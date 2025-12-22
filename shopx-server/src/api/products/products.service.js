@@ -7,10 +7,13 @@ exports.getAllProducts = async () => {
   const result = await repo.getAllProducts();
   const products = result.rows;
 
-  // Add images for each product
   for (const product of products) {
     const imgRes = await repo.getImagesByProduct(product.id);
     product.images = imgRes.rows.map(row => row.image_path);
+
+    // ⭐ NEW: attach real stock
+    const stockRes = await repo.getStocksByProduct(product.id);
+    product.quantity = stockRes.rows[0]?.quantity ?? 0;
   }
 
   return products;
@@ -27,8 +30,20 @@ exports.getProductById = async (id) => {
   const imgRes = await repo.getImagesByProduct(id);
   product.images = imgRes.rows.map(r => r.image_path);
 
+  // ⭐ NEW: get real stock
+  const stockRes = await repo.getStocksByProduct(id);
+  const realStock = stockRes.rows[0]?.quantity ?? 0;
+
+  // ⭐ OVERRIDE quantity with real stock
+  product.quantity = realStock;
+
   return product;
 };
+
+
+
+
+
 
 
 // CREATE NEW PRODUCT

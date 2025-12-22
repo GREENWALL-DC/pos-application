@@ -63,10 +63,18 @@ exports.createSale = async (data) => {
         ]
       );
 
-      // Deduct only fulfilled quantity
-      if (fulfillQty > 0) {
-        await stockService.adjustStock(item.product_id, -fulfillQty, "sale");
-      }
+      // // Deduct only fulfilled quantity
+      // if (fulfillQty > 0) {
+      //   await stockService.adjustStock(item.product_id, -fulfillQty, "sale");
+      // }
+
+      // Deduct FULL sold quantity (allow negative stock)
+await stockService.adjustStock(
+  item.product_id,
+  -item.quantity,
+  "sale"
+);
+
 
       // If anything pending → backorder
       if (pendingQty > 0) {
