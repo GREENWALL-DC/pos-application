@@ -198,6 +198,10 @@ Future<void> _initAuth() async {
     }
   }
 
+
+
+
+
   // 🔑 STEP 1: Login owner and get TEMP token
   Future<void> loginOwner(String username, String password) async {
     state = const AuthState.loading();
@@ -210,8 +214,15 @@ Future<void> _initAuth() async {
       // state = const AuthState.initial();
     } catch (e) {
       state = AuthState.error(e.toString());
+      throw e; // ✅ THIS LINE IS MANDATORY
     }
   }
+
+
+
+
+
+
 
   // 📱 STEP 2: Send OTP via any method (Email, WhatsApp, SMS, Missed Call)
   Future<void> sendOTP(String method) async {

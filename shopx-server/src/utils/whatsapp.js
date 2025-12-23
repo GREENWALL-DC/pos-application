@@ -52,7 +52,13 @@ exports.sendWhatsAppOtp = async (phone, otp) => {
     console.log("✅ WhatsApp OTP sent:", result.sid);
     return result;
   } catch (error) {
-    console.error("❌ WhatsApp OTP failed:", error.message);
-    throw new Error("Failed to send WhatsApp OTP");
-  }
+  console.error("❌ WhatsApp OTP FULL ERROR:", error);
+
+  throw new Error(
+    error?.message ||
+    error?.code ||
+    "Twilio WhatsApp OTP failed"
+  );
+}
+
 };

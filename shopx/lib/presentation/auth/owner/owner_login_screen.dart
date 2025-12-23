@@ -505,8 +505,75 @@ class OwnerLoginScreen extends HookConsumerWidget {
                             const Center(child: CircularProgressIndicator()),
                       );
 
+                      //   try {
+                      //     // 🔐 LOGIN
+                      //     await ref
+                      //         .read(authNotifierProvider.notifier)
+                      //         .loginOwner(
+                      //           emailController.text.trim(),
+                      //           passwordController.text.trim(),
+                      //         );
+
+                      //     // 📩 SEND OTP
+                      //     await ref
+                      //         .read(authNotifierProvider.notifier)
+                      //         .sendOTP(selectedOtpMethod.value!.toLowerCase());
+
+                      //     // ⭐ CLOSE LOADING
+                      //     if (context.mounted) Navigator.of(context).pop();
+
+                      //     // ✅ CHANGE UI ONLY AFTER SUCCESS
+                      //     isOtpSent.value = true;
+
+                      //     secondsLeft.value = 300;
+                      //     isTimerRunning.value = true;
+
+                      //     otpTimer.value = Timer.periodic(
+                      //       const Duration(seconds: 1),
+                      //       (timer) {
+                      //         if (secondsLeft.value == 0) {
+                      //           timer.cancel();
+                      //           isTimerRunning.value = false;
+                      //         } else {
+                      //           secondsLeft.value--;
+                      //         }
+                      //       },
+                      //     );
+
+                      //     final method = selectedOtpMethod.value!.toLowerCase();
+
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       SnackBar(
+                      //         content: Text(
+                      //           method == "whatsapp"
+                      //               ? "OTP sent to your WhatsApp"
+                      //               : "OTP sent to your email",
+                      //         ),
+                      //       ),
+                      //     );
+                      //   } catch (e) {
+                      //     // ⭐ CLOSE LOADING IF OPEN
+                      //     if (context.mounted) {
+                      //       Navigator.of(context, rootNavigator: true).pop();
+                      //     }
+
+                      //     // 🔁 RESET STATE
+                      //     otpTimer.value?.cancel();
+                      //     isTimerRunning.value = false;
+                      //     isOtpSent.value = false;
+
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       const SnackBar(
+                      //         content: Text(
+                      //           "Something went wrong. Please check your internet connection.",
+                      //         ),
+                      //       ),
+                      //     );
+                      //   }
+                      // }
+
                       try {
-                        // 🔐 LOGIN
+                        // 🔐 STEP 1: LOGIN OWNER (MUST SUCCEED)
                         await ref
                             .read(authNotifierProvider.notifier)
                             .loginOwner(
@@ -514,7 +581,7 @@ class OwnerLoginScreen extends HookConsumerWidget {
                               passwordController.text.trim(),
                             );
 
-                        // 📩 SEND OTP
+                        // 📩 STEP 2: SEND OTP (ONLY AFTER LOGIN SUCCESS)
                         await ref
                             .read(authNotifierProvider.notifier)
                             .sendOTP(selectedOtpMethod.value!.toLowerCase());
@@ -522,9 +589,8 @@ class OwnerLoginScreen extends HookConsumerWidget {
                         // ⭐ CLOSE LOADING
                         if (context.mounted) Navigator.of(context).pop();
 
-                        // ✅ CHANGE UI ONLY AFTER SUCCESS
+                        // ✅ STEP 3: CHANGE UI STATE (SAFE NOW)
                         isOtpSent.value = true;
-
                         secondsLeft.value = 300;
                         isTimerRunning.value = true;
 
@@ -552,23 +618,29 @@ class OwnerLoginScreen extends HookConsumerWidget {
                           ),
                         );
                       } catch (e) {
-                        // ⭐ CLOSE LOADING IF OPEN
+                        // ⭐ CLOSE LOADING
                         if (context.mounted) {
                           Navigator.of(context, rootNavigator: true).pop();
                         }
 
-                        // 🔁 RESET STATE
+                        // ❌ DO NOT CHANGE UI STATE
                         otpTimer.value?.cancel();
                         isTimerRunning.value = false;
                         isOtpSent.value = false;
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              "Something went wrong. Please check your internet connection.",
-                            ),
-                          ),
-                        );
+                        final error = e.toString().toLowerCase();
+
+                        String message = "Login failed";
+
+                        if (error.contains("invalid credentials")) {
+                          message = "Invalid username or password";
+                        } else if (error.contains("not authorized")) {
+                          message = "You are not allowed to login as admin";
+                        }
+
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(message)));
                       }
                     }
                     // =========================
