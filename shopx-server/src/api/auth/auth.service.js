@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const repo = require("./auth.repository");
 // const otpRepo = require("./auth.repository");
 const { sendEmail } = require("../../utils/email"); // ✅ ADD
-const { sendWhatsApp } = require("../../utils/whatsapp");
+const { sendWhatsAppOtp } = require("../../utils/whatsapp");
 const { generateOTP } = require("../../utils/otp");
 const { sendSMS } = require("../../utils/sms");
 
@@ -213,9 +213,10 @@ const sendOTP = async ({ userId, method }) => {
 
   // 🟢 WHATSAPP OTP (FREE TRIAL)
   else if (method === "whatsapp") {
-    if (!user.phone) throw new Error("User phone number not found");
-    await sendWhatsApp(user.phone, otp); // ✅ FIXED: WhatsApp implemented
-  }
+  if (!user.phone) throw new Error("User phone number not found");
+  await sendWhatsAppOtp(user.phone, otp);
+}
+
 
   // 🔴 SMS OTP (REQUIRES PAID TWILIO)
   else if (method === "sms") {

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,9 +16,10 @@ import 'package:shopx/infrastructure/printer/receipt_image_builder.dart';
 import 'package:shopx/infrastructure/printer/thermal_printer_service.dart'; // Ensure path matches your project structure
 
 class RecieptPreviewScreen extends HookConsumerWidget {
+  final GlobalKey repaintKey = GlobalKey();
   final ReceiptData receipt;
 
-  const RecieptPreviewScreen({super.key, required this.receipt});
+  RecieptPreviewScreen({super.key, required this.receipt});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -89,17 +91,20 @@ class RecieptPreviewScreen extends HookConsumerWidget {
                         physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Center(
-                          child: SizedBox(
-                            width: receiptWidth, // 384
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildHeader(receipt),
-                                _buildCustomerInfo(receipt),
-                                _buildItemsTable(receipt),
-                                _buildTotals(receipt),
-                                _buildFooter(qrData),
-                              ],
+                          child: RepaintBoundary(
+                            key: repaintKey,
+                            child: SizedBox(
+                              width: receiptWidth, // 384
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildHeader(receipt),
+                                  _buildCustomerInfo(receipt),
+                                  _buildItemsTable(receipt),
+                                  _buildTotals(receipt),
+                                  _buildFooter(qrData),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -164,7 +169,11 @@ class RecieptPreviewScreen extends HookConsumerWidget {
 
   Future<void> _shareReceipt(BuildContext context) async {
     try {
-      final ui.Image image = await ReceiptImageBuilder.build(receipt);
+      final boundary =
+          repaintKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
 
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
@@ -178,7 +187,7 @@ class RecieptPreviewScreen extends HookConsumerWidget {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Share failed')));
+      ).showSnackBar(const SnackBar(content: Text('Share failed')));
     }
   }
 

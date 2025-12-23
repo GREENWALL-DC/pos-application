@@ -1,18 +1,48 @@
 const db = require("../../config/db");
 
 // CREATE SALE
+
 exports.createSale = async (
   client,
-  { salesperson_id, customer_id, total_amount }
+  {
+    salesperson_id,
+    customer_id,
+    subtotal_amount,
+    discount_amount,
+    vat_percentage,
+    vat_amount,
+    total_amount,
+  }
 ) => {
   const result = await client.query(
-    `INSERT INTO sales (salesperson_id, customer_id, total_amount, payment_status)
-     VALUES ($1, $2, $3, 'paid')
+    `INSERT INTO sales 
+     (
+       salesperson_id,
+       customer_id,
+       subtotal_amount,
+       discount_amount,
+       vat_percentage,
+       vat_amount,
+       total_amount,
+       payment_status
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid')
      RETURNING *`,
-    [salesperson_id, customer_id, total_amount]
+    [
+      salesperson_id,
+      customer_id,
+      subtotal_amount,
+      discount_amount,
+      vat_percentage,
+      vat_amount,
+      total_amount,
+    ]
   );
+
   return result.rows[0];
 };
+
+
 
 // INSERT SALE ITEM
 exports.addSaleItem = async (client, sale_id, item) => {

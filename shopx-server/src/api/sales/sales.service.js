@@ -22,19 +22,43 @@ exports.createSale = async (data) => {
       throw new Error("Customer is required");
     }
 
-    // 2️⃣ CALCULATE TOTAL
-    let total_amount = 0;
-    data.items.forEach((i) => {
-      const discount = i.discount || 0;
-      total_amount += i.quantity * (i.unit_price - discount);
-    });
+    // 2️⃣ CALCULATE SUBTOTAL
+
+    const VAT_PERCENTAGE = 15;
+
+// 1️⃣ GROSS SUBTOTAL (NO ITEM DISCOUNT)
+let gross_subtotal = 0;
+data.items.forEach((i) => {
+  gross_subtotal += i.quantity * i.unit_price;
+});
+
+// 2️⃣ SALE-LEVEL DISCOUNT
+const discount_amount = Number(data.discount_amount || 0);
+
+// 3️⃣ TAXABLE AMOUNT
+const taxable_amount = gross_subtotal - discount_amount;
+
+// 4️⃣ VAT
+const vat_amount = taxable_amount * (VAT_PERCENTAGE / 100);
+
+// 5️⃣ FINAL TOTAL
+const total_amount = taxable_amount + vat_amount;
+
+
+
 
     // 3️⃣ CREATE MAIN SALE
     const sale = await repo.createSale(client, {
-      salesperson_id: data.salesperson_id,
-      customer_id: data.customer_id,
-      total_amount,
-    });
+  salesperson_id: data.salesperson_id,
+  customer_id: data.customer_id,
+  subtotal_amount: gross_subtotal,
+  discount_amount,
+  vat_percentage: VAT_PERCENTAGE,
+  vat_amount,
+  total_amount,
+});
+
+
 
     let isBackorder = false;
 

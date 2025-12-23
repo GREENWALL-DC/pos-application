@@ -1,53 +1,52 @@
 const twilio = require("twilio");
 
-// Initialize Twilio client (works with trial account)
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
 
-exports.sendWhatsApp = async (to, message) => {
+/**
+ * Send OTP via WhatsApp
+ * @param {string} phone - MUST be in international format (+91..., +966...)
+ * @param {string} otp - 4 digit OTP
+ */
+exports.sendWhatsAppOtp = async (phone, otp) => {
   try {
-    // Format phone number for WhatsApp
-    // Remove any spaces, dashes, and ensure country code
-    let formattedTo = to.replace(/\s+/g, '').replace(/-/g, '');
-    
-    // If number doesn't start with '+', add it (assuming Indian numbers)
-    if (!formattedTo.startsWith('+')) {
-      if (formattedTo.startsWith('91') && formattedTo.length === 12) {
-        formattedTo = '+' + formattedTo;
-      } else if (formattedTo.length === 10) {
-        formattedTo = '+91' + formattedTo; // Default to India
-      }
-    }
-    
-    // Add WhatsApp prefix if not present
-    if (!formattedTo.startsWith('whatsapp:')) {
-      formattedTo = 'whatsapp:' + formattedTo;
+    if (!phone) {
+      throw new Error("Phone number is required for WhatsApp OTP");
     }
 
-    console.log(`Sending WhatsApp to: ${formattedTo}`);
+    // Clean phone number (no spaces or dashes)
+    let to = phone.replace(/\s+/g, "").replace(/-/g, "");
+
+    // Ensure whatsapp prefix
+    if (!to.startsWith("whatsapp:")) {
+      to = `whatsapp:${to}`;
+    }
+
+    console.log("📲 Sending WhatsApp OTP to:", to);
 
     const result = await client.messages.create({
-      body: `🔐 Your Admin Login OTP: ${message}\n\nThis OTP is valid for 5 minutes. Do not share with anyone.`,
-      from: process.env.TWILIO_WHATSAPP_FROM, // Twilio sandbox number
-      to: formattedTo
+      from: process.env.TWILIO_WHATSAPP_FROM,
+      to,
+      body: `🔐 *JoyPros Admin Login OTP*\n\nYour OTP is *${otp}*\n\nThis OTP is valid for 5 minutes.\nDo not share this code with anyone.`,
     });
 
-    console.log(`WhatsApp OTP sent successfully. SID: ${result.sid}`);
+    console.log("✅ WhatsApp OTP sent. SID:", result.sid);
     return result;
   } catch (error) {
-    console.error("WhatsApp sending failed:", error);
-    
-    // User-friendly error messages
+    console.error("❌ WhatsApp OTP failed:", error);
+
     if (error.code === 21211) {
       throw new Error("Invalid phone number format");
-    } else if (error.code === 21608) {
-      throw new Error("WhatsApp not enabled for this number. Please join Twilio sandbox first.");
-    } else if (error.code === 21408) {
-      throw new Error("Permission to send WhatsApp message denied. Recipient must join Twilio sandbox.");
-    } else {
-      throw new Error("Failed to send WhatsApp OTP. Please try another method.");
     }
+
+    if (error.code === 21408 || error.code === 21608) {
+      throw new Error(
+        "WhatsApp not enabled for this number. Please join Twilio sandbox."
+      );
+    }
+
+    throw new Error("Failed to send WhatsApp OTP");
   }
 };

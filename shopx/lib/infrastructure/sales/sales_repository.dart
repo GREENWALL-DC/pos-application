@@ -16,12 +16,20 @@ Future<int> createSale({
   required int customerId,
   required List<Map<String, dynamic>> items,
   required String paymentMethod,
+   required double discountAmount,
 }) async {
   final response = await api.createSale({
     "customer_id": customerId,
     "items": items,
     "payment_method": paymentMethod,
+     "discount_amount": discountAmount, 
   });
+
+
+
+
+
+
   print("🔥 RAW SALE RESPONSE = $response");
 
 

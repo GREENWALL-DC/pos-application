@@ -10,7 +10,6 @@ import 'package:shopx/domain/products/product.dart';
 import 'package:shopx/presentation/cart/cart_success_screen.dart'; // Ensure this path matches your project
 
 class CartScreen extends HookConsumerWidget {
-  
   const CartScreen({super.key});
 
   @override
@@ -42,14 +41,38 @@ class CartScreen extends HookConsumerWidget {
     // Value is 'cash' or 'card'
     final paymentMethod = useState<String>("cash");
 
-    // Calculate Totals
-    // Assuming your CartState has a getter for totalPrice, otherwise calculate here:
+    // ================= DISCOUNT + VAT LOGIC =================
+    const double VAT_PERCENTAGE = 15;
+
+    // Subtotal (gross)
     final double subTotal = cartItems.fold(
       0,
       (sum, item) => sum + (item.product.price * item.quantity),
     );
-    final double discount = 0.00;
-    final double totalPayable = subTotal - discount;
+
+    // Discount input controller
+   final discountController = useTextEditingController();
+final discountAmount = useState<double>(0);
+
+useEffect(() {
+  discountController.text = "0";
+  discountController.addListener(() {
+    discountAmount.value =
+        double.tryParse(discountController.text) ?? 0.0;
+  });
+  return null;
+}, []);
+
+    // Taxable amount (after discount)
+ final double taxableAmount =
+    (subTotal - discountAmount.value).clamp(0, double.infinity);
+
+
+    // VAT (15% after discount)
+    final double vatAmount = taxableAmount * VAT_PERCENTAGE / 100;
+
+    // Final total
+    final double totalPayable = taxableAmount + vatAmount;
 
     // --- LOGIC: Place Order ---
     void handlePlaceOrder() async {
@@ -77,64 +100,59 @@ class CartScreen extends HookConsumerWidget {
         };
       }).toList();
 
-final stockMap = ref.read(stockNotifierProvider).stock;
+      final stockMap = ref.read(stockNotifierProvider).stock;
 
-bool hasBackorder = false;
+      bool hasBackorder = false;
 
-for (var item in cartItems) {
-  final available = stockMap[item.product.id] ?? 0.0;
+      for (var item in cartItems) {
+        final available = stockMap[item.product.id] ?? 0.0;
 
-  if (available <= 0 || item.quantity > available) {
-    hasBackorder = true;
-  }
-}
-
-
-
+        if (available <= 0 || item.quantity > available) {
+          hasBackorder = true;
+        }
+      }
 
       // 3. Call backend and create sale
       try {
         print("🛒 Creating sale...");
+
         final saleId = await ref
             .read(salesNotifierProvider.notifier)
             .createSale(
               customerId: selectedCustomer.value?.id ?? 0,
               items: saleItems,
               paymentMethod: paymentMethod.value,
+             discountAmount: discountAmount.value,
+
             );
 
-             // OPTIONAL INFO MESSAGE (correct place)
-  if (hasBackorder) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Order placed with backordered items"),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
+        // OPTIONAL INFO MESSAGE (correct place)
+        if (hasBackorder) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Order placed with backordered items"),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
 
         // 4. Clear cart
         ref.read(cartProvider.notifier).clearCart();
         print("🟢 SALE CREATED! Sale ID = $saleId");
 
-
-       // 5. Navigate to success screen (CLEAR STACK – POS SAFE)
-Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(
-    builder: (context) => SuccessScreen(saleId: saleId),
-  ),
-  (route) => false,
-);
-
+        // 5. Navigate to success screen (CLEAR STACK – POS SAFE)
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SuccessScreen(saleId: saleId),
+          ),
+          (route) => false,
+        );
       } catch (e) {
-        
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Order failed: $e")));
-        
       }
-      
     }
 
     // --- UI HELPERS ---
@@ -260,7 +278,7 @@ Navigator.pushAndRemoveUntil(
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                      "Qty: ${item.quantity.toInt()} x SAR ${product.price}",
+                                        "Qty: ${item.quantity.toInt()} x SAR ${product.price}",
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey[500],
@@ -268,7 +286,7 @@ Navigator.pushAndRemoveUntil(
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                    "SAR ${itemTotal.toStringAsFixed(2)}", // Item total logic if needed
+                                        "SAR ${itemTotal.toStringAsFixed(2)}", // Item total logic if needed
                                         style: const TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey,
@@ -441,7 +459,8 @@ Navigator.pushAndRemoveUntil(
                           // Cash Option
                           _buildPaymentOption(
                             label: "Cash",
-                            imageAsset:"assets/images/saudi-arabia-official-riyal-sign.png" ,
+                            imageAsset:
+                                "assets/images/saudi-arabia-official-riyal-sign.png",
                             isSelected: paymentMethod.value == 'cash',
                             onTap: () => paymentMethod.value = 'cash',
                             activeColor: blueColor,
@@ -479,9 +498,34 @@ Navigator.pushAndRemoveUntil(
                             ),
                           ),
                           const SizedBox(height: 12),
+
+                          // _buildSummaryRow("Sub total :", subTotal),
+                          // _buildSummaryRow("VAT (15%) :", vatAmount),
+                          // _buildSummaryRow("Discount :", discount),
                           _buildSummaryRow("Sub total :", subTotal),
-                          _buildSummaryRow("Discount :", discount),
+
+                          // DISCOUNT INPUT
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: TextField(
+                              controller: discountController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                labelText: "Discount (SAR)",
+                              ),
+                            ),
+                          ),
+
+                          _buildSummaryRow("VAT (15%) :", vatAmount),
+
                           const Divider(height: 24),
+
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -493,7 +537,7 @@ Navigator.pushAndRemoveUntil(
                                 ),
                               ),
                               Text(
-                              "SAR ${totalPayable.toStringAsFixed(2)}",
+                                "SAR ${totalPayable.toStringAsFixed(2)}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 16,
@@ -594,7 +638,7 @@ Navigator.pushAndRemoveUntil(
 
   Widget _buildPaymentOption({
     required String label,
-     IconData? icon,
+    IconData? icon,
     String? imageAsset,
     required bool isSelected,
     required VoidCallback onTap,
@@ -623,16 +667,8 @@ Navigator.pushAndRemoveUntil(
               ),
               // child: Icon(icon, color: Colors.grey[700], size: 20),
               child: imageAsset != null
-    ? Image.asset(
-        imageAsset,
-        height: 18,
-      )
-    : Icon(
-        icon,
-        color: Colors.grey[700],
-        size: 20,
-      ),
-
+                  ? Image.asset(imageAsset, height: 18)
+                  : Icon(icon, color: Colors.grey[700], size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -667,7 +703,7 @@ Navigator.pushAndRemoveUntil(
             ),
           ),
           Text(
-         "SAR ${amount.toStringAsFixed(2)}",
+            "SAR ${amount.toStringAsFixed(2)}",
             style: TextStyle(
               color: Colors.grey[600],
               fontSize: 14,

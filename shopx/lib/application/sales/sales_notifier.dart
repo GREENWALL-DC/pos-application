@@ -7,31 +7,44 @@ class SalesNotifier extends Notifier<SalesState> {
   @override
   SalesState build() => const SalesState();
 
- Future<int> createSale({
+
+
+
+
+Future<int> createSale({
   required int customerId,
   required List<Map<String, dynamic>> items,
   required String paymentMethod,
+  required double discountAmount,
 }) async {
   state = state.copyWith(isLoading: true);
 
   try {
     final repo = ref.read(salesRepositoryProvider);
 
-print("📌 SalesNotifier.createSale called");
+    print("📌 SalesNotifier.createSale called");
 
     final saleId = await repo.createSale(
       customerId: customerId,
       items: items,
       paymentMethod: paymentMethod,
+      discountAmount: discountAmount,
     );
 
     state = state.copyWith(isLoading: false);
-    return saleId;          // <-- IMPORTANT
+    return saleId;
   } catch (e) {
     state = state.copyWith(isLoading: false, error: e.toString());
     rethrow;
   }
 }
+
+
+
+
+
+
+
 
 
 Future<Sale> getSale(int id) async {
