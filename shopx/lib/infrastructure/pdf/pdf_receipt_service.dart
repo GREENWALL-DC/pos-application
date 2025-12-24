@@ -196,8 +196,8 @@ class PdfReceiptService {
                     1: const pw.FlexColumnWidth(3), // Description
                     2: const pw.FixedColumnWidth(50), // Qty
                     3: const pw.FixedColumnWidth(60), // Price
-                    4: const pw.FixedColumnWidth(50), // VAT
-                    5: const pw.FixedColumnWidth(70), // Amount
+                    // 4: const pw.FixedColumnWidth(50), // VAT
+                    4: const pw.FixedColumnWidth(70), // Amount
                   },
                   children: [
                     // Header
@@ -210,7 +210,7 @@ class PdfReceiptService {
                         _cell(arabicFontBold, 'البيان\nDescription'),
                         _cell(arabicFontBold, 'العدد\nQty'),
                         _cell(arabicFontBold, 'السعر\nPrice'),
-                        _cell(arabicFontBold, 'الضريبة\nVAT'),
+                        // _cell(arabicFontBold, 'الضريبة\nVAT'),
                         _cell(arabicFontBold, 'الإجمالي\nAmount'),
                       ],
                     ),
@@ -219,7 +219,7 @@ class PdfReceiptService {
                     ...List.generate(receipt.items.length, (index) {
                       final item = receipt.items[index];
                       final total = item.unitPrice * item.quantity;
-                      final vat = total * receipt.vatPercentage / 100;
+                      // final vat = total * receipt.vatPercentage / 100;
 
                       return pw.TableRow(
                         children: [
@@ -227,7 +227,7 @@ class PdfReceiptService {
                           _cell(arabicFont, item.nameEn),
                           _cell(arabicFont, item.quantity.toString()),
                           _cell(arabicFont, item.unitPrice.toStringAsFixed(2)),
-                          _cell(arabicFont, '${vat.toStringAsFixed(2)} SR'),
+                          // _cell(arabicFont, '${vat.toStringAsFixed(2)} SR'),
                           _cell(arabicFont, '${total.toStringAsFixed(2)} SR'),
                         ],
                       );
@@ -258,21 +258,23 @@ class PdfReceiptService {
                       child: pw.Table(
                         border: pw.TableBorder.all(),
                         children: [
-                          _totalRow(
-                            arabicFont,
-                            'Taxable Amount\nالمبلغ الخاضع للضريبة',
-                            receipt.subTotal,
-                          ),
+                        _totalRow(
+  arabicFont,
+  'Taxable Amount\nالمبلغ الخاضع للضريبة',
+   receipt.subTotal,
+  // receipt.subTotal - (receipt.discount ?? 0.0),
+),
+
                           _totalRow(
                             arabicFont,
                             'Discount\nالخصم',
                             receipt.discount ?? 0.0,
                           ),
-                          _totalRow(
-                            arabicFont,
-                            'Amount After Discount\nالمبلغ بعد الخصم',
-                            receipt.subTotal - (receipt.discount ?? 0.0),
-                          ),
+                          // _totalRow(
+                          //   arabicFont,
+                          //   'Amount After Discount\nالمبلغ بعد الخصم',
+                          //   receipt.subTotal - (receipt.discount ?? 0.0),
+                          // ),
                           _totalRow(
                             arabicFont,
                             'VAT ${receipt.vatPercentage}%\nضريبة القيمة المضافة',

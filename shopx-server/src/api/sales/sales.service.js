@@ -52,14 +52,25 @@ exports.createSale = async (data) => {
     // // 5️⃣ FINAL TOTAL
     // const total_amount = taxable_amount + vat_amount;
 
-    // NEVER allow taxable amount to go below zero
-    const taxable_amount = Math.max(gross_subtotal - discount_amount, 0);
+    
 
-    // VAT must ALWAYS be >= 0
-    const vat_amount = +(taxable_amount * (VAT_PERCENTAGE / 100)).toFixed(2);
+// 3️⃣ VAT — CALCULATED ON GROSS SUBTOTAL (DISCOUNT DOES NOT AFFECT VAT)
+const vat_amount = +(gross_subtotal * (VAT_PERCENTAGE / 100)).toFixed(2);
 
-    // Final total
-    const total_amount = +(taxable_amount + vat_amount).toFixed(2);
+// 4️⃣ FINAL TOTAL = SUBTOTAL + VAT - DISCOUNT
+const total_amount = +(
+  gross_subtotal +
+  vat_amount -
+  discount_amount
+).toFixed(2);
+
+// Safety check
+if (total_amount < 0) {
+  throw new Error("Total amount cannot be negative");
+}
+
+
+
 
     // 3️⃣ CREATE MAIN SALE
     const sale = await repo.createSale(client, {

@@ -146,6 +146,7 @@ class SuccessScreen extends HookConsumerWidget {
 
         items: receiptItems,
         subTotal: subTotal,
+        discount: sale.discountAmount,
         vatPercentage: vatPercentage,
         vatAmount: vatAmount,
         netTotal: netTotal,

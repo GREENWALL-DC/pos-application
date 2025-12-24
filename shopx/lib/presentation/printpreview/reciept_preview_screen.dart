@@ -417,7 +417,13 @@ class RecieptPreviewScreen extends HookConsumerWidget {
           const Divider(thickness: 1, color: Colors.black54),
           _summaryRow("Vat", "ضريبة", r.vatAmount.toStringAsFixed(2)),
           _summaryRow("Charges", "رسوم أخرى", "0.00"),
-          _summaryRow("Discount", "خصم", "0.00"),
+         _summaryRow(
+  "Discount",
+  "خصم",
+  (r.discount ?? 0.0).toStringAsFixed(2),
+),
+
+
           const Divider(thickness: 1.5, color: Colors.black),
           _summaryRow(
             "Net Total",
