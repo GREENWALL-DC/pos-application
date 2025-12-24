@@ -26,39 +26,51 @@ exports.createSale = async (data) => {
 
     const VAT_PERCENTAGE = 15;
 
-// 1️⃣ GROSS SUBTOTAL (NO ITEM DISCOUNT)
-let gross_subtotal = 0;
-data.items.forEach((i) => {
-  gross_subtotal += i.quantity * i.unit_price;
-});
+    // 1️⃣ GROSS SUBTOTAL (NO ITEM DISCOUNT)
+    let gross_subtotal = 0;
+    data.items.forEach((i) => {
+      gross_subtotal += i.quantity * i.unit_price;
+    });
 
-// 2️⃣ SALE-LEVEL DISCOUNT
-const discount_amount = Number(data.discount_amount || 0);
+    // 2️⃣ SALE-LEVEL DISCOUNT
+    const discount_amount = Number(data.discount_amount || 0);
 
-// 3️⃣ TAXABLE AMOUNT
-const taxable_amount = gross_subtotal - discount_amount;
+    if (discount_amount < 0) {
+      throw new Error("Discount cannot be negative");
+    }
 
-// 4️⃣ VAT
-const vat_amount = taxable_amount * (VAT_PERCENTAGE / 100);
+    if (discount_amount > gross_subtotal) {
+      throw new Error("Discount cannot exceed subtotal");
+    }
 
-// 5️⃣ FINAL TOTAL
-const total_amount = taxable_amount + vat_amount;
+    // // 3️⃣ TAXABLE AMOUNT
+    // const taxable_amount = gross_subtotal - discount_amount;
 
+    // // 4️⃣ VAT
+    // const vat_amount = taxable_amount * (VAT_PERCENTAGE / 100);
 
+    // // 5️⃣ FINAL TOTAL
+    // const total_amount = taxable_amount + vat_amount;
 
+    // NEVER allow taxable amount to go below zero
+    const taxable_amount = Math.max(gross_subtotal - discount_amount, 0);
+
+    // VAT must ALWAYS be >= 0
+    const vat_amount = +(taxable_amount * (VAT_PERCENTAGE / 100)).toFixed(2);
+
+    // Final total
+    const total_amount = +(taxable_amount + vat_amount).toFixed(2);
 
     // 3️⃣ CREATE MAIN SALE
     const sale = await repo.createSale(client, {
-  salesperson_id: data.salesperson_id,
-  customer_id: data.customer_id,
-  subtotal_amount: gross_subtotal,
-  discount_amount,
-  vat_percentage: VAT_PERCENTAGE,
-  vat_amount,
-  total_amount,
-});
-
-
+      salesperson_id: data.salesperson_id,
+      customer_id: data.customer_id,
+      subtotal_amount: gross_subtotal,
+      discount_amount,
+      vat_percentage: VAT_PERCENTAGE,
+      vat_amount,
+      total_amount,
+    });
 
     let isBackorder = false;
 
@@ -93,12 +105,7 @@ const total_amount = taxable_amount + vat_amount;
       // }
 
       // Deduct FULL sold quantity (allow negative stock)
-await stockService.adjustStock(
-  item.product_id,
-  -item.quantity,
-  "sale"
-);
-
+      await stockService.adjustStock(item.product_id, -item.quantity, "sale");
 
       // If anything pending → backorder
       if (pendingQty > 0) {

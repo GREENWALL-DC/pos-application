@@ -32,6 +32,18 @@ class CartScreen extends HookConsumerWidget {
       return null;
     }, []);
 
+    // Discount input controller
+    final discountController = useTextEditingController();
+    final discountAmount = useState<double>(0);
+
+    useEffect(() {
+      discountController.text = "0";
+      discountController.addListener(() {
+        discountAmount.value = double.tryParse(discountController.text) ?? 0.0;
+      });
+      return null;
+    }, []);
+
     // 2. Text Controllers (Local Hooks)
     final nameCtrl = useTextEditingController();
     final phoneCtrl = useTextEditingController();
@@ -42,37 +54,12 @@ class CartScreen extends HookConsumerWidget {
     final paymentMethod = useState<String>("cash");
 
     // ================= DISCOUNT + VAT LOGIC =================
-    const double VAT_PERCENTAGE = 15;
 
     // Subtotal (gross)
     final double subTotal = cartItems.fold(
       0,
       (sum, item) => sum + (item.product.price * item.quantity),
     );
-
-    // Discount input controller
-   final discountController = useTextEditingController();
-final discountAmount = useState<double>(0);
-
-useEffect(() {
-  discountController.text = "0";
-  discountController.addListener(() {
-    discountAmount.value =
-        double.tryParse(discountController.text) ?? 0.0;
-  });
-  return null;
-}, []);
-
-    // Taxable amount (after discount)
- final double taxableAmount =
-    (subTotal - discountAmount.value).clamp(0, double.infinity);
-
-
-    // VAT (15% after discount)
-    final double vatAmount = taxableAmount * VAT_PERCENTAGE / 100;
-
-    // Final total
-    final double totalPayable = taxableAmount + vatAmount;
 
     // --- LOGIC: Place Order ---
     void handlePlaceOrder() async {
@@ -122,8 +109,7 @@ useEffect(() {
               customerId: selectedCustomer.value?.id ?? 0,
               items: saleItems,
               paymentMethod: paymentMethod.value,
-             discountAmount: discountAmount.value,
-
+              discountAmount: discountAmount.value,
             );
 
         // OPTIONAL INFO MESSAGE (correct place)
@@ -504,32 +490,58 @@ useEffect(() {
                           // _buildSummaryRow("Discount :", discount),
                           _buildSummaryRow("Sub total :", subTotal),
 
-                          // DISCOUNT INPUT
+                          // DISCOUNT ROW (MATCHES SUMMARY STYLE)
                           Container(
                             margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: TextField(
-                              controller: discountController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                labelText: "Discount (SAR)",
-                              ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "Discount :",
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                SizedBox(
+                                  width: 100,
+                                  child: TextField(
+                                    controller: discountController,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.right,
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "0.00",
+                                    ),
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
 
-                          _buildSummaryRow("VAT (15%) :", vatAmount),
+                          // VAT is calculated in backend – do NOT calculate here
+                          _buildSummaryRow("VAT (15%) :", 0),
 
                           const Divider(height: 24),
 
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
+                            children: const [
+                              Text(
                                 "Total Payable :",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -537,8 +549,8 @@ useEffect(() {
                                 ),
                               ),
                               Text(
-                                "SAR ${totalPayable.toStringAsFixed(2)}",
-                                style: const TextStyle(
+                                "Calculated after order",
+                                style: TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 16,
                                 ),

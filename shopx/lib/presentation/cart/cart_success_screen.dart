@@ -82,13 +82,9 @@ class SuccessScreen extends HookConsumerWidget {
         );
       }).toList();
 
-      final subTotal = sale.items.fold<double>(
-        0,
-        (sum, item) => sum + item.totalPrice,
-      );
-
-      const vatPercentage = 15.0;
-      final vatAmount = sale.totalAmount - subTotal;
+      final double subTotal = sale.subtotalAmount;
+      final double vatAmount = sale.vatAmount;
+      const double vatPercentage = 15.0;
 
       final receipt = ReceiptData(
         companyNameEn: CompanyConfig.companyNameEn,
@@ -98,9 +94,9 @@ class SuccessScreen extends HookConsumerWidget {
         crNumber: CompanyConfig.crNumber,
         vatNumber: CompanyConfig.vatNumber,
         mobile: CompanyConfig.mobile,
-         customerAddress: customer.address,
-  customerPhone: customer.phone,
-  discount: 0.0,
+        customerAddress: customer.address,
+        customerPhone: customer.phone,
+        discount: sale.discountAmount,
         invoiceNumber: sale.id.toString(),
         invoiceDate: sale.saleDate,
         customerName: sale.customerName,
@@ -130,14 +126,10 @@ class SuccessScreen extends HookConsumerWidget {
         );
       }).toList();
 
-      final double subTotal = sale.items.fold(
-        0.0,
-        (sum, item) => sum + item.totalPrice,
-      );
-
+      final double subTotal = sale.subtotalAmount;
+      final double vatAmount = sale.vatAmount;
       const double vatPercentage = 15.0;
       final double netTotal = sale.totalAmount;
-      final double vatAmount = netTotal - subTotal;
 
       final receiptData = ReceiptData(
         companyNameEn: CompanyConfig.companyNameEn,

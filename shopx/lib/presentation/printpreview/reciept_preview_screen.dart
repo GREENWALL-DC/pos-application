@@ -93,7 +93,8 @@ class RecieptPreviewScreen extends HookConsumerWidget {
                         child: Center(
                           child: RepaintBoundary(
                             key: repaintKey,
-                            child: SizedBox(
+                            child: Container(
+                              color: Colors.white,
                               width: receiptWidth, // 384
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,

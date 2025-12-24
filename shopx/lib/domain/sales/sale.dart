@@ -14,6 +14,13 @@ class Sale {
   final List<SaleItem> items;
   final List<Payment> payments;
 
+  
+  // 🔹 NEW FIELDS (REQUIRED)
+  final double subtotalAmount;
+  final double discountAmount;
+  final double vatAmount;
+  final double vatPercentage;
+
   final double totalAmount;
   final String paymentStatus;
   final DateTime saleDate;
@@ -26,6 +33,11 @@ class Sale {
     required this.customerPhone,
     required this.items,
     required this.payments,
+    required this.subtotalAmount,
+    required this.discountAmount,
+    required this.vatAmount,
+    required this.vatPercentage,
+
     required this.totalAmount,
     required this.paymentStatus,
     required this.saleDate,
@@ -70,6 +82,19 @@ class Sale {
 
     items: (json["items"] as List?)?.map((i) => SaleItem.fromJson(i)).toList() ?? [],
     payments: (json["payments"] as List?)?.map((p) => Payment.fromJson(p)).toList() ?? [],
+
+      // 🔹 MAP BACKEND FIELDS CORRECTLY
+      subtotalAmount:
+          double.tryParse(saleData["subtotal_amount"].toString()) ?? 0,
+
+      discountAmount:
+          double.tryParse(saleData["discount_amount"].toString()) ?? 0,
+
+      vatAmount:
+          double.tryParse(saleData["vat_amount"].toString()) ?? 0,
+
+      vatPercentage:
+          double.tryParse(saleData["vat_percentage"].toString()) ?? 15,
 
     totalAmount: double.tryParse(saleData["total_amount"].toString()) ?? 0,
     paymentStatus: saleData["payment_status"] ?? "paid",
