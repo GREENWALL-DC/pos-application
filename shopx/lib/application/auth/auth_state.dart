@@ -25,12 +25,16 @@ class AuthState {
         error = null;
 
        // 2. 🔄 LOADING STATE: Login/Register operation in progress, show spinner
-  const AuthState.loading()
-      : user = null,
-        token = null,  // ✅ NEW
-        isLoading = true,
-        isInitializing = false,
-        error = null;
+const AuthState.loading({
+  UserModel? user,
+  String? token,
+})
+  : user = user,
+    token = token,
+    isLoading = true,
+    isInitializing = true,
+    error = null;
+
 
       // 3. ✅ AUTHENTICATED STATE: User successfully logged in, store user data
   const AuthState.authenticated(UserModel user,{String?token})
@@ -102,5 +106,7 @@ class AuthState {
 
 extension AuthStateHelpers on AuthState {
   bool get isAuthenticated => user != null;  // logged in if user exists
-   bool get isUnauthenticated => user == null && !isLoading;
+  bool get isUnauthenticated =>
+    user == null && !isLoading && !isInitializing;
+
 }

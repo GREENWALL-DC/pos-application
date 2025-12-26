@@ -9,13 +9,8 @@ import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
 import 'package:shopx/presentation/splash/splash_screen.dart';
 
 void main() {
-  runApp(
-    ProviderScope(
-      child:  MyApp(),
-      ),
-      );
+  runApp(ProviderScope(child: MyApp()));
 }
-
 
 class MyApp extends HookConsumerWidget {
   const MyApp({super.key});
@@ -24,9 +19,19 @@ class MyApp extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
 
-  
+     Widget home;
 
-
+  if (authState.isInitializing) {
+    home = const SplashScreen();
+  } else if (authState.isAuthenticated) {
+    if (authState.user!.userType == "admin") {
+      home = const AdminDashboard();
+    } else {
+      home = const UserDashboard();
+    }
+  } else {
+    home = const SelectionScreen();
+  }
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -41,45 +46,40 @@ class MyApp extends HookConsumerWidget {
       ),
 
       // Register all named routes used in the app
-      routes: {
-        "/login": (_) => const SelectionScreen(),
-      },
+      routes: {"/login": (_) => const SelectionScreen()},
 
-  home: const SplashScreen(),
+      home: home,
 
-    
-//     Builder(
-//   builder: (context) {
-//     return Consumer(
-//       builder: (context, ref, _) {
-//         final authState = ref.watch(authNotifierProvider);
+      //     Builder(
+      //   builder: (context) {
+      //     return Consumer(
+      //       builder: (context, ref, _) {
+      //         final authState = ref.watch(authNotifierProvider);
 
-//         if (authState.isLoading) {
-//           return const Scaffold(
-//             body: Center(child: CircularProgressIndicator()),
-//           );
-//         }
+      //         if (authState.isLoading) {
+      //           return const Scaffold(
+      //             body: Center(child: CircularProgressIndicator()),
+      //           );
+      //         }
 
-//         // If NOT logged in → show SelectionScreen
-//         if (authState.user == null && authState.token == null) {
-//           return const SelectionScreen();
-//         }
+      //         // If NOT logged in → show SelectionScreen
+      //         if (authState.user == null && authState.token == null) {
+      //           return const SelectionScreen();
+      //         }
 
-//         final user = authState.user;
+      //         final user = authState.user;
 
-//         if (user?.userType == "admin") {
+      //         if (user?.userType == "admin") {
 
-//           return const AdminDashboard();
-//         } else {
-//           return const UserDashboard();
-//         }
-//       },
-//     );
+      //           return const AdminDashboard();
+      //         } else {
+      //           return const UserDashboard();
+      //         }
+      //       },
+      //     );
 
-//   },
-// ),
-
-
+      //   },
+      // ),
     );
   }
 }

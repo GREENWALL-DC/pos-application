@@ -39,6 +39,7 @@ class OwnerLoginScreen extends HookConsumerWidget {
     final secondsLeft = useState(300); // 5 minutes
     final isTimerRunning = useState(false);
     final otpTimer = useRef<Timer?>(null);
+    final isPasswordVisible = useState<bool>(false);
 
     useEffect(() {
       return () {
@@ -183,9 +184,10 @@ class OwnerLoginScreen extends HookConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
+
                       TextField(
                         controller: passwordController,
-                        obscureText: true,
+                        obscureText: !isPasswordVisible.value,
                         decoration: InputDecoration(
                           hintText: 'Minimum 8 characters',
                           hintStyle: TextStyle(
@@ -202,10 +204,22 @@ class OwnerLoginScreen extends HookConsumerWidget {
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
                           ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              isPasswordVisible.value
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              isPasswordVisible.value =
+                                  !isPasswordVisible.value;
+                            },
+                          ),
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      kHeight30,
 
                       // Send OTP Selection
                       const Text(

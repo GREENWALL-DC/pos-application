@@ -32,23 +32,25 @@ class AuthRepository {
     }
   }
 
-  Future<Map<String, dynamic>> loginAdmin(String username, String password) async {
-  try {
-    final response = await _api.loginAdmin(username, password);
+  Future<Map<String, dynamic>> loginAdmin(
+    String username,
+    String password,
+  ) async {
+    try {
+      final response = await _api.loginAdmin(username, password);
 
-    final user = UserModel.fromJson(response["user"]);
-    final token = response["accessToken"];
+      final user = UserModel.fromJson(response["user"]);
+      final token = response["accessToken"];
 
-    if (token == null) {
-      throw Exception("No token received after admin login");
+      if (token == null) {
+        throw Exception("No token received after admin login");
+      }
+
+      return {'user': user, 'token': token};
+    } catch (e) {
+      throw Exception("Admin login failed: $e");
     }
-
-    return {'user': user, 'token': token};
-  } catch (e) {
-    throw Exception("Admin login failed: $e");
   }
-}
-
 
   // 👤 REGISTER: Create new admin user (admin-only operation)
   Future<Map<String, dynamic>> register(
@@ -113,12 +115,6 @@ class AuthRepository {
     // No return needed - just confirmation it succeeded
   }
 
-
-
-
-
-
-
   // ✅ VERIFY OTP: Verify OTP code and get user data AND token
   // Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
   //   final response = await _api.verifyOTP(token, otp);
@@ -137,39 +133,20 @@ class AuthRepository {
   //   // ✅ Return BOTH user and token
   //   return {'user': user, 'token': permanentToken};
   // }
-  
-Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
-  final response = await _api.verifyOTP(token, otp);
 
-  final userJson = response["user"];
-  final user = UserModel.fromJson(userJson);
+  Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
+    final response = await _api.verifyOTP(token, otp);
 
-  final permanentToken = response["accessToken"] as String?;
-  if (permanentToken == null) {
-    throw Exception('No token received after OTP verification');
+    final userJson = response["user"];
+    final user = UserModel.fromJson(userJson);
+
+    final permanentToken = response["accessToken"] as String?;
+    if (permanentToken == null) {
+      throw Exception('No token received after OTP verification');
+    }
+
+    return {'user': user, 'token': permanentToken};
   }
-
-  return {'user': user, 'token': permanentToken};
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   // 👥 GET ALL USERS: Admin-only - get list of all users
   Future<List<UserModel>> getAllUsers(String token) async {

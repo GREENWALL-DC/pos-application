@@ -16,6 +16,7 @@ class EmployeeLoginScreen extends HookConsumerWidget {
 
     final usernameError = useState<String?>(null);
     final passwordError = useState<String?>(null);
+    final isPasswordVisible = useState<bool>(false);
 
     // 2. Define Colors based on design
     const primaryBlue = Color(0xFF1976D2);
@@ -133,19 +134,30 @@ class EmployeeLoginScreen extends HookConsumerWidget {
 
               TextField(
                 controller: passwordController,
-                obscureText: true,
+                obscureText: !isPasswordVisible.value,
                 decoration: InputDecoration(
                   hintText: 'Minimum 8 characters',
                   hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
                   filled: true,
                   fillColor: inputFillColor,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 18,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isPasswordVisible.value
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      isPasswordVisible.value = !isPasswordVisible.value;
+                    },
                   ),
                 ),
               ),
@@ -191,13 +203,13 @@ class EmployeeLoginScreen extends HookConsumerWidget {
 
                       // Success → go to dashboard
                       if (auth.user != null) {
-                       Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const UserDashboard(),
-  ),
-  (route) => false, // 🔥 clears entire back stack
-);
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const UserDashboard(),
+                          ),
+                          (route) => false, // 🔥 clears entire back stack
+                        );
 
                         return;
                       }

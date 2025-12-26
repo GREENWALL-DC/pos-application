@@ -10,32 +10,36 @@ class AuthNotifier extends Notifier<AuthState> {
   String? _selectedOtpMethod; // ✅ ADD: Store selected method
   String? _jwtToken; // ✅ ADD THIS: Store permanent JWT token
 
- @override
-AuthState build() {
-  _initAuth(); // async init
-  return const AuthState.initial(); // 🔥 IMPORTANT
-}
-
-Future<void> _initAuth() async {
-  final storedToken = await _loadToken();
-
-  if (storedToken == null) {
-    state = const AuthState.unauthenticated(); // init DONE
-    return;
+  @override
+  AuthState build() {
+    _initAuth(); // async init
+    return const AuthState.initial(); // 🔥 IMPORTANT
   }
 
-  try {
-    final user = await ref
-        .read(authRepositoryProvider)
-        .getCurrentUser(storedToken);
+  Future<void> _initAuth() async {
+    final storedToken = await _loadToken();
 
-    _jwtToken = storedToken;
-    state = AuthState.authenticated(user, token: storedToken);
-  } catch (_) {
-    await logout();
-  }
+    if (storedToken == null) {
+      state = const AuthState.unauthenticated(); // init DONE
+      return;
+    }
+
+    try {
+      final user = await ref
+          .read(authRepositoryProvider)
+          .getCurrentUser(storedToken);
+
+      _jwtToken = storedToken;
+      state = AuthState.authenticated(user, token: storedToken);
+ } catch (_) {
+  // Internet OFF → do nothing
+  // Keep state as initializing
+  return;
 }
 
+
+
+  }
 
   // 🔥 LOCAL TOKEN STORAGE (SharedPreferences)
   Future<void> _saveToken(String token) async {
@@ -55,7 +59,12 @@ Future<void> _initAuth() async {
 
   // 🔐 LOGIN: Authenticate user with username and password
   Future<void> loginUser(String username, String password) async {
-    state = const AuthState.loading();
+    // state = const AuthState.loading();
+    state = AuthState.loading(
+  user: state.user,
+  token: state.token,
+);
+
 
     try {
       final result = await ref
@@ -75,7 +84,12 @@ Future<void> _initAuth() async {
   }
 
   Future<void> loginAdmin(String username, String password) async {
-    state = const AuthState.loading();
+    // state = const AuthState.loading();
+    state = AuthState.loading(
+  user: state.user,
+  token: state.token,
+);
+
 
     try {
       final result = await ref
@@ -102,7 +116,12 @@ Future<void> _initAuth() async {
     String phone,
     String adminToken,
   ) async {
-    state = const AuthState.loading();
+    // state = const AuthState.loading();
+    state = AuthState.loading(
+  user: state.user,
+  token: state.token,
+);
+
 
     try {
       // ✅ UPDATED: Get result with both user and token
@@ -130,17 +149,26 @@ Future<void> _initAuth() async {
       return;
     }
 
-    state = const AuthState.loading();
+    // state = const AuthState.loading();
+    state = AuthState.loading(
+  user: state.user,
+  token: state.token,
+);
+
 
     try {
       final user = await ref
           .read(authRepositoryProvider)
           .getCurrentUser(_jwtToken!);
       state = AuthState.authenticated(user, token: _jwtToken); // ✅ Pass token
-    } catch (e) {
-      state = AuthState.error(e.toString());
-      await logout();
-    }
+  } catch (e) {
+  // Network or server issue — do NOT logout
+  state = state.copyWith(
+    isLoading: false,
+    error: null,
+  );
+}
+
   }
 
   // 🚪 LOGOUT: Clear user data and return to unauthenticated state
@@ -186,7 +214,12 @@ Future<void> _initAuth() async {
       return;
     }
 
-    state = const AuthState.loading();
+    // state = const AuthState.loading();
+    state = AuthState.loading(
+  user: state.user,
+  token: state.token,
+);
+
 
     try {
       await ref
@@ -198,13 +231,14 @@ Future<void> _initAuth() async {
     }
   }
 
-
-
-
-
   // 🔑 STEP 1: Login owner and get TEMP token
   Future<void> loginOwner(String username, String password) async {
-    state = const AuthState.loading();
+    // state = const AuthState.loading();
+    state = AuthState.loading(
+  user: state.user,
+  token: state.token,
+);
+
 
     try {
       _tempToken = await ref
@@ -218,12 +252,6 @@ Future<void> _initAuth() async {
     }
   }
 
-
-
-
-
-
-
   // 📱 STEP 2: Send OTP via any method (Email, WhatsApp, SMS, Missed Call)
   Future<void> sendOTP(String method) async {
     if (_tempToken == null) {
@@ -232,7 +260,12 @@ Future<void> _initAuth() async {
     }
 
     _selectedOtpMethod = method; // ✅ Store the method being used
-    state = state.copyWith(isLoading: true);
+    // state = state.copyWith(isLoading: true);
+    state = state.copyWith(
+  isLoading: true,
+  isInitializing: false,
+);
+
 
     try {
       await ref.read(authRepositoryProvider).sendOTP(_tempToken!, method);
@@ -277,7 +310,12 @@ Future<void> _initAuth() async {
       return false;
     }
 
-    state = const AuthState.loading();
+    // state = const AuthState.loading();
+    state = AuthState.loading(
+  user: state.user,
+  token: state.token,
+);
+
 
     try {
       final result = await ref
