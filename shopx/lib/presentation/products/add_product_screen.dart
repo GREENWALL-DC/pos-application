@@ -21,6 +21,10 @@ class AddProductScreen extends HookConsumerWidget {
       text: productToEdit?.name ?? "",
     );
 
+    final nameArController = useTextEditingController(
+  text: productToEdit?.nameAr ?? "",
+);
+
     final priceController = useTextEditingController(
       text: productToEdit != null ? productToEdit!.price.toString() : "",
     );
@@ -99,6 +103,7 @@ class AddProductScreen extends HookConsumerWidget {
       if (productToEdit == null) {
         // Reset only in add mode
         nameController.clear();
+        nameArController.clear(); // ✅ FIX
         priceController.clear();
         categoryController.clear();
         codeController.clear();
@@ -194,6 +199,16 @@ class AddProductScreen extends HookConsumerWidget {
               fillColor: inputFillColor,
             ),
             kHeight16,
+
+          _buildLabel('Product Name (Arabic)'),
+_buildTextField(
+  controller: nameArController,
+  hintText: 'Enter product name in Arabic',
+  fillColor: inputFillColor,
+),
+kHeight16,
+
+
 
             // Field: Selling Price
             _buildLabel('Selling price'),
@@ -459,6 +474,7 @@ class AddProductScreen extends HookConsumerWidget {
                   final product = Product(
                     id: productToEdit?.id, // keep old ID in edit mode
                     name: nameController.text,
+                     nameAr: nameArController.text, // ✅ NEW
                     price: double.parse(priceController.text),
                     category: categoryController.text,
                     code: codeController.text,
@@ -482,6 +498,7 @@ class AddProductScreen extends HookConsumerWidget {
                     final updatedProduct = Product(
                       id: productToEdit!.id,
                       name: nameController.text,
+                        nameAr: nameArController.text, // ✅ NEW
                       price: double.parse(priceController.text),
                       category: categoryController.text,
                       code: codeController.text,

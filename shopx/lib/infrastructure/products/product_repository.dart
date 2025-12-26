@@ -27,6 +27,7 @@ Future<Product> createProduct(Product product, List<Uint8List> images) async {
   return Product(
     id: productId.toString(),
     name: product.name,
+    nameAr: product.nameAr,
     price: product.price,
     category: product.category,
     quantity: product.quantity,

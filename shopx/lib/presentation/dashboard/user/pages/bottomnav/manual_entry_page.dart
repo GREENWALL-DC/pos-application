@@ -54,6 +54,7 @@ class ManualEntryPage extends HookConsumerWidget {
       final productForCart = Product(
         id: product.id,
         name: product.name,
+        nameAr: product.nameAr,
         price: enteredPrice,        // <-- salesman’s custom price
         category: product.category,
         quantity: product.quantity, // stock info, if you use it

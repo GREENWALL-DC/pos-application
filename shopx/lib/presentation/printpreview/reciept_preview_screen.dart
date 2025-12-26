@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -20,6 +21,10 @@ class RecieptPreviewScreen extends HookConsumerWidget {
   final ReceiptData receipt;
 
   RecieptPreviewScreen({super.key, required this.receipt});
+
+  String formatInvoiceDate(DateTime date) {
+    return DateFormat('yyyy-MM-dd hh:mm a').format(date);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -250,7 +255,13 @@ class RecieptPreviewScreen extends HookConsumerWidget {
             ": ${r.vatNumber ?? ''}",
             "الرقم الضريبي للعميل",
           ),
-          _bilingualRow("InvoiceDate", ": ${r.invoiceDate}", "تاريخ الفاتورة"),
+          // _bilingualRow("InvoiceDate", ": ${r.invoiceDate}", "تاريخ الفاتورة"),
+          _bilingualRow(
+            "InvoiceDate",
+            ": ${formatInvoiceDate(r.invoiceDate)}",
+            "تاريخ الفاتورة",
+          ),
+
           _bilingualRow("InvoiceNo", ": ${r.invoiceNumber}", "رقم الفاتورة"),
           const SizedBox(height: 10),
           const Divider(thickness: 1.5, color: Colors.black),
@@ -417,12 +428,11 @@ class RecieptPreviewScreen extends HookConsumerWidget {
           const Divider(thickness: 1, color: Colors.black54),
           _summaryRow("Vat", "ضريبة", r.vatAmount.toStringAsFixed(2)),
           _summaryRow("Charges", "رسوم أخرى", "0.00"),
-         _summaryRow(
-  "Discount",
-  "خصم",
-  (r.discount ?? 0.0).toStringAsFixed(2),
-),
-
+          _summaryRow(
+            "Discount",
+            "خصم",
+            (r.discount ?? 0.0).toStringAsFixed(2),
+          ),
 
           const Divider(thickness: 1.5, color: Colors.black),
           _summaryRow(

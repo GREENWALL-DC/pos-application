@@ -36,7 +36,7 @@ class ProductApi {
     return response.data;
   }
 
-  // PUT → Update Product (metadata only)
+  // PUT → Update Product  (metadata incl. name_ar)
   Future<void> updateProduct(String id, Map<String, dynamic> data) async {
     await _dio.put(
       "/products/$id",

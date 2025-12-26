@@ -21,6 +21,7 @@ return;
       CREATE TABLE products (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
+        name_ar VARCHAR(100) NOT NULL,       -- Arabic name (NEW)
         price NUMERIC(10, 2) NOT NULL,
         quantity NUMERIC(10,2) DEFAULT 0,       
         code TEXT,    

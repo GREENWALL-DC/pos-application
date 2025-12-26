@@ -1,6 +1,7 @@
 class Product {
    final String? id;        // id comes only when product is fetched from backend
   final String name;       // product name
+  final String nameAr; // ✅ NEW
   final double price;      // product price
   final String category;   // product category (Tea, Coffee, etc.)
    final double quantity;    // initial stock (numeric)
@@ -14,6 +15,7 @@ class Product {
   const Product({
     this.id,
     required this.name,
+    required this.nameAr,
     required this.price,
     required this.category,
      required this.quantity,
@@ -28,7 +30,8 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json["id"]?.toString(),
-      name: json["name"] ?? "",
+     name: json["name"] ?? "",
+nameAr: json["name_ar"] ?? "",
       price: double.tryParse(json["price"].toString()) ?? 0.0,
       category: json["category"] ?? "",
         
@@ -45,6 +48,7 @@ class Product {
   Map<String, dynamic> toJson() {
     return {
       "name": name,
+      "name_ar": nameAr, // ✅ NEW
       "price": price,
       "category": category,
        "quantity": quantity,    
