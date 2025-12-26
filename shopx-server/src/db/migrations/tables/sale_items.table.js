@@ -11,15 +11,20 @@ module.exports = async (client) => {
 
     await client.query(`
       CREATE TABLE sale_items (
-        id SERIAL PRIMARY KEY,
-        sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
-        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
-        quantity INTEGER NOT NULL,
-        fulfilled_quantity INTEGER NOT NULL DEFAULT 0,  -- 👈 NEW
-        unit_price NUMERIC(10,2) NOT NULL,
-        total_price NUMERIC(10,2) NOT NULL,
-         discount NUMERIC(10,2) DEFAULT 0 
-      );
+  id SERIAL PRIMARY KEY,
+  sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
+  product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+
+  product_name TEXT NOT NULL,        -- ✅ NEW (English)
+  product_name_ar TEXT,              -- ✅ NEW (Arabic)
+
+  quantity INTEGER NOT NULL,
+  fulfilled_quantity INTEGER NOT NULL DEFAULT 0,
+  unit_price NUMERIC(10,2) NOT NULL,
+  discount NUMERIC(10,2) DEFAULT 0,
+  total_price NUMERIC(10,2) NOT NULL
+);
+
     `);
 
     console.log('✅ "sale_items" table created.');

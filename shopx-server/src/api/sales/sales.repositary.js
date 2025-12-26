@@ -88,16 +88,25 @@ exports.getFullInvoice = async (id) => {
     `,
     [id]
   );
+const items = await db.query(
+  `
+    SELECT 
+      si.id,
+      si.sale_id,
+      si.product_id,
+      si.product_name,
+      si.product_name_ar,
+      si.quantity,
+      si.fulfilled_quantity,
+      si.unit_price,
+      si.discount,
+      si.total_price
+    FROM sale_items si
+    WHERE si.sale_id = $1
+  `,
+  [id]
+);
 
-  const items = await db.query(
-    `
-      SELECT si.*, p.name AS product_name
-      FROM sale_items si
-      JOIN products p ON p.id = si.product_id
-      WHERE si.sale_id = $1
-    `,
-    [id]
-  );
 
   const payments = await db.query(
     `SELECT * FROM payments WHERE sale_id = $1 ORDER BY created_at ASC`,

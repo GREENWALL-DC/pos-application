@@ -52,25 +52,20 @@ exports.createSale = async (data) => {
     // // 5️⃣ FINAL TOTAL
     // const total_amount = taxable_amount + vat_amount;
 
-    
+    // 3️⃣ VAT — CALCULATED ON GROSS SUBTOTAL (DISCOUNT DOES NOT AFFECT VAT)
+    const vat_amount = +(gross_subtotal * (VAT_PERCENTAGE / 100)).toFixed(2);
 
-// 3️⃣ VAT — CALCULATED ON GROSS SUBTOTAL (DISCOUNT DOES NOT AFFECT VAT)
-const vat_amount = +(gross_subtotal * (VAT_PERCENTAGE / 100)).toFixed(2);
+    // 4️⃣ FINAL TOTAL = SUBTOTAL + VAT - DISCOUNT
+    const total_amount = +(
+      gross_subtotal +
+      vat_amount -
+      discount_amount
+    ).toFixed(2);
 
-// 4️⃣ FINAL TOTAL = SUBTOTAL + VAT - DISCOUNT
-const total_amount = +(
-  gross_subtotal +
-  vat_amount -
-  discount_amount
-).toFixed(2);
-
-// Safety check
-if (total_amount < 0) {
-  throw new Error("Total amount cannot be negative");
-}
-
-
-
+    // Safety check
+    if (total_amount < 0) {
+      throw new Error("Total amount cannot be negative");
+    }
 
     // 3️⃣ CREATE MAIN SALE
     const sale = await repo.createSale(client, {
@@ -90,18 +85,36 @@ if (total_amount < 0) {
       const stock = await stockService.getStock(item.product_id);
       const availableQty = stock?.quantity || 0;
 
-      // Fulfill only what is available
       const fulfillQty = Math.min(availableQty, item.quantity);
       const pendingQty = item.quantity - fulfillQty;
 
-      // Insert sale item with fulfilled_quantity
+      // ✅ FETCH PRODUCT NAMES (English + Arabic)
+      const productRes = await client.query(
+        `SELECT name, name_ar FROM products WHERE id = $1`,
+        [item.product_id]
+      );
+
+      const product = productRes.rows[0];
+
       await client.query(
         `INSERT INTO sale_items 
-     (sale_id, product_id, quantity, fulfilled_quantity, unit_price, discount, total_price)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+     (
+       sale_id,
+       product_id,
+       product_name,
+       product_name_ar,
+       quantity,
+       fulfilled_quantity,
+       unit_price,
+       discount,
+       total_price
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
         [
           sale.id,
           item.product_id,
+          product.name,
+          product.name_ar,
           item.quantity,
           fulfillQty,
           item.unit_price,
@@ -110,15 +123,9 @@ if (total_amount < 0) {
         ]
       );
 
-      // // Deduct only fulfilled quantity
-      // if (fulfillQty > 0) {
-      //   await stockService.adjustStock(item.product_id, -fulfillQty, "sale");
-      // }
-
       // Deduct FULL sold quantity (allow negative stock)
       await stockService.adjustStock(item.product_id, -item.quantity, "sale");
 
-      // If anything pending → backorder
       if (pendingQty > 0) {
         isBackorder = true;
       }
