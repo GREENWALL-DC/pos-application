@@ -77,6 +77,7 @@ class SuccessScreen extends HookConsumerWidget {
       final receiptItems = sale.items.map((item) {
         return ReceiptItem(
           nameEn: item.productName,
+          nameAr: item.productNameAr,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
         );
@@ -121,6 +122,7 @@ class SuccessScreen extends HookConsumerWidget {
       final receiptItems = sale.items.map((item) {
         return ReceiptItem(
           nameEn: item.productName,
+          nameAr: item.productNameAr,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
         );

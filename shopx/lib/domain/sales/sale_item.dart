@@ -37,6 +37,7 @@ class SaleItem {
   final double unitPrice;
   final double totalPrice;
   final String productName;
+   final String productNameAr;
 
   SaleItem({
     required this.productId,
@@ -44,6 +45,7 @@ class SaleItem {
     required this.unitPrice,
     required this.totalPrice,
     required this.productName,
+    required this.productNameAr
   });
 
   factory SaleItem.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class SaleItem {
       unitPrice: double.parse(json["unit_price"].toString()),
       totalPrice: double.parse(json["total_price"].toString()),
       productName: json["product_name"] ?? "",
+       productNameAr: json["product_name_ar"], // ✅ THIS WAS MISSING
     );
   }
 }
