@@ -24,3 +24,14 @@ exports.getAllSales = asyncHandler(async (req, res) => {
   const sales = await service.getAllSales();
   res.json(sales);
 });
+
+exports.voidSale = asyncHandler(async (req, res) => {
+  const saleId = req.params.id;
+
+  const result = await service.voidSale(saleId, req.user);
+
+  res.json({
+    message: "Sale voided successfully",
+    result,
+  });
+});

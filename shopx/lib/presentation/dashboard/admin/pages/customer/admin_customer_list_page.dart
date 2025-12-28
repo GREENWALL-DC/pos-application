@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/application/customers/customer_notifier.dart';
+import 'package:shopx/application/salesman/salesman_notifier.dart';
 import 'package:shopx/domain/customers/customer.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/customer/admin_customer_page.dart';
 
@@ -12,30 +13,77 @@ class AdminCustomerListPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authNotifierProvider);
+    
 
     final searchQuery = useState('');
+    final selectedArea = useState<String?>("All");
+   final selectedSalespersonName = useState<String>("All");
+
 
     // STATE: Track expanded row
     final expandedCustomerId = useState<int?>(null);
     final customerState = ref.watch(customerNotifierProvider);
 
     final customers = customerState.customers;
+    final salesmanState = ref.watch(salesmanNotifierProvider);
+
+// 🔥 ID → NAME mapping
+final Map<int, String> salespersonMap = {
+  for (final s in salesmanState.salesmen)
+    if (s.id != null) s.id!: s.username,
+};
+
+
+
+final salespersonNames = [
+  "All",
+  ...{
+    for (final c in customers)
+      if (c.salespersonId != null &&
+          salespersonMap.containsKey(c.salespersonId))
+        salespersonMap[c.salespersonId!]!,
+  }
+];
+
+
+    final areas = [
+      "All",
+      ...{
+        for (var c in customers)
+          if (c.area != null && c.area!.isNotEmpty) c.area!,
+      },
+    ].toList();
 
     final filteredCustomers = customers.where((customer) {
       final query = searchQuery.value.toLowerCase();
-      return customer.name.toLowerCase().contains(query) ||
-          customer.phone.toLowerCase().contains(query) ||
-          (customer.email?.toLowerCase().contains(query) ?? false);
+
+      final matchesSearch =
+          customer.name.toLowerCase().contains(query) ||
+          (customer.phone?.toLowerCase().contains(query) ?? false);
+
+      final matchesArea =
+          selectedArea.value == "All" || customer.area == selectedArea.value;
+
+  final matchesSalesperson =
+    selectedSalespersonName.value == "All" ||
+    (customer.salespersonId != null &&
+     salespersonMap[customer.salespersonId] ==
+         selectedSalespersonName.value);
+
+
+      return matchesSearch && matchesArea && matchesSalesperson;
     }).toList();
 
-    useEffect(() {
-      if (auth.token != null) {
-        Future.microtask(
-          () => ref.read(customerNotifierProvider.notifier).fetchCustomers(),
-        );
-      }
-      return null;
-    }, [auth.token]);
+   useEffect(() {
+  if (auth.token != null) {
+    Future.microtask(() async {
+      await ref.read(customerNotifierProvider.notifier).fetchCustomers();
+      await ref.read(salesmanNotifierProvider.notifier).fetchSalesmen(); // ✅ ADD
+    });
+  }
+  return null;
+}, [auth.token]);
+
 
     // LISTENER: Handle side effects (Success/Error)
     ref.listen(customerNotifierProvider, (previous, next) {
@@ -101,6 +149,79 @@ class AdminCustomerListPage extends HookConsumerWidget {
             ),
           ),
 
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                // AREA FILTER
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedArea.value,
+                    decoration: const InputDecoration(
+                      labelText: "Area",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: areas
+                        .map(
+                          (area) =>
+                              DropdownMenuItem(value: area, child: Text(area)),
+                        )
+                        .toList(),
+                    onChanged: (value) => selectedArea.value = value,
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // SALESPERSON FILTER
+               Expanded(
+  child: Autocomplete<String>(
+    initialValue: TextEditingValue(
+      text: selectedSalespersonName.value == "All"
+          ? ""
+          : selectedSalespersonName.value,
+    ),
+
+    optionsBuilder: (TextEditingValue textEditingValue) {
+      if (textEditingValue.text.isEmpty) {
+        return salespersonNames.where((e) => e != "All");
+      }
+
+      return salespersonNames.where(
+        (option) =>
+            option != "All" &&
+            option.toLowerCase().contains(
+                  textEditingValue.text.toLowerCase(),
+                ),
+      );
+    },
+
+    onSelected: (String selection) {
+      selectedSalespersonName.value = selection;
+    },
+
+    fieldViewBuilder: (
+      context,
+      textController,
+      focusNode,
+      onFieldSubmitted,
+    ) {
+      return TextFormField(
+        controller: textController,
+        focusNode: focusNode,
+        decoration: const InputDecoration(
+          labelText: "Salesperson",
+          hintText: "Type salesperson name",
+          border: OutlineInputBorder(),
+        ),
+      );
+    },
+  ),
+),
+
+              ],
+            ),
+          ),
+
           // List Content
           Expanded(
             child: customerState.isLoading && customerState.customers.isEmpty
@@ -125,6 +246,7 @@ class AdminCustomerListPage extends HookConsumerWidget {
                         customer,
                         isExpanded,
                         expandedCustomerId,
+                         salespersonMap,
                       );
                     },
                   ),
@@ -174,6 +296,7 @@ class AdminCustomerListPage extends HookConsumerWidget {
     Customer customer,
     bool isExpanded,
     ValueNotifier<int?> expandedState,
+     Map<int, String> salespersonMap, // ✅ ADD THIS
   ) {
     return GestureDetector(
       onTap: () {
@@ -217,17 +340,16 @@ class AdminCustomerListPage extends HookConsumerWidget {
               ],
             ),
 
+
+
             // Expanded Content
             if (isExpanded) ...[
               const SizedBox(height: 8),
-              Text(
-                customer.phone,
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              if (customer.email != null && customer.email!.isNotEmpty)
+              Text("Phone: ${customer.phone ?? "-"}"),
+              if (customer.area != null)
                 Text(
-                  customer.email!,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  "Area: ${customer.area}",
+                  style: const TextStyle(color: Colors.grey),
                 ),
 
               const SizedBox(height: 20),
@@ -332,6 +454,13 @@ class AdminCustomerListPage extends HookConsumerWidget {
                 ],
               ),
             ],
+
+            if (customer.salespersonId != null)
+  Text(
+    "Salesperson: ${salespersonMap[customer.salespersonId!] ?? "-"}",
+    style: const TextStyle(color: Colors.grey),
+  ),
+
           ],
         ),
       ),

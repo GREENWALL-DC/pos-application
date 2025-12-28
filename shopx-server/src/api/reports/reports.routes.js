@@ -8,6 +8,13 @@ router.get("/summary", validateToken, checkAdmin, controller.summary);
 router.get("/salesman", validateToken, checkAdmin, controller.salesman);
 router.get("/products", validateToken, checkAdmin, controller.products);
 router.get("/customers", validateToken, checkAdmin, controller.customers);
+router.get(
+  "/product-performance",
+  validateToken,
+  checkAdmin,
+  controller.productPerformance
+);
+
 
 
 module.exports = router;

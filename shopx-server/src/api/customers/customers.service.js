@@ -1,14 +1,18 @@
 const repo = require("./customers.repository");
 const { validateCustomer } = require("./customers.validator");
 
-exports.createCustomer = async (data) => {
+exports.createCustomer = async (data, user) => {
   const errors = validateCustomer(data);
   if (errors.length > 0) {
     throw new Error(errors.join(", "));
   }
 
-  return await repo.createCustomer(data);
+  return await repo.createCustomer({
+    ...data,
+    salesperson_id: user.id,
+  });
 };
+
 
 exports.getAllCustomers = async () => {
   return await repo.getAllCustomers();

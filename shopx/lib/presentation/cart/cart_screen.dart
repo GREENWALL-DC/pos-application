@@ -51,7 +51,8 @@ class CartScreen extends HookConsumerWidget {
 
     // 3. Payment Method State (Local Hook)
     // Value is 'cash' or 'card'
-    final paymentMethod = useState<String>("cash");
+final paymentMethod = useState<String>("cash");
+final paymentStatus = useState<String>("paid"); // 👈 NEW
 
     // ================= DISCOUNT + VAT LOGIC =================
 
@@ -109,6 +110,7 @@ class CartScreen extends HookConsumerWidget {
               customerId: selectedCustomer.value?.id ?? 0,
               items: saleItems,
               paymentMethod: paymentMethod.value,
+               paymentStatus: paymentStatus.value, // 👈 NEW
               discountAmount: discountAmount.value,
             );
 
@@ -443,23 +445,44 @@ class CartScreen extends HookConsumerWidget {
                       child: Column(
                         children: [
                           // Cash Option
-                          _buildPaymentOption(
-                            label: "Cash",
-                            imageAsset:
-                                "assets/images/saudi-arabia-official-riyal-sign.png",
-                            isSelected: paymentMethod.value == 'cash',
-                            onTap: () => paymentMethod.value = 'cash',
-                            activeColor: blueColor,
-                          ),
-                          const SizedBox(height: 12),
-                          // Card Option
-                          _buildPaymentOption(
-                            label: "Bank / Card",
-                            icon: Icons.account_balance,
-                            isSelected: paymentMethod.value == 'card',
-                            onTap: () => paymentMethod.value = 'card',
-                            activeColor: blueColor,
-                          ),
+                       _buildPaymentOption(
+  label: "Cash",
+  imageAsset: "assets/images/saudi-arabia-official-riyal-sign.png",
+  isSelected: paymentMethod.value == 'cash',
+  onTap: () {
+    paymentMethod.value = 'cash';
+    paymentStatus.value = 'paid'; // 👈 IMPORTANT
+  },
+  activeColor: blueColor,
+),
+
+const SizedBox(height: 12),
+
+_buildPaymentOption(
+  label: "Bank / Card",
+  icon: Icons.account_balance,
+  isSelected: paymentMethod.value == 'card',
+  onTap: () {
+    paymentMethod.value = 'card';
+    paymentStatus.value = 'paid'; // 👈 IMPORTANT
+  },
+  activeColor: blueColor,
+),
+
+const SizedBox(height: 12),
+
+// ✅ NEW: Pending option
+_buildPaymentOption(
+  label: "Pending",
+  icon: Icons.schedule,
+  isSelected: paymentStatus.value == 'pending',
+  onTap: () {
+    paymentMethod.value = 'pending'; // for record
+    paymentStatus.value = 'pending'; // 👈 THIS IS THE KEY
+  },
+  activeColor: Colors.orange,
+),
+
                         ],
                       ),
                     ),

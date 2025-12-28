@@ -7,5 +7,7 @@ const validateToken = require("../../middleware/validateTokenHandler");
 
 router.post("/", validateToken, addPaymentValidator, controller.addPayment);
 router.get("/:saleId", validateToken, controller.getPayments);
+router.post("/:saleId/mark-paid", validateToken, controller.markPaymentAsPaid);
+
 
 module.exports = router;

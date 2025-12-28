@@ -4,9 +4,11 @@ import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/presentation/dashboard/admin/admin_dashboard.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/customer/admin_customer_list_page.dart';
+import 'package:shopx/presentation/dashboard/admin/pages/productPerformance/product_performance.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/products/product_list_page.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/salesPerformance/sales_performance.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/salesperson/salesperson_list_page.dart';
+import 'package:shopx/presentation/dashboard/admin/pages/transaction/admin_transaction_history_page.dart';
 import 'package:shopx/presentation/dashboard/user/pages/customers/customer_list_page.dart';
 
 final ValueNotifier<int> adminNavIndex = ValueNotifier<int>(0);
@@ -53,7 +55,21 @@ final selectedIndex = adminNavIndex.value;
     'builder': (context) => const SalesPerformancePage(),
 
       },
+
+      {
+  'title': 'Product Performance',
+  'icon': Icons.inventory_2_outlined,
+  'builder': (context) => const ProductPerformancePage(),
+},
+
+
+      {
+  'title': 'Transactions History',
+  'icon': Icons.receipt_long,
+  'builder': (context) => const AdminTransactionHistoryPage(),
+},
     ];
+
 
     return Drawer(
       backgroundColor: Colors.white,

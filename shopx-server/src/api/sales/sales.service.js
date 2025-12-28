@@ -136,13 +136,22 @@ exports.createSale = async (data) => {
     await repo.updateSaleStatus(client, sale.id, saleStatus);
 
     // 7️⃣ CREATE ONE FULL PAYMENT (ALWAYS PAID – CLIENT RULE)
-    const payment = await paymentsRepo.createPayment(client, {
-      saleId: sale.id,
-      customerId: data.customer_id,
+   // 7️⃣ CREATE PAYMENT (PAID or PENDING)
+const paymentStatus = data.payment_status || "paid";
 
-      amount: total_amount, // always full
-      method: data.payment_method || "cash",
-    });
+const payment = await paymentsRepo.createPayment(client, {
+  saleId: sale.id,
+  customerId: data.customer_id,
+  amount: total_amount,
+  method: data.payment_method || "cash",
+  status: paymentStatus,
+});
+
+// 🔁 Sync sale payment status
+await client.query(
+  `UPDATE sales SET payment_status = $1 WHERE id = $2`,
+  [paymentStatus, sale.id]
+);
 
     await client.query("COMMIT");
 
@@ -157,6 +166,50 @@ exports.createSale = async (data) => {
     client.release();
   }
 };
+
+exports.voidSale = async (saleId, user) => {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // 1️⃣ Fetch sale
+    const sale = await repo.getSaleById(client, saleId);
+
+    if (!sale) throw new Error("Sale not found");
+
+    if (sale.sale_status === "voided") {
+      throw new Error("Sale already voided");
+    }
+
+    // 2️⃣ Reverse stock using sale_items
+    const items = await repo.getSaleItems(client, saleId);
+
+    for (const item of items) {
+      await stockService.adjustStock(
+        item.product_id,
+        item.quantity,   // ADD BACK
+        "sale_void"
+      );
+    }
+
+    // 3️⃣ Update sale status
+    await repo.updateSaleStatus(client, saleId, "voided");
+
+    // 4️⃣ Reverse payment
+    await paymentsRepo.reversePaymentBySaleId(client, saleId);
+
+    await client.query("COMMIT");
+
+    return { saleId, status: "voided" };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
 
 exports.getFullInvoice = async (id) => {
   return await repo.getFullInvoice(id);

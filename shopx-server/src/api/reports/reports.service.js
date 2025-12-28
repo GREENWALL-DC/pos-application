@@ -15,3 +15,7 @@ exports.getProductSales = async (start, end) => {
 exports.getCustomerPerformance = async (start, end) => {
   return await repo.getCustomerPerformance(start, end);
 };
+
+exports.getProductPerformance = async (start, end, salespersonId) => {
+  return await repo.getProductPerformance(start, end, salespersonId);
+};

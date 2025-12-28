@@ -64,6 +64,35 @@ exports.getProductSales = async (start, end) => {
   return rows.rows;
 };
 
+// ---------------------- PRODUCT PERFORMANCE ----------------------
+exports.getProductPerformance = async (start, end, salespersonId = null) => {
+  const params = [start, end];
+  let filter = "";
+
+  if (salespersonId) {
+    params.push(salespersonId);
+    filter = "AND s.salesperson_id = $3";
+  }
+
+  const rows = await db.query(`
+    SELECT 
+      p.id AS product_id,
+      p.name AS product_name,
+      SUM(si.quantity) AS units_sold,
+      SUM(si.total_price) AS revenue
+    FROM sale_items si
+    JOIN products p ON p.id = si.product_id
+    JOIN sales s ON s.id = si.sale_id
+    WHERE s.sale_date BETWEEN $1 AND $2
+    ${filter}
+    GROUP BY p.id, p.name
+    ORDER BY units_sold DESC;
+  `, params);
+
+  return rows.rows;
+};
+
+
 exports.getCustomerPerformance = async (start, end) => {
   const rows = await db.query(`
     SELECT 

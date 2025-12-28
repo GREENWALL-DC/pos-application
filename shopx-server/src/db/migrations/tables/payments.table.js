@@ -10,14 +10,19 @@ module.exports = async (client) => {
     }
 
     await client.query(`
-      CREATE TABLE payments (
-        id SERIAL PRIMARY KEY,
-        sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
-        customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
-        amount NUMERIC(10,2) NOT NULL,
-        method VARCHAR(20) DEFAULT 'cash',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+     CREATE TABLE payments (
+  id SERIAL PRIMARY KEY,
+  sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+
+  amount NUMERIC(10,2) NOT NULL,
+  method VARCHAR(20) DEFAULT 'cash',
+
+  status VARCHAR(20) DEFAULT 'paid', -- ✅ IMPORTANT
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
     `);
 
     console.log('✅ "payments" table created.');

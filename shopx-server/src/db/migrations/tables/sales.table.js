@@ -24,7 +24,6 @@ module.exports = async (client) => {
 
   total_amount NUMERIC(12,2) NOT NULL,
 
-  payment_status VARCHAR(20) DEFAULT 'paid',
   sale_status VARCHAR(20) DEFAULT 'completed',
   sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

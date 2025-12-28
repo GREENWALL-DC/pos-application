@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/salesPerformance/sales_performance_notifier.dart';
 import 'package:shopx/application/salesPerformance/sales_performance_state.dart';
+import 'package:shopx/core/constants.dart';
 
 class SalesPerformancePage extends HookConsumerWidget {
   const SalesPerformancePage({super.key});
@@ -15,20 +16,18 @@ class SalesPerformancePage extends HookConsumerWidget {
     // 1. STATE & NOTIFIER
     // -------------------------------------------------------------------------
     final state = ref.watch(salesPerformanceNotifierProvider);
-    print("DEBUG UI STATE → loading: ${state.loading}, error: ${state.error}, "
-      "summaryKeys: ${state.summary.keys}, summaryEmpty: ${state.summary.isEmpty}");
+    print(
+      "DEBUG UI STATE → loading: ${state.loading}, error: ${state.error}, "
+      "summaryKeys: ${state.summary.keys}, summaryEmpty: ${state.summary.isEmpty}",
+    );
 
+    print("🔍 UI STATE CHECK:");
+    print("   Loading: ${state.loading}");
+    print("   Error: ${state.error}");
+    print("   Summary: ${state.summary}");
+    print("   Salesmen count: ${state.salesmanList.length}");
 
-        print("🔍 UI STATE CHECK:");
-  print("   Loading: ${state.loading}");
-  print("   Error: ${state.error}");
-  print("   Summary: ${state.summary}");
-  print("   Salesmen count: ${state.salesmanList.length}");
-
-  
     final notifier = ref.read(salesPerformanceNotifierProvider.notifier);
-
-    
 
     final tabController = useTabController(initialLength: 4);
     final startDateController = useTextEditingController(text: state.startDate);
@@ -90,21 +89,23 @@ class SalesPerformancePage extends HookConsumerWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                  ),
-//                    onPressed: () {
-//   final start = startDateController.text;
-//   final end = endDateController.text;
+                    ),
+                    //                    onPressed: () {
+                    //   final start = startDateController.text;
+                    //   final end = endDateController.text;
 
-//   notifier.filter(start, end);      // update dates in state
-//   notifier.loadReport(start, end);  // FETCH DATA FROM BACKEND
-// },
-onPressed: () {
-  final start = startDateController.text;
-  final end = endDateController.text;
+                    //   notifier.filter(start, end);      // update dates in state
+                    //   notifier.loadReport(start, end);  // FETCH DATA FROM BACKEND
+                    // },
+                    onPressed: () {
+                      final start = startDateController.text;
+                      final end = endDateController.text;
 
-  notifier.filter(start, end);  // filter ALREADY loads report.
-},
-
+                      notifier.filter(
+                        start,
+                        end,
+                      ); // filter ALREADY loads report.
+                    },
 
                     icon: const Icon(Icons.search, color: Colors.white),
                     label: Text(
@@ -179,11 +180,22 @@ onPressed: () {
   // 🟦 TAB 1: SUMMARY OVERVIEW
   // ===========================================================================
   Widget _buildSummaryTab(SalesPerformanceState state) {
-final summary = state.summary['summary'];
+    final chartData = (state.summary['chart'] ?? []) as List;
 
-  if (summary == null || summary['revenue'] == null) {
-    return Center(child: Text("No summary data"));
-  }
+    final maxRevenue = chartData.isEmpty
+        ? 0
+        : chartData
+              .map((e) => num.tryParse(e['revenue'].toString()) ?? 0)
+              .reduce((a, b) => a > b ? a : b);
+
+    // Add 20% headroom (industry standard)
+    final maxY = (maxRevenue * 1.2).ceilToDouble();
+
+    final summary = state.summary['summary'];
+
+    if (summary == null || summary['revenue'] == null) {
+      return Center(child: Text("No summary data"));
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -192,21 +204,21 @@ final summary = state.summary['summary'];
           // Cards
           _buildInfoCard(
             title: "TOTAL REVENUE",
-           value: "${state.summary['summary']?['revenue'] }",
+            value: "${state.summary['summary']?['revenue']}",
             icon: Icons.calendar_today_outlined,
             accentColor: const Color(0xFF5C3DC9),
           ),
           const SizedBox(height: 12),
           _buildInfoCard(
             title: "UNITS SOLD",
-            value: "${state.summary['summary']?['units'] }",
+            value: "${state.summary['summary']?['units']}",
             icon: Icons.inventory_2_outlined,
             accentColor: const Color(0xFF33BE5B),
           ),
           const SizedBox(height: 12),
           _buildInfoCard(
             title: "AVG. TRANSACTION VALUE",
-            value: "${state.summary['summary']?['avg_value'] }",
+            value: "${state.summary['summary']?['avg_value']}",
             icon: Icons.people_outline,
             accentColor: const Color(0xFFFF9800),
           ),
@@ -230,10 +242,11 @@ final summary = state.summary['summary'];
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
+
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: 350000,
+                maxY: maxY == 0 ? 100 : maxY,
                 barTouchData: BarTouchData(enabled: false),
                 titlesData: FlTitlesData(
                   show: true,
@@ -297,35 +310,29 @@ final summary = state.summary['summary'];
                 ),
                 borderData: FlBorderData(show: false),
 
+                barGroups: ((state.summary['chart'] ?? []) as List)
+                    .asMap()
+                    .entries
+                    .map((e) {
+                      final rev =
+                          num.tryParse(e.value['revenue'].toString()) ?? 0;
 
-
-
-          barGroups: ((state.summary['chart'] ?? []) as List).asMap().entries.map(
-  (e) {
-    final rev = num.tryParse(e.value['revenue'].toString()) ?? 0;
-
-    return BarChartGroupData(
-      x: e.key,
-      barRods: [
-        BarChartRodData(
-          toY: rev.toDouble(),
-          color: const Color(0xFF1E75D5),
-          width: 40,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(6),
-            topRight: Radius.circular(6),
-          ),
-        ),
-      ],
-    );
-  },
-).toList(),
-
-
-
-
-
-
+                      return BarChartGroupData(
+                        x: e.key,
+                        barRods: [
+                          BarChartRodData(
+                            toY: rev.toDouble(),
+                            color: const Color(0xFF1E75D5),
+                            width: 40,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(6),
+                              topRight: Radius.circular(6),
+                            ),
+                          ),
+                        ],
+                      );
+                    })
+                    .toList(),
               ),
             ),
           ),
@@ -513,7 +520,7 @@ final summary = state.summary['summary'];
               ),
             ),
 
-            const SizedBox(height: 30),
+            kHeight30,
 
             Text(
               "Product Revenue Breakdown",
@@ -524,13 +531,16 @@ final summary = state.summary['summary'];
             ),
             const SizedBox(height: 10),
 
-            // Legend List
+            // Legend List (FIXED)
             ...listData.map((item) {
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Color Dot
                     Container(
+                      margin: const EdgeInsets.only(top: 6),
                       width: 10,
                       height: 10,
                       decoration: BoxDecoration(
@@ -540,15 +550,49 @@ final summary = state.summary['summary'];
                                 Colors.primaries.length],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      item['name'],
-                      style: GoogleFonts.poppins(color: Colors.black87),
+
+                    const SizedBox(width: 12),
+
+                    // Product Details (NO OVERFLOW)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Product Name
+                          Text(
+                            item['name'],
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // Units Sold
+                          Text(
+                            "Units Sold: ${item['units']}",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const Spacer(),
+
+                    const SizedBox(width: 12),
+
+                    // Revenue
                     Text(
-                      "${item['revenue']}",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      "SAR ${item['revenue']}",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),

@@ -37,6 +37,24 @@ class SalesPerformanceApi {
     );
     return response.data;
   }
+   
+   /// ✅ Product Performance API (NEW)
+Future<List<dynamic>> getProductPerformance({
+  required String start,
+  required String end,
+  String? salespersonId,
+}) async {
+  final response = await _dio.get(
+    "/reports/product-performance",
+    queryParameters: {
+      "start": start,
+      "end": end,
+      if (salespersonId != null) "salespersonId": salespersonId,
+    },
+  );
+  return response.data;
+}
+
 
 //customer 
   Future<List<dynamic>> getCustomerPerformance(String start, String end) async {

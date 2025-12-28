@@ -18,7 +18,27 @@ class SalesPerformanceRepository {
   Future<List<Map<String, dynamic>>> fetchProductSales(String start, String end) async {
     final data = await api.getProductSales(start, end);
     return data.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+    
   }
+
+   /// ✅ Product Performance Repository (NEW)
+Future<List<Map<String, dynamic>>> fetchProductPerformance({
+  required String start,
+  required String end,
+  String? salespersonId,
+}) async {
+  final data = await api.getProductPerformance(
+    start: start,
+    end: end,
+    salespersonId: salespersonId,
+  );
+
+  return data
+      .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+      .toList();
+}
+
+
 
   Future<List<Map<String, dynamic>>> fetchCustomerPerformance(String start, String end) async {
   final data = await api.getCustomerPerformance(start, end);

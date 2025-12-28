@@ -23,3 +23,15 @@ exports.customers = async (req, res) => {
   const data = await service.getCustomerPerformance(start, end);
   res.json(data);
 };
+
+exports.productPerformance = async (req, res) => {
+  const { start, end, salespersonId } = req.query;
+
+  const data = await service.getProductPerformance(
+    start,
+    end,
+    salespersonId || null
+  );
+
+  res.json(data);
+};

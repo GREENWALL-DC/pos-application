@@ -1,22 +1,65 @@
 const repo = require("./payments.repository");
+const db = require("../../config/db");
 
-exports.addPayment = async ({ saleId, customerId, amount, method }) => {
-  // 1️⃣ Create one payment (always full)
-  const payment = await repo.createPayment({
-    saleId,
-    customerId,
-    amount,
-    method
-  });
+// ✅ ADD PAYMENT (PAID or PENDING)
+exports.addPayment = async ({ saleId, customerId, amount, method, status }) => {
+  const client = await db.connect();
+  const paymentStatus = status || "paid";
 
-  // 2️⃣ Mark sale status as PAID
-  await repo.updateSaleStatus(saleId, "paid");
+  try {
+    await client.query("BEGIN");
 
-  // 3️⃣ Return final result
-  return {
-    payment: payment.rows[0],
-    payment_status: "paid"
-  };
+    const payment = await repo.createPayment(client, {
+      saleId,
+      customerId,
+      amount,
+      method,
+      status: paymentStatus,
+    });
+
+    await repo.updateSalePaymentStatus(saleId, paymentStatus);
+
+    await client.query("COMMIT");
+
+    return {
+      payment: payment.rows[0],
+      payment_status: paymentStatus,
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+
+// ✅ Mark pending → paid (used after 4–5 days)
+
+exports.markPaymentAsPaid = async (saleId) => {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // 1️⃣ Mark payments as PAID
+    await repo.markPaymentsAsPaid(client, saleId);
+
+    // 2️⃣ Update sale payment status
+    await repo.updateSalePaymentStatus(saleId, "paid");
+
+    await client.query("COMMIT");
+
+    return {
+      saleId,
+      payment_status: "paid",
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 exports.getPaymentsOfSale = async (saleId) => {

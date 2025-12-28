@@ -22,9 +22,14 @@ class AdminCustomerPage extends HookConsumerWidget {
     // CONTROLLERS (correct place!)
     // -----------------------------
     final nameController = useTextEditingController(text: customer?.name ?? "");
-    final phoneController = useTextEditingController(text: customer?.phone ?? "");
+    final phoneController = useTextEditingController(
+      text: customer?.phone ?? "",
+    );
     final tinController = useTextEditingController(text: customer?.tin ?? "");
-    final addressController = useTextEditingController(text: customer?.address ?? "");
+    final addressController = useTextEditingController(
+      text: customer?.address ?? "",
+    );
+    final areaController = useTextEditingController(text: customer?.area ?? "");
 
     // -----------------------------
     // STATES FOR BUTTON ACTIVATION
@@ -33,6 +38,7 @@ class AdminCustomerPage extends HookConsumerWidget {
     final phone = useState(customer?.phone ?? "");
     final tin = useState(customer?.tin ?? "");
     final address = useState(customer?.address ?? "");
+    final area = useState(customer?.area ?? "");
 
     // -----------------------------
     // LISTENERS (correct placement!)
@@ -41,21 +47,22 @@ class AdminCustomerPage extends HookConsumerWidget {
       nameController.addListener(() => name.value = nameController.text);
       phoneController.addListener(() => phone.value = phoneController.text);
       tinController.addListener(() => tin.value = tinController.text);
-      addressController.addListener(() => address.value = addressController.text);
+      addressController.addListener(
+        () => address.value = addressController.text,
+      );
+      areaController.addListener(() => area.value = areaController.text);
       return null;
     }, []);
 
     // BUTTON ENABLED?
-   bool isValidPhone(String phone) =>
-    RegExp(r'^[0-9]{10}$').hasMatch(phone);
+    bool isValidPhone(String phone) => RegExp(r'^[0-9]{10}$').hasMatch(phone);
 
-bool isValidTin(String tin) => tin.length >= 6;
-
-final isButtonEnabled =
-    name.value.trim().isNotEmpty &&
-    isValidPhone(phone.value.trim()) &&
-    isValidTin(tin.value.trim()) &&
-    address.value.trim().isNotEmpty;
+    bool isValidTin(String tin) => tin.length >= 6;
+    final isButtonEnabled =
+        name.value.trim().isNotEmpty &&
+        address.value.trim().isNotEmpty &&
+        (phone.value.trim().isEmpty || isValidPhone(phone.value.trim())) &&
+        (tin.value.trim().isEmpty || isValidTin(tin.value.trim()));
 
     // -----------------------------
     // LISTENER FOR SUCCESS/ERROR
@@ -63,14 +70,19 @@ final isButtonEnabled =
     ref.listen(customerNotifierProvider, (previous, next) {
       if (next.success == true && !next.isLoading) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isEditMode ? "Customer updated!" : "Customer added!")),
+          SnackBar(
+            content: Text(isEditMode ? "Customer updated!" : "Customer added!"),
+          ),
         );
         Navigator.pop(context);
       }
 
       if (next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${next.error}"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Error: ${next.error}"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     });
@@ -84,17 +96,26 @@ final isButtonEnabled =
       final updatedCustomer = Customer(
         id: isEditMode ? customer!.id : 0,
         name: nameController.text.trim(),
-        phone: phoneController.text.trim(),
-       tin: tinController.text.trim(),
+        phone: phoneController.text.trim().isEmpty
+            ? null
+            : phoneController.text.trim(),
+        tin: tinController.text.trim().isEmpty
+            ? null
+            : tinController.text.trim(),
         address: addressController.text.trim(),
+        area: areaController.text.trim().isEmpty
+            ? null
+            : areaController.text.trim(),
         createdAt: isEditMode ? customer!.createdAt : DateTime.now(),
       );
 
       if (isEditMode) {
-        await ref.read(customerNotifierProvider.notifier)
+        await ref
+            .read(customerNotifierProvider.notifier)
             .updateCustomer(customer!.id, updatedCustomer);
       } else {
-        await ref.read(customerNotifierProvider.notifier)
+        await ref
+            .read(customerNotifierProvider.notifier)
             .createCustomer(updatedCustomer);
       }
     }
@@ -107,7 +128,10 @@ final isButtonEnabled =
       appBar: AppBar(
         title: Text(
           isEditMode ? "Edit Customer" : "Add Customer",
-          style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.blue,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -129,12 +153,21 @@ final isButtonEnabled =
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildLabel("Name"),
-                      _buildTextField(nameController, "Example: John Doe", required: true),
+                      _buildTextField(
+                        nameController,
+                        "Example: John Doe",
+                        required: true,
+                      ),
 
                       const SizedBox(height: 20),
 
                       _buildLabel("Phone"),
-                      _buildTextField(phoneController, "Example: 9876543210", required: true, isPhone: true),
+                      _buildTextField(
+                        phoneController,
+                        "Example: 9876543210",
+                        required: true,
+                        isPhone: true,
+                      ),
 
                       const SizedBox(height: 20),
 
@@ -144,7 +177,20 @@ final isButtonEnabled =
                       const SizedBox(height: 20),
 
                       _buildLabel("Address"),
-                      _buildTextField(addressController, "Example: Bannerghatta Road", required: true, maxLines: 3),
+                      _buildTextField(
+                        addressController,
+                        "Example: Bannerghatta Road",
+                        required: true,
+                        maxLines: 3,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      _buildLabel("Area"),
+                      _buildTextField(
+                        areaController,
+                        "Example: Downtown / Zone A",
+                      ),
                     ],
                   ),
                 ),
@@ -169,10 +215,9 @@ final isButtonEnabled =
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed:
-                      (!isButtonEnabled || customerState.isLoading)
-                          ? null
-                          : saveCustomer,
+                  onPressed: (!isButtonEnabled || customerState.isLoading)
+                      ? null
+                      : saveCustomer,
                   child: customerState.isLoading
                       ? const SizedBox(
                           height: 20,
@@ -182,7 +227,9 @@ final isButtonEnabled =
                       : Text(
                           isEditMode ? "Save changes" : "Save customer",
                           style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                 ),
               ),
@@ -212,9 +259,11 @@ final isButtonEnabled =
 
   Widget _buildTextField(
     TextEditingController controller,
-    String hint,
-    {bool required = false, bool isPhone = false, int maxLines = 1}
-  ) {
+    String hint, {
+    bool required = false,
+    bool isPhone = false,
+    int maxLines = 1,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF2F2F2),
@@ -225,36 +274,35 @@ final isButtonEnabled =
         maxLines: maxLines,
         keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
 
-validator: (value) {
-  final text = value?.trim() ?? "";
+        validator: (value) {
+          final text = value?.trim() ?? "";
 
-  if (required && text.isEmpty) {
-    return "This field is required";
-  }
+          if (required && text.isEmpty) {
+            return "This field is required";
+          }
+          if (isPhone && text.isNotEmpty) {
+            if (!RegExp(r'^[0-9]{10}$').hasMatch(text)) {
+              return "Phone number must be exactly 10 digits";
+            }
+          }
 
-  if (isPhone) {
-    if (!RegExp(r'^[0-9]{10}$').hasMatch(text)) {
-      return "Phone number must be exactly 10 digits";
-    }
-  }
+          if (hint.toLowerCase().contains("tin") && text.isNotEmpty) {
+            if (text.length < 6) {
+              return "TIN must be at least 6 characters";
+            }
+          }
 
-  if (hint.toLowerCase().contains("tin")) {
-    if (text.length < 6) {
-      return "TIN must be at least 6 characters";
-    }
-  }
-
-  return null;
-},
-
-
+          return null;
+        },
 
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );

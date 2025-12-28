@@ -12,14 +12,20 @@ module.exports = async (client) => {
 
     // 2️⃣ Create table
     await client.query(`
-      CREATE TABLE customers (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        phone VARCHAR(20),
-        address TEXT,
-        tin VARCHAR(50), -- optional for shop owners
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+     CREATE TABLE customers (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+
+  phone VARCHAR(20),          -- optional
+  tin VARCHAR(50),            -- optional
+  address TEXT,
+
+  area VARCHAR(100),          -- ✅ NEW
+  salesperson_id INTEGER,     -- ✅ NEW
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
     `);
 
     console.log('✅ "customers" table created successfully.');

@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shopx/application/sales/sales_notifier.dart';
 import 'package:shopx/domain/sales/sale.dart';
+import 'package:shopx/presentation/dashboard/user/pages/transactions/transaction_detail_sheet.dart';
 import 'package:shopx/widget/transaction/build_transaction_card.dart';
 
 class TransactionHistoryPage extends HookConsumerWidget {
@@ -193,12 +194,17 @@ padding: EdgeInsets.only(top: 16, bottom: 8),
                           ),
 
                           // -- Transactions for this date --
-                          ...daySales
-                              .map(
-                                (sale) =>
-                                    buildTransactionCard(sale, primaryBlue),
-                              )
-                              .toList(),
+                         ...daySales.map(
+  (sale) => GestureDetector(
+    onTap: () {
+      _openTransactionDetails(context, ref, sale);
+    },
+    child: buildTransactionCard(sale, primaryBlue),
+  ),
+).toList(),
+
+
+
                         ],
                       );
                     },
@@ -211,4 +217,34 @@ padding: EdgeInsets.only(top: 16, bottom: 8),
       ),
     );
   }
+  void _openTransactionDetails(
+  BuildContext context,
+  WidgetRef ref,
+  Sale sale,
+) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (_) {
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6, // 👈 half screen
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          return TransactionDetailSheet(
+            sale: sale,
+            scrollController: scrollController,
+            
+          );
+        },
+      );
+    },
+  );
+}
+
 }

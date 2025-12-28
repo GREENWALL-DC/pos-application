@@ -23,10 +23,10 @@ exports.createSale = async (
        discount_amount,
        vat_percentage,
        vat_amount,
-       total_amount,
-       payment_status
+       total_amount
+       
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid')
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       salesperson_id,
@@ -35,7 +35,7 @@ exports.createSale = async (
       discount_amount,
       vat_percentage,
       vat_amount,
-      total_amount,
+      total_amount
     ]
   );
 
@@ -119,6 +119,24 @@ const items = await db.query(
     payments: payments.rows,
   };
 };
+
+
+exports.getSaleById = async (client, id) => {
+  const r = await client.query(
+    `SELECT * FROM sales WHERE id = $1`,
+    [id]
+  );
+  return r.rows[0];
+};
+
+exports.getSaleItems = async (client, saleId) => {
+  const r = await client.query(
+    `SELECT * FROM sale_items WHERE sale_id = $1`,
+    [saleId]
+  );
+  return r.rows;
+};
+
 
 // BASIC LIST
 exports.getAllSales = async () => {

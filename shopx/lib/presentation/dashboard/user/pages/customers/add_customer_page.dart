@@ -15,98 +15,88 @@ class AddCustomerPage extends HookConsumerWidget {
     final phoneController = useTextEditingController();
     final tinController = useTextEditingController();
     final addressController = useTextEditingController();
-
+    final areaController = useTextEditingController(); // ✅ NEW
 
     final nameError = useState<String?>(null);
-final phoneError = useState<String?>(null);
-final tinError = useState<String?>(null);
-final addressError = useState<String?>(null);
-
+    final phoneError = useState<String?>(null);
+    final tinError = useState<String?>(null);
+    final addressError = useState<String?>(null);
+    final areaError = useState<String?>(null); // optional, for consistency
 
     // 2. Form Validity State
     final isFormValid = useState(false);
 
+    bool isValidPhone(String phone) {
+      final phoneRegex = RegExp(r'^[0-9]{10}$'); // exactly 10 digits
+      return phoneRegex.hasMatch(phone);
+    }
 
-
- 
-
-bool isValidPhone(String phone) {
-  final phoneRegex = RegExp(r'^[0-9]{10}$'); // exactly 10 digits
-  return phoneRegex.hasMatch(phone);
-}
-
-bool isValidTin(String tin) {
-  return tin.length >= 6; // you can adjust rule
-}
-
+    bool isValidTin(String tin) {
+      return tin.length >= 6; // you can adjust rule
+    }
 
     // 3. Validation Logic
-   void validateForm() {
-  final name = nameController.text.trim();
-  final phone = phoneController.text.trim();
-  final tin = tinController.text.trim();
-  final address = addressController.text.trim();
+    void validateForm() {
+      final name = nameController.text.trim();
+      final phone = phoneController.text.trim();
+      final tin = tinController.text.trim();
+      final address = addressController.text.trim();
 
-  // NAME
-  nameError.value = name.isEmpty ? "Name is required" : null;
+      // NAME (required)
+      nameError.value = name.isEmpty ? "Name is required" : null;
 
-  // PHONE
-  phoneError.value = phone.isEmpty
-      ? "Phone number is required"
-      : !isValidPhone(phone)
+      // PHONE (optional)
+      phoneError.value = phone.isNotEmpty && !isValidPhone(phone)
           ? "Phone must be exactly 10 digits"
           : null;
 
-  // TIN
-  tinError.value = tin.isEmpty
-      ? "TIN / Tax ID is required"
-      : !isValidTin(tin)
+      // TIN (optional)
+      tinError.value = tin.isNotEmpty && !isValidTin(tin)
           ? "Minimum 6 characters required"
           : null;
 
-  // ADDRESS
-  addressError.value =
-      address.isEmpty ? "Address is required" : null;
+      // ADDRESS (keep required – business choice)
+      addressError.value = address.isEmpty ? "Address is required" : null;
 
-  isFormValid.value =
-      nameError.value == null &&
-      phoneError.value == null &&
-      tinError.value == null &&
-      addressError.value == null;
-}
+      // AREA (optional → no validation error)
+      areaError.value = null;
 
-
+      isFormValid.value =
+          nameError.value == null &&
+          phoneError.value == null &&
+          tinError.value == null &&
+          addressError.value == null;
+    }
 
     // 4. Watch for Loading/Success
     final customerState = ref.watch(customerNotifierProvider);
 
     // Listen for Success to Pop
-   ref.listen(customerNotifierProvider, (previous, next) {
-  // SUCCESS MESSAGE
-  if (next.success && previous?.success != true) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Customer added successfully!"),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
+    ref.listen(customerNotifierProvider, (previous, next) {
+      // SUCCESS MESSAGE
+      if (next.success && previous?.success != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Customer added successfully!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
 
-    Navigator.pop(context); // Return to customer list
-  }
+        Navigator.pop(context); // Return to customer list
+      }
 
-  // ERROR MESSAGE
-  if (next.error != null && next.error != previous?.error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(next.error!),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-});
-
+      // ERROR MESSAGE
+      if (next.error != null && next.error != previous?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    });
 
     // UI Constants
     const primaryBlue = Color(0xFF1976D2);
@@ -154,36 +144,41 @@ bool isValidTin(String tin) {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                   buildInputGroup(
-  "Name",
-  nameController,
-  validateForm,
-  errorText: nameError.value,
-),
+                    buildInputGroup(
+                      "Name",
+                      nameController,
+                      validateForm,
+                      errorText: nameError.value,
+                    ),
 
-buildInputGroup(
-  "Phone",
-  phoneController,
-  validateForm,
-  isPhone: true,
-  errorText: phoneError.value,
-),
+                    buildInputGroup(
+                      "Phone",
+                      phoneController,
+                      validateForm,
+                      isPhone: true,
+                      errorText: phoneError.value,
+                    ),
 
-buildInputGroup(
-  "TIN / Tax ID",
-  tinController,
-  validateForm,
-  errorText: tinError.value,
-),
+                    buildInputGroup(
+                      "TIN / Tax ID",
+                      tinController,
+                      validateForm,
+                      errorText: tinError.value,
+                    ),
+                    buildInputGroup(
+                      "Address",
+                      addressController,
+                      validateForm,
+                      maxLines: 3,
+                      errorText: addressError.value,
+                    ),
 
-buildInputGroup(
-  "Address",
-  addressController,
-  validateForm,
-  maxLines: 3,
-  errorText: addressError.value,
-),
-
+                    buildInputGroup(
+                      "Area",
+                      areaController,
+                      validateForm,
+                      errorText: areaError.value,
+                    ),
                   ],
                 ),
               ),
@@ -200,12 +195,19 @@ buildInputGroup(
                       ? () async {
                           // Create Customer Object
                           final newCustomer = Customer(
-                            id: 0, // Backend ignores ID on create
+                            id: 0,
                             name: nameController.text,
-                            phone: phoneController.text,
-                            tin: tinController.text,
+                            phone: phoneController.text.isEmpty
+                                ? null
+                                : phoneController.text,
+                            tin: tinController.text.isEmpty
+                                ? null
+                                : tinController.text,
                             address: addressController.text,
-                            createdAt: DateTime.now(), // Backend handles date
+                            area: areaController.text.isEmpty
+                                ? null
+                                : areaController.text, // ✅ NEW
+                            createdAt: DateTime.now(),
                           );
 
                           // Call Provider

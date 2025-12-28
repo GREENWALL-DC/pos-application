@@ -1,10 +1,12 @@
 const service = require("./customers.service");
 const asyncHandler = require("express-async-handler");
 
+
 exports.createCustomer = asyncHandler(async (req, res) => {
-  const customer = await service.createCustomer(req.body);
+  const customer = await service.createCustomer(req.body, req.user);
   res.status(201).json({ message: "Customer created", customer });
 });
+
 
 exports.getAllCustomers = asyncHandler(async (req, res) => {
   const customers = await service.getAllCustomers();

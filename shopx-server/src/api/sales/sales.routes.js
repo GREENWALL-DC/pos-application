@@ -6,5 +6,7 @@ const validateToken = require("../../middleware/validateTokenHandler");
 router.post("/", validateToken, controller.createSale);
 router.get("/", validateToken, controller.getAllSales);
 router.get("/:id", validateToken, controller.getSaleById);
+router.post("/:id/void", validateToken, controller.voidSale);
+
 
 module.exports = router;
