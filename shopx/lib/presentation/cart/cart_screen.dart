@@ -409,7 +409,7 @@ final paymentStatus = useState<String>("paid"); // 👈 NEW
                             onSelected: (Customer selected) {
                               selectedCustomer.value = selected;
                               nameCtrl.text = selected.name;
-                              phoneCtrl.text = selected.phone;
+                              phoneCtrl.text = selected.phone ?? "";
                               addressCtrl.text = selected.address;
                             },
                           ),
@@ -417,7 +417,8 @@ final paymentStatus = useState<String>("paid"); // 👈 NEW
                           const SizedBox(height: 12),
 
                           _buildTextField(
-                            controller: phoneCtrl,
+                            controller: phoneCtrl, 
+
                             hint: "Phone number",
                             icon: Icons.phone_outlined,
                             keyboardType: TextInputType.phone,

@@ -68,15 +68,18 @@ exports.createSale = async (data) => {
     }
 
     // 3️⃣ CREATE MAIN SALE
-    const sale = await repo.createSale(client, {
-      salesperson_id: data.salesperson_id,
-      customer_id: data.customer_id,
-      subtotal_amount: gross_subtotal,
-      discount_amount,
-      vat_percentage: VAT_PERCENTAGE,
-      vat_amount,
-      total_amount,
-    });
+  const sale = await repo.createSale(client, {
+  salesperson_id: data.salesperson_id,
+  customer_id: data.customer_id,
+  subtotal_amount: gross_subtotal,
+  discount_amount,
+  vat_percentage: VAT_PERCENTAGE,
+  vat_amount,
+  total_amount,
+  payment_method: data.payment_method,
+  payment_status: data.payment_status,
+});
+
 
     let isBackorder = false;
 

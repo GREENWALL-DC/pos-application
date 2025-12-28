@@ -12,6 +12,8 @@ exports.createSale = async (
     vat_percentage,
     vat_amount,
     total_amount,
+    payment_method,
+    payment_status,
   }
 ) => {
   const result = await client.query(
@@ -23,10 +25,11 @@ exports.createSale = async (
        discount_amount,
        vat_percentage,
        vat_amount,
-       total_amount
-       
+       total_amount,
+       payment_method,
+       payment_status
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
      RETURNING *`,
     [
       salesperson_id,
@@ -35,13 +38,14 @@ exports.createSale = async (
       discount_amount,
       vat_percentage,
       vat_amount,
-      total_amount
+      total_amount,
+      payment_method,
+      payment_status
     ]
   );
 
   return result.rows[0];
 };
-
 
 
 // INSERT SALE ITEM
