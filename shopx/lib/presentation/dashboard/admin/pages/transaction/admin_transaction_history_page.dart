@@ -13,8 +13,19 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
 
   const AdminTransactionHistoryPage({super.key, this.onFilterTap});
 
+  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    useEffect(() {
+  Future.microtask(() {
+    ref.read(salesNotifierProvider.notifier).fetchAllSales();
+  });
+  return null;
+}, []);
+
+
     final primaryBlue = const Color(0xFF1D72D6);
 
   final salesState = ref.watch(salesNotifierProvider);
@@ -95,9 +106,9 @@ if (filter != null) {
   // Salesperson filter
   if (filter.salespersonName != null) {
     filteredSales = filteredSales
-        .where((s) =>
-            s.salespersonName.toLowerCase() ==
-            filter.salespersonName!.toLowerCase())
+      .where((s) =>
+  s.salespersonName.trim().toLowerCase() ==
+  filter.salespersonName!.trim().toLowerCase())
         .toList();
   }
 
@@ -125,7 +136,7 @@ if (filter != null) {
 }
 
 
-    if (sales.isEmpty) {
+  if (filteredSales.isEmpty) {
       return const Center(child: Text("No transactions found"));
     }
 

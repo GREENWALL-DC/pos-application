@@ -143,7 +143,30 @@ exports.getSaleItems = async (client, saleId) => {
 
 
 // BASIC LIST
-exports.getAllSales = async () => {
-  const r = await db.query(`SELECT * FROM sales ORDER BY id DESC`);
+exports.getAllSales = async (limit = 20) => {
+  const r = await db.query(
+    `
+    SELECT
+      s.id,
+      s.customer_id,
+      s.subtotal_amount,
+      s.discount_amount,
+      s.vat_amount,
+      s.vat_percentage,
+      s.total_amount,
+      s.payment_status,
+      s.created_at AS sale_date,
+      u.username AS salesperson_name,
+      c.name AS customer_name,
+      c.phone AS customer_phone
+    FROM sales s
+    LEFT JOIN users u ON u.id = s.salesperson_id
+    LEFT JOIN customers c ON c.id = s.customer_id
+    ORDER BY s.created_at DESC
+    LIMIT $1
+    `,
+    [limit]
+  );
+
   return r.rows;
 };
