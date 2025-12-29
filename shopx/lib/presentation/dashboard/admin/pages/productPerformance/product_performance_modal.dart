@@ -25,7 +25,8 @@ class ProductPerformanceFilterModal extends HookConsumerWidget {
     final primaryBlue = const Color(0xFF1D72D6);
 
     final salesState = ref.watch(salesNotifierProvider);
-    final selectedSalesperson = useState<String?>(null);
+ final selectedSalespersonId = useState<String?>(null);
+
 
     final fromDate = useState<DateTime?>(null);
     final toDate = useState<DateTime?>(null);
@@ -48,27 +49,30 @@ class ProductPerformanceFilterModal extends HookConsumerWidget {
           const SizedBox(height: 20),
 
           /// SALESPERSON AUTOCOMPLETE
-          Autocomplete<String>(
-            optionsBuilder: (text) {
-              if (text.text.isEmpty) return const Iterable.empty();
-              return salesState.sales
-                  .map((e) => e.salespersonName)
-                  .where(
-                    (name) =>
-                        name.toLowerCase().contains(text.text.toLowerCase()),
-                  );
-            },
-            onSelected: (value) => selectedSalesperson.value = value,
-            fieldViewBuilder: (_, controller, __, ___) {
-              return TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  labelText: "Salesperson",
-                  border: OutlineInputBorder(),
-                ),
-              );
-            },
-          ),
+         Autocomplete<Map<String, dynamic>>(
+  optionsBuilder: (text) {
+    if (text.text.isEmpty) return const Iterable.empty();
+    return salesState.sales
+        .map((e) => {
+              "id": e.salespersonName,
+              "name": e.salespersonName,
+            })
+        .where((s) =>
+            s["name"]!.toLowerCase().contains(text.text.toLowerCase()));
+  },
+  displayStringForOption: (o) => o["name"],
+  onSelected: (value) => selectedSalespersonId.value = value["id"],
+  fieldViewBuilder: (_, controller, __, ___) {
+    return TextField(
+      controller: controller,
+      decoration: const InputDecoration(
+        labelText: "Salesperson",
+        border: OutlineInputBorder(),
+      ),
+    );
+  },
+),
+
 
           const SizedBox(height: 14),
 
@@ -105,7 +109,7 @@ class ProductPerformanceFilterModal extends HookConsumerWidget {
                         .format(fromDate.value!),
                     endDate:
                         DateFormat("yyyy-MM-dd").format(toDate.value!),
-                    salespersonId: selectedSalesperson.value,
+                    salespersonId: selectedSalespersonId.value,
                   ),
                 );
               },

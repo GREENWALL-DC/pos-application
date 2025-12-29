@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
-
 import 'package:shopx/application/sales/sales_notifier.dart';
 import 'package:shopx/domain/sales/sale.dart';
 import 'package:shopx/widget/admintransaction/transaction_detail_dialog.dart';
@@ -13,24 +12,19 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
 
   const AdminTransactionHistoryPage({super.key, this.onFilterTap});
 
-  
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     useEffect(() {
-  Future.microtask(() {
-    ref.read(salesNotifierProvider.notifier).fetchAllSales();
-  });
-  return null;
-}, []);
-
+      Future.microtask(() {
+        ref.read(salesNotifierProvider.notifier).fetchAllSales();
+      });
+      return null;
+    }, []);
 
     final primaryBlue = const Color(0xFF1D72D6);
 
-  final salesState = ref.watch(salesNotifierProvider);
-final filter = useState<TransactionFilterResult?>(null);
-
+    final salesState = ref.watch(salesNotifierProvider);
+    final filter = useState<TransactionFilterResult?>(null);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -52,21 +46,21 @@ final filter = useState<TransactionFilterResult?>(null);
         ),
         actions: [
           TextButton.icon(
-         onPressed: () async {
-  final result = await showDialog<TransactionFilterResult>(
-    context: context,
-    builder: (_) => TransactionFilterDialog(
-      salespersons: salesState.sales
-          .map((e) => e.salespersonName)
-          .toSet()
-          .toList(),
-    ),
-  );
+            onPressed: () async {
+              final result = await showDialog<TransactionFilterResult>(
+                context: context,
+                builder: (_) => TransactionFilterDialog(
+                  salespersons: salesState.sales
+                      .map((e) => e.salespersonName)
+                      .toSet()
+                      .toList(),
+                ),
+              );
 
-  if (result != null) {
-    filter.value = result;
-  }
-},
+              if (result != null) {
+                filter.value = result;
+              }
+            },
 
             icon: Icon(Icons.tune, color: primaryBlue, size: 20),
             label: Text(
@@ -85,64 +79,60 @@ final filter = useState<TransactionFilterResult?>(null);
           ? const Center(child: CircularProgressIndicator())
           : salesState.error != null
           ? Center(child: Text(salesState.error!))
-     : _buildSalesList(context, ref, salesState.sales, filter.value),
-
-
+          : _buildSalesList(context, ref, salesState.sales, filter.value),
     );
   }
 
   // ================= LIST =================
 
- Widget _buildSalesList(
-  BuildContext context,
-  WidgetRef ref,
-  List<Sale> sales,
-  TransactionFilterResult? filter,
-)
-{
-  var filteredSales = sales;
+  Widget _buildSalesList(
+    BuildContext context,
+    WidgetRef ref,
+    List<Sale> sales,
+    TransactionFilterResult? filter,
+  ) {
+    var filteredSales = sales;
 
-if (filter != null) {
-  // Salesperson filter
-  if (filter.salespersonName != null) {
-    filteredSales = filteredSales
-      .where((s) =>
-  s.salespersonName.trim().toLowerCase() ==
-  filter.salespersonName!.trim().toLowerCase())
-        .toList();
-  }
+    if (filter != null) {
+      // Salesperson filter
+      if (filter.salespersonName != null) {
+        filteredSales = filteredSales
+            .where(
+              (s) =>
+                  s.salespersonName.trim().toLowerCase() ==
+                  filter.salespersonName!.trim().toLowerCase(),
+            )
+            .toList();
+      }
 
-  // Status filter
-  if (filter.status != 'ALL') {
-    filteredSales = filteredSales
-        .where((s) =>
-            s.paymentStatus.toUpperCase() == filter.status)
-        .toList();
-  }
+      // Status filter
+      if (filter.status != 'ALL') {
+        filteredSales = filteredSales
+            .where((s) => s.paymentStatus.toUpperCase() == filter.status)
+            .toList();
+      }
 
-  // From date
-  if (filter.fromDate != null) {
-    filteredSales = filteredSales
-        .where((s) => !s.saleDate.isBefore(filter.fromDate!))
-        .toList();
-  }
+      // From date
+      if (filter.fromDate != null) {
+        filteredSales = filteredSales
+            .where((s) => !s.saleDate.isBefore(filter.fromDate!))
+            .toList();
+      }
 
-  // To date
-  if (filter.toDate != null) {
-    filteredSales = filteredSales
-        .where((s) => !s.saleDate.isAfter(filter.toDate!))
-        .toList();
-  }
-}
+      // To date
+      if (filter.toDate != null) {
+        filteredSales = filteredSales
+            .where((s) => !s.saleDate.isAfter(filter.toDate!))
+            .toList();
+      }
+    }
 
-
-  if (filteredSales.isEmpty) {
+    if (filteredSales.isEmpty) {
       return const Center(child: Text("No transactions found"));
     }
 
-  final sortedSales = [...filteredSales]
-  ..sort((a, b) => b.saleDate.compareTo(a.saleDate));
-
+    final sortedSales = [...filteredSales]
+      ..sort((a, b) => b.saleDate.compareTo(a.saleDate));
 
     final groupedSales = _groupByDate(sortedSales);
 
@@ -188,18 +178,11 @@ if (filter != null) {
             ),
 
             // TRANSACTION CARDS
-          ...dailySales.map(
-  (sale) => _buildTransactionCard(
-    context,
-    sale,
-    () async {
-      await ref
-          .read(salesNotifierProvider.notifier)
-          .fetchAllSales();
-    },
-  ),
-),
-
+            ...dailySales.map(
+              (sale) => _buildTransactionCard(context, sale, () async {
+                await ref.read(salesNotifierProvider.notifier).fetchAllSales();
+              }),
+            ),
 
             const SizedBox(height: 12),
           ],
@@ -225,12 +208,11 @@ if (filter != null) {
 
   // ================= CARD =================
 
-Widget _buildTransactionCard(
-  BuildContext context,
-  Sale sale,
-  VoidCallback onRefresh,
-)
- {
+  Widget _buildTransactionCard(
+    BuildContext context,
+    Sale sale,
+    VoidCallback onRefresh,
+  ) {
     final timeString = DateFormat('hh:mm a').format(sale.saleDate);
     final trxId = "#TRX${sale.id.toString().padLeft(10, '0')}";
     final statusColor = _getStatusColor(sale.paymentStatus);
@@ -242,13 +224,12 @@ Widget _buildTransactionCard(
           context: context,
           builder: (_) => TransactionDetailsDialog(
             sale: sale,
-          onMarkAsPaid: sale.paymentStatus.toUpperCase() == 'PENDING'
-    ? () {
-        Navigator.of(context).pop();
-        onRefresh();
-      }
-    : null,
-
+            onMarkAsPaid: sale.paymentStatus.toUpperCase() == 'PENDING'
+                ? () {
+                    Navigator.of(context).pop();
+                    onRefresh();
+                  }
+                : null,
           ),
         );
       },

@@ -16,13 +16,18 @@ class ProductPerformancePage extends HookConsumerWidget {
     final state = ref.watch(salesPerformanceNotifierProvider);
 
     useEffect(() {
-      final notifier = ref.read(salesPerformanceNotifierProvider.notifier);
-      notifier.loadProductPerformance(
-        start: state.startDate,
-        end: state.endDate,
-      );
-      return null;
-    }, []);
+  Future.microtask(() {
+    final notifier = ref.read(salesPerformanceNotifierProvider.notifier);
+    final s = ref.read(salesPerformanceNotifierProvider);
+
+    notifier.loadProductPerformance(
+      start: s.startDate,
+      end: s.endDate,
+    );
+  });
+  return null;
+}, []);
+
 
     return Scaffold(
       backgroundColor: Colors.white,

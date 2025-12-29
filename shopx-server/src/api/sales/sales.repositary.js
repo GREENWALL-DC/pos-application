@@ -155,14 +155,14 @@ exports.getAllSales = async (limit = 20) => {
       s.vat_percentage,
       s.total_amount,
       s.payment_status,
-      s.created_at AS sale_date,
+      s.sale_date,
       u.username AS salesperson_name,
       c.name AS customer_name,
       c.phone AS customer_phone
     FROM sales s
     LEFT JOIN users u ON u.id = s.salesperson_id
     LEFT JOIN customers c ON c.id = s.customer_id
-    ORDER BY s.created_at DESC
+    ORDER BY s.sale_date DESC
     LIMIT $1
     `,
     [limit]
