@@ -91,7 +91,8 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
     List<Sale> sales,
     TransactionFilterResult? filter,
   ) {
-    var filteredSales = sales;
+  var filteredSales = List<Sale>.from(sales);
+
 
     if (filter != null) {
       // Salesperson filter

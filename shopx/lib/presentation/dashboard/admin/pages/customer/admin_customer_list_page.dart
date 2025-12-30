@@ -5,6 +5,7 @@ import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/application/customers/customer_notifier.dart';
 import 'package:shopx/application/salesman/salesman_notifier.dart';
 import 'package:shopx/domain/customers/customer.dart';
+import 'package:shopx/presentation/dashboard/admin/pages/customer/admin_customer_filter_result.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/customer/admin_customer_page.dart';
 
 class AdminCustomerListPage extends HookConsumerWidget {
@@ -13,12 +14,11 @@ class AdminCustomerListPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authNotifierProvider);
-    
 
     final searchQuery = useState('');
-    final selectedArea = useState<String?>("All");
-   final selectedSalespersonName = useState<String>("All");
-
+    final selectedArea = useState<String>("All");
+    final selectedSalespersonId = useState<int?>(null);
+    final selectedFilterType = useState<CustomerFilterType?>(null);
 
     // STATE: Track expanded row
     final expandedCustomerId = useState<int?>(null);
@@ -27,24 +27,12 @@ class AdminCustomerListPage extends HookConsumerWidget {
     final customers = customerState.customers;
     final salesmanState = ref.watch(salesmanNotifierProvider);
 
-// 🔥 ID → NAME mapping
-final Map<int, String> salespersonMap = {
-  for (final s in salesmanState.salesmen)
-    if (s.id != null) s.id!: s.username,
-};
-
-
-
-final salespersonNames = [
-  "All",
-  ...{
-    for (final c in customers)
-      if (c.salespersonId != null &&
-          salespersonMap.containsKey(c.salespersonId))
-        salespersonMap[c.salespersonId!]!,
-  }
-];
-
+    // 🔥 ID → NAME mapping
+    final Map<int, String> salespersonMap = {
+      for (final s in salesmanState.salesmen)
+        if (s.id != null) s.id!: s.username,
+    };
+    final salespersons = salesmanState.salesmen;
 
     final areas = [
       "All",
@@ -61,29 +49,33 @@ final salespersonNames = [
           customer.name.toLowerCase().contains(query) ||
           (customer.phone?.toLowerCase().contains(query) ?? false);
 
-      final matchesArea =
-          selectedArea.value == "All" || customer.area == selectedArea.value;
+      bool matchesFilter = true;
 
-  final matchesSalesperson =
-    selectedSalespersonName.value == "All" ||
-    (customer.salespersonId != null &&
-     salespersonMap[customer.salespersonId] ==
-         selectedSalespersonName.value);
+      if (selectedFilterType.value == CustomerFilterType.area) {
+        matchesFilter =
+            selectedArea.value == "All" || customer.area == selectedArea.value;
+      }
 
+      if (selectedFilterType.value == CustomerFilterType.salesperson) {
+        matchesFilter =
+            selectedSalespersonId.value == null ||
+            customer.salespersonId == selectedSalespersonId.value;
+      }
 
-      return matchesSearch && matchesArea && matchesSalesperson;
+      return matchesSearch && matchesFilter;
     }).toList();
 
-   useEffect(() {
-  if (auth.token != null) {
-    Future.microtask(() async {
-      await ref.read(customerNotifierProvider.notifier).fetchCustomers();
-      await ref.read(salesmanNotifierProvider.notifier).fetchSalesmen(); // ✅ ADD
-    });
-  }
-  return null;
-}, [auth.token]);
-
+    useEffect(() {
+      if (auth.token != null) {
+        Future.microtask(() async {
+          await ref.read(customerNotifierProvider.notifier).fetchCustomers();
+          await ref
+              .read(salesmanNotifierProvider.notifier)
+              .fetchSalesmen(); // ✅ ADD
+        });
+      }
+      return null;
+    }, [auth.token]);
 
     // LISTENER: Handle side effects (Success/Error)
     ref.listen(customerNotifierProvider, (previous, next) {
@@ -151,74 +143,54 @@ final salespersonNames = [
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                // AREA FILTER
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedArea.value,
-                    decoration: const InputDecoration(
-                      labelText: "Area",
-                      border: OutlineInputBorder(),
-                    ),
-                    items: areas
-                        .map(
-                          (area) =>
-                              DropdownMenuItem(value: area, child: Text(area)),
-                        )
-                        .toList(),
-                    onChanged: (value) => selectedArea.value = value,
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // SALESPERSON FILTER
-               Expanded(
-  child: Autocomplete<String>(
-    initialValue: TextEditingValue(
-      text: selectedSalespersonName.value == "All"
-          ? ""
-          : selectedSalespersonName.value,
-    ),
-
-    optionsBuilder: (TextEditingValue textEditingValue) {
-      if (textEditingValue.text.isEmpty) {
-        return salespersonNames.where((e) => e != "All");
-      }
-
-      return salespersonNames.where(
-        (option) =>
-            option != "All" &&
-            option.toLowerCase().contains(
-                  textEditingValue.text.toLowerCase(),
-                ),
-      );
-    },
-
-    onSelected: (String selection) {
-      selectedSalespersonName.value = selection;
-    },
-
-    fieldViewBuilder: (
-      context,
-      textController,
-      focusNode,
-      onFieldSubmitted,
-    ) {
-      return TextFormField(
-        controller: textController,
-        focusNode: focusNode,
-        decoration: const InputDecoration(
-          labelText: "Salesperson",
-          hintText: "Type salesperson name",
-          border: OutlineInputBorder(),
-        ),
-      );
-    },
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () async {
+              final result = await showDialog<CustomerFilterResult>(
+  context: context,
+  builder: (_) => CustomerFilterDialog(
+    areas: areas,
+    salespersons: salespersons, // ✅ PASS FULL SALESMEN LIST
   ),
-),
+);
 
-              ],
+if (result == null) return;
+
+if (result.filterType == CustomerFilterType.area) {
+  selectedFilterType.value = CustomerFilterType.area;
+  selectedArea.value = result.value;
+  selectedSalespersonId.value = null;
+} else {
+  selectedFilterType.value = CustomerFilterType.salesperson;
+  selectedSalespersonId.value = result.salespersonId;
+  selectedArea.value = "All";
+}
+
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.blue),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text(
+                      "Choose a Category",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Icon(Icons.keyboard_arrow_down),
+                  ],
+                ),
+              ),
             ),
           ),
 
@@ -246,7 +218,7 @@ final salespersonNames = [
                         customer,
                         isExpanded,
                         expandedCustomerId,
-                         salespersonMap,
+                        salespersonMap,
                       );
                     },
                   ),
@@ -296,7 +268,7 @@ final salespersonNames = [
     Customer customer,
     bool isExpanded,
     ValueNotifier<int?> expandedState,
-     Map<int, String> salespersonMap, // ✅ ADD THIS
+    Map<int, String> salespersonMap, // ✅ ADD THIS
   ) {
     return GestureDetector(
       onTap: () {
@@ -339,8 +311,6 @@ final salespersonNames = [
                   const Icon(Icons.chevron_right, color: Colors.black54),
               ],
             ),
-
-
 
             // Expanded Content
             if (isExpanded) ...[
@@ -456,11 +426,10 @@ final salespersonNames = [
             ],
 
             if (customer.salespersonId != null)
-  Text(
-    "Salesperson: ${salespersonMap[customer.salespersonId!] ?? "-"}",
-    style: const TextStyle(color: Colors.grey),
-  ),
-
+              Text(
+                "Salesperson: ${salespersonMap[customer.salespersonId!] ?? "-"}",
+                style: const TextStyle(color: Colors.grey),
+              ),
           ],
         ),
       ),

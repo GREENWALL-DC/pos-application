@@ -164,15 +164,15 @@ class AdminCustomerPage extends HookConsumerWidget {
                       _buildLabel("Phone"),
                       _buildTextField(
                         phoneController,
-                        "Example: 9876543210",
-                        required: true,
+                       "Example: 9876543210 (Optional)",
+                        required: false,
                         isPhone: true,
                       ),
 
                       const SizedBox(height: 20),
 
                       _buildLabel("Tin"),
-                      _buildTextField(tinController, "Example: tin no"),
+                      _buildTextField(tinController,"Example: TIN12345 (Optional)",),
 
                       const SizedBox(height: 20),
 

@@ -250,11 +250,15 @@ class RecieptPreviewScreen extends HookConsumerWidget {
       child: Column(
         children: [
           _bilingualRow("Customer", ": ${r.customerName}", "اسم العميل"),
-          _bilingualRow(
-            "CustomerVat",
-            ": ${r.vatNumber ?? ''}",
-            "الرقم الضريبي للعميل",
-          ),
+
+if (r.customerVat != null && r.customerVat!.isNotEmpty)
+  _bilingualRow(
+    "Customer VAT",
+    ": ${r.customerVat}",
+    "الرقم الضريبي للعميل",
+  ),
+
+
           // _bilingualRow("InvoiceDate", ": ${r.invoiceDate}", "تاريخ الفاتورة"),
           _bilingualRow(
             "InvoiceDate",

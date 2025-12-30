@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import 'package:shopx/application/salesPerformance/sales_performance_notifier.dart';
 import 'package:shopx/application/salesPerformance/sales_performance_state.dart';
+import 'package:shopx/application/salesman/salesman_notifier.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/productPerformance/product_performance_modal.dart';
 
 class ProductPerformancePage extends HookConsumerWidget {
@@ -14,9 +15,12 @@ class ProductPerformancePage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final primaryBlue = const Color(0xFF1D72D6);
     final state = ref.watch(salesPerformanceNotifierProvider);
+useEffect(() {
+  Future.microtask(() async {
+    // 🔥 THIS WAS MISSING
+    await ref.read(salesmanNotifierProvider.notifier).fetchSalesmen();
 
-    useEffect(() {
-  Future.microtask(() {
+    // Load product performance
     final notifier = ref.read(salesPerformanceNotifierProvider.notifier);
     final s = ref.read(salesPerformanceNotifierProvider);
 
@@ -48,17 +52,25 @@ class ProductPerformancePage extends HookConsumerWidget {
         actions: [
           TextButton.icon(
             onPressed: () async {
+
+
+
+
               final result =
-                  await showModalBottomSheet<ProductPerformanceFilterResult>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.white,
-                shape: const RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                builder: (_) => const ProductPerformanceFilterModal(),
-              );
+    await showDialog<ProductPerformanceFilterResult>(
+  context: context,
+  barrierDismissible: true,
+  builder: (context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const ProductPerformanceFilterModal(),
+    );
+  },
+);
+
 
               if (result != null) {
                 ref
@@ -70,6 +82,8 @@ class ProductPerformancePage extends HookConsumerWidget {
                     );
               }
             },
+
+
             icon: Icon(Icons.tune, color: primaryBlue),
             label: Text(
               "Filter",

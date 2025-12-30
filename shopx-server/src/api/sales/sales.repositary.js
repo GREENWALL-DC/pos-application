@@ -170,3 +170,32 @@ exports.getAllSales = async (limit = 20) => {
 
   return r.rows;
 };
+
+exports.getSalesBySalesperson = async (salespersonId) => {
+  const r = await db.query(
+    `
+    SELECT
+      s.id,
+      s.customer_id,
+      s.subtotal_amount,
+      s.discount_amount,
+      s.vat_amount,
+      s.vat_percentage,
+      s.total_amount,
+      s.payment_status,
+      s.sale_date,
+      u.username AS salesperson_name,
+      c.name AS customer_name,
+      c.phone AS customer_phone
+    FROM sales s
+    LEFT JOIN users u ON u.id = s.salesperson_id
+    LEFT JOIN customers c ON c.id = s.customer_id
+    WHERE s.salesperson_id = $1
+    ORDER BY s.sale_date DESC
+    `,
+    [salespersonId]
+  );
+
+  return r.rows;
+};
+

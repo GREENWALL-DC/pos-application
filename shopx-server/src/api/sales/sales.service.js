@@ -217,7 +217,11 @@ exports.voidSale = async (saleId, user) => {
 exports.getFullInvoice = async (id) => {
   return await repo.getFullInvoice(id);
 };
-
 exports.getAllSales = async () => {
   return await repo.getAllSales();
 };
+
+exports.getSalesBySalesperson = async (salespersonId) => {
+  return await repo.getSalesBySalesperson(salespersonId);
+};
+

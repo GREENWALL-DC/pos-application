@@ -4,6 +4,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:shopx/application/sales/sales_notifier.dart';
+import 'package:shopx/application/salesman/salesman_notifier.dart';
+import 'package:shopx/domain/salesman/salesman.dart';
 
 class ProductPerformanceFilterResult {
   final String startDate;
@@ -22,10 +24,21 @@ class ProductPerformanceFilterModal extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+      // 🔥 FORCE FETCH WHEN MODAL OPENS
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(salesmanNotifierProvider.notifier).fetchSalesmen();
+      });
+      return null;
+    }, []);
+
+
     final primaryBlue = const Color(0xFF1D72D6);
 
-    final salesState = ref.watch(salesNotifierProvider);
- final selectedSalespersonId = useState<String?>(null);
+    final salesmanState = ref.watch(salesmanNotifierProvider);
+ final selectedSalespersonId = useState<int?>(null);
+
 
 
     final fromDate = useState<DateTime?>(null);
@@ -49,29 +62,60 @@ class ProductPerformanceFilterModal extends HookConsumerWidget {
           const SizedBox(height: 20),
 
           /// SALESPERSON AUTOCOMPLETE
-         Autocomplete<Map<String, dynamic>>(
+  Autocomplete<Salesman>(
   optionsBuilder: (text) {
     if (text.text.isEmpty) return const Iterable.empty();
-    return salesState.sales
-        .map((e) => {
-              "id": e.salespersonName,
-              "name": e.salespersonName,
-            })
-        .where((s) =>
-            s["name"]!.toLowerCase().contains(text.text.toLowerCase()));
+
+    return salesmanState.salesmen.where(
+      (s) => s.username.toLowerCase().contains(text.text.toLowerCase()),
+    );
   },
-  displayStringForOption: (o) => o["name"],
-  onSelected: (value) => selectedSalespersonId.value = value["id"],
-  fieldViewBuilder: (_, controller, __, ___) {
+
+  displayStringForOption: (s) => s.username,
+
+  onSelected: (s) {
+    selectedSalespersonId.value = s.id;
+  },
+
+  fieldViewBuilder: (context, controller, focusNode, _) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       decoration: const InputDecoration(
         labelText: "Salesperson",
         border: OutlineInputBorder(),
       ),
     );
   },
+
+  // 🔥 THIS IS THE FIX
+  optionsViewBuilder: (context, onSelected, options) {
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        elevation: 6,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width - 80,
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            itemCount: options.length,
+            itemBuilder: (context, index) {
+              final option = options.elementAt(index);
+              return ListTile(
+                title: Text(option.username),
+                onTap: () => onSelected(option),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  },
 ),
+
+
 
 
           const SizedBox(height: 14),
@@ -109,7 +153,9 @@ class ProductPerformanceFilterModal extends HookConsumerWidget {
                         .format(fromDate.value!),
                     endDate:
                         DateFormat("yyyy-MM-dd").format(toDate.value!),
-                    salespersonId: selectedSalespersonId.value,
+                    // salespersonId: selectedSalespersonId.value,
+                    salespersonId: selectedSalespersonId.value?.toString(),
+
                   ),
                 );
               },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/application/customers/customer_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/presentation/dashboard/user/pages/customers/add_customer_page.dart';
@@ -10,6 +11,9 @@ class CustomerListPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authNotifierProvider);
+final loggedInSalespersonId = authState.user?.id;
+
     // 1. Fetch Customers on Load
     useEffect(() {
       Future.microtask(() {
@@ -27,6 +31,12 @@ class CustomerListPage extends HookConsumerWidget {
 
     
 final filteredCustomers = customers.where((customer) {
+  // 🔒 HARD RULE: salesperson sees only own customers
+  if (customer.salespersonId != loggedInSalespersonId) {
+    return false;
+  }
+
+  // 🔍 Search
   final query = searchQuery.value.toLowerCase();
   return customer.name.toLowerCase().contains(query);
 }).toList();

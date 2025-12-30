@@ -152,7 +152,7 @@ class AddCustomerPage extends HookConsumerWidget {
                     ),
 
                     buildInputGroup(
-                      "Phone",
+                      "Phone (Optional)",
                       phoneController,
                       validateForm,
                       isPhone: true,
@@ -160,7 +160,7 @@ class AddCustomerPage extends HookConsumerWidget {
                     ),
 
                     buildInputGroup(
-                      "TIN / Tax ID",
+                     "TIN / Tax ID (Optional)",
                       tinController,
                       validateForm,
                       errorText: tinError.value,

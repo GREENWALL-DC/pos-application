@@ -37,6 +37,7 @@ class ReceiptData {
   // OPTIONAL — only needed for PDF send
   final String? customerAddress;
   final String? customerPhone;
+  final String? customerVat; // ✅ ADD THIS
   final double? discount;
 
   // --------------------
@@ -74,6 +75,7 @@ class ReceiptData {
     required this.mobile,
      this.customerAddress,
      this.customerPhone,
+     this.customerVat,
     this.discount,
     required this.invoiceNumber,
     required this.invoiceDate,

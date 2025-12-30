@@ -155,34 +155,46 @@ class PdfReceiptService {
                 ),
                 pw.SizedBox(height: 16),
 
-                pw.Table(
-                  border: pw.TableBorder.all(),
-                  children: [
-                    _infoRow(
-                      arabicFont,
-                      'Customer',
-                      receipt.customerName,
-                      'اسم العميل',
-                      receipt.customerName,
-                    ),
-                    _infoRow(
-                      arabicFont,
-                      'Address',
-                      receipt.customerAddress ?? '',
-                      'العنوان',
-                      receipt.customerAddress ?? '',
-                    ),
-                    _infoRow(
-                      arabicFont,
-                      'Phone',
-                      receipt.customerPhone ?? '',
-                      'الهاتف',
-                      receipt.customerPhone ?? '',
-                    ),
-                    _infoRow(arabicFont, 'VAT No', '', 'الرقم الضريبي', ''),
-                    _infoRow(arabicFont, 'CR', '', 'السجل التجاري', ''),
-                  ],
-                ),
+              pw.Table(
+  border: pw.TableBorder.all(),
+  children: [
+    _infoRow(
+      arabicFont,
+      'Customer',
+      receipt.customerName,
+      'اسم العميل',
+      receipt.customerName,
+    ),
+
+    if (receipt.customerAddress != null && receipt.customerAddress!.isNotEmpty)
+      _infoRow(
+        arabicFont,
+        'Address',
+        receipt.customerAddress!,
+        'العنوان',
+        receipt.customerAddress!,
+      ),
+
+    if (receipt.customerPhone != null && receipt.customerPhone!.isNotEmpty)
+      _infoRow(
+        arabicFont,
+        'Phone',
+        receipt.customerPhone!,
+        'الهاتف',
+        receipt.customerPhone!,
+      ),
+
+    if (receipt.customerVat != null && receipt.customerVat!.isNotEmpty)
+      _infoRow(
+        arabicFont,
+        'VAT No',
+        receipt.customerVat!,
+        'الرقم الضريبي',
+        receipt.customerVat!,
+      ),
+  ],
+),
+
 
                 pw.SizedBox(height: 16),
 

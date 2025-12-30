@@ -49,9 +49,18 @@ class ReceiptImageBuilder {
     y += 10;
 
     // ---------------- CUSTOMER ----------------
-    drawText("العميل: ${r.customerName}", 12);
-    drawText("رقم الفاتورة: ${r.invoiceNumber}", 12);
-    drawText("التاريخ: ${r.invoiceDate}", 12);
+   drawText("العميل: ${r.customerName}", 12);
+
+if (r.customerPhone != null && r.customerPhone!.isNotEmpty) {
+  drawText("الهاتف: ${r.customerPhone}", 12);
+}
+
+if (r.customerVat != null && r.customerVat!.isNotEmpty) {
+  drawText("الرقم الضريبي: ${r.customerVat}", 12);
+}
+
+drawText("رقم الفاتورة: ${r.invoiceNumber}", 12);
+drawText("التاريخ: ${r.invoiceDate}", 12);
 
     y += 10;
 
