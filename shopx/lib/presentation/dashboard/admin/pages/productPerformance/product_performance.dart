@@ -24,7 +24,7 @@ useEffect(() {
     final notifier = ref.read(salesPerformanceNotifierProvider.notifier);
     final s = ref.read(salesPerformanceNotifierProvider);
 
-    notifier.loadProductPerformance(
+    notifier.loadAdminProductPerformance(
       start: s.startDate,
       end: s.endDate,
     );
@@ -75,7 +75,7 @@ useEffect(() {
               if (result != null) {
                 ref
                     .read(salesPerformanceNotifierProvider.notifier)
-                    .loadProductPerformance(
+                    .loadAdminProductPerformance(
                       start: result.startDate,
                       end: result.endDate,
                       salespersonId: result.salespersonId,

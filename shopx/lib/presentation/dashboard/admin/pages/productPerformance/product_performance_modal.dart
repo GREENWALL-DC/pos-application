@@ -14,6 +14,7 @@ class ProductPerformanceFilterResult {
 
   ProductPerformanceFilterResult({
     required this.startDate,
+
     required this.endDate,
     this.salespersonId,
   });
@@ -44,129 +45,105 @@ class ProductPerformanceFilterModal extends HookConsumerWidget {
     final fromDate = useState<DateTime?>(null);
     final toDate = useState<DateTime?>(null);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20,
-        right: 20,
-        top: 20,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Filter Product Performance",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
+    return Material(
+  color: Colors.transparent,
+  child: SingleChildScrollView(
+    padding: EdgeInsets.only(
+      bottom: MediaQuery.of(context).viewInsets.bottom,
+      left: 20,
+      right: 20,
+      top: 20,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Filter Product Performance",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 20),
 
-          /// SALESPERSON AUTOCOMPLETE
-  Autocomplete<Salesman>(
-  optionsBuilder: (text) {
-    if (text.text.isEmpty) return const Iterable.empty();
+        /// SALESPERSON AUTOCOMPLETE
+        Autocomplete<Salesman>(
+          optionsBuilder: (text) {
+            if (text.text.isEmpty) return const Iterable.empty();
+            return salesmanState.salesmen.where(
+              (s) => s.username
+                  .toLowerCase()
+                  .contains(text.text.toLowerCase()),
+            );
+          },
+          displayStringForOption: (s) => s.username,
+          onSelected: (s) {
+            selectedSalespersonId.value = s.id;
+          },
+          fieldViewBuilder: (context, controller, focusNode, _) {
+            return TextField(
+              controller: controller,
+              focusNode: focusNode,
+              decoration: const InputDecoration(
+                labelText: "Salesperson",
+                border: OutlineInputBorder(),
+              ),
+            );
+          },
+        ),
 
-    return salesmanState.salesmen.where(
-      (s) => s.username.toLowerCase().contains(text.text.toLowerCase()),
-    );
-  },
+        const SizedBox(height: 14),
 
-  displayStringForOption: (s) => s.username,
+        _datePicker(
+          context,
+          label: "From Date",
+          value: fromDate.value,
+          onPick: (d) => fromDate.value = d,
+        ),
 
-  onSelected: (s) {
-    selectedSalespersonId.value = s.id;
-  },
+        const SizedBox(height: 14),
 
-  fieldViewBuilder: (context, controller, focusNode, _) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      decoration: const InputDecoration(
-        labelText: "Salesperson",
-        border: OutlineInputBorder(),
-      ),
-    );
-  },
+        _datePicker(
+          context,
+          label: "To Date",
+          value: toDate.value,
+          onPick: (d) => toDate.value = d,
+        ),
 
-  // 🔥 THIS IS THE FIX
-  optionsViewBuilder: (context, onSelected, options) {
-    return Align(
-      alignment: Alignment.topLeft,
-      child: Material(
-        elevation: 6,
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width - 80,
-          child: ListView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            itemCount: options.length,
-            itemBuilder: (context, index) {
-              final option = options.elementAt(index);
-              return ListTile(
-                title: Text(option.username),
-                onTap: () => onSelected(option),
+        const SizedBox(height: 24),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryBlue,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            onPressed: () {
+              Navigator.pop(
+                context,
+                ProductPerformanceFilterResult(
+                  startDate: DateFormat("yyyy-MM-dd")
+                      .format(fromDate.value!),
+                  endDate:
+                      DateFormat("yyyy-MM-dd")
+                          .format(toDate.value!),
+                  salespersonId:
+                      selectedSalespersonId.value?.toString(),
+                ),
               );
             },
+            child: const Text("Apply Filter"),
           ),
         ),
-      ),
-    );
-  },
-),
+
+        const SizedBox(height: 20),
+      ],
+    ),
+  ),
+);
 
 
 
-
-          const SizedBox(height: 14),
-
-          _datePicker(
-            context,
-            label: "From Date",
-            value: fromDate.value,
-            onPick: (d) => fromDate.value = d,
-          ),
-
-          const SizedBox(height: 14),
-
-          _datePicker(
-            context,
-            label: "To Date",
-            value: toDate.value,
-            onPick: (d) => toDate.value = d,
-          ),
-
-          const SizedBox(height: 24),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              onPressed: () {
-                Navigator.pop(
-                  context,
-                  ProductPerformanceFilterResult(
-                    startDate: DateFormat("yyyy-MM-dd")
-                        .format(fromDate.value!),
-                    endDate:
-                        DateFormat("yyyy-MM-dd").format(toDate.value!),
-                    // salespersonId: selectedSalespersonId.value,
-                    salespersonId: selectedSalespersonId.value?.toString(),
-
-                  ),
-                );
-              },
-              child: const Text("Apply Filter"),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
+    
   }
 
   Widget _datePicker(

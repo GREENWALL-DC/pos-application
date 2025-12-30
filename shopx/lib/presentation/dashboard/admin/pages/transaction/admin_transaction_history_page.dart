@@ -16,7 +16,8 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     useEffect(() {
       Future.microtask(() {
-        ref.read(salesNotifierProvider.notifier).fetchAllSales();
+        // ref.read(salesNotifierProvider.notifier).fetchAdminSales();
+        
       });
       return null;
     }, []);
@@ -181,7 +182,7 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
             // TRANSACTION CARDS
             ...dailySales.map(
               (sale) => _buildTransactionCard(context, sale, () async {
-                await ref.read(salesNotifierProvider.notifier).fetchAllSales();
+                await ref.read(salesNotifierProvider.notifier).fetchAdminSales();
               }),
             ),
 

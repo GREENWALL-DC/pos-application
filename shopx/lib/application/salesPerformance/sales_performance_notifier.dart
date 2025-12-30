@@ -167,44 +167,76 @@ class SalesPerformanceNotifier extends Notifier<SalesPerformanceState> {
     }
   }
 
-  /// ✅ Load Product Performance (NEW)
-  Future<void> loadProductPerformance({
-    required String start,
-    required String end,
-    String? salespersonId,
-  }) async {
-    state = state.copyWith(loading: true, error: null);
+//   /// ✅ Load Product Performance (NEW)
+//   Future<void> loadProductPerformance({
+//     required String start,
+//     required String end,
+//     String? salespersonId,
+//   }) async {
+//     state = state.copyWith(loading: true, error: null);
 
-    try {
-      final repo = ref.read(salesPerformanceRepositoryProvider);
+//     try {
+//       final repo = ref.read(salesPerformanceRepositoryProvider);
 
-      // final data = await repo.fetchProductPerformance(
-      //   start: start,
-      //   end: end,
-      //   salespersonId: salespersonId,
-      // );
+//       // final data = await repo.fetchProductPerformance(
+//       //   start: start,
+//       //   end: end,
+//       //   salespersonId: salespersonId,
+//       // );
 
-final data = await repo.fetchMyProductPerformance(
-  start: start,
-  end: end,
-);
+// final data = await repo.fetchMyProductPerformance(
+//   start: start,
+//   end: end,
+// );
 
-      state = state.copyWith(
-        loading: false,
-        productSales: {
-          "list": data,
-          "pie": data.map((e) {
-            return {
-              "value": parseSafe(e["units_sold"], "product.units"),
-              "label": e["product_name"],
-            };
-          }).toList(),
-        },
-      );
-    } catch (e) {
-      state = state.copyWith(loading: false, error: e.toString());
-    }
-  }
+//       state = state.copyWith(
+//         loading: false,
+//         productSales: {
+//           "list": data,
+//           "pie": data.map((e) {
+//             return {
+//               "value": parseSafe(e["units_sold"], "product.units"),
+//               "label": e["product_name"],
+//             };
+//           }).toList(),
+//         },
+//       );
+//     } catch (e) {
+//       state = state.copyWith(loading: false, error: e.toString());
+//     }
+//   }
+
+
+// ADMIN
+Future<void> loadAdminProductPerformance({
+  required String start,
+  required String end,
+  String? salespersonId,
+}) async {
+  final repo = ref.read(salesPerformanceRepositoryProvider);
+  final data = await repo.fetchProductPerformance(
+    start: start,
+    end: end,
+    salespersonId: salespersonId,
+  );
+
+  state = state.copyWith(productSales: {"list": data});
+}
+
+// USER
+Future<void> loadUserProductPerformance({
+  required String start,
+  required String end,
+}) async {
+  final repo = ref.read(salesPerformanceRepositoryProvider);
+  final data = await repo.fetchMyProductPerformance(
+    start: start,
+    end: end,
+  );
+
+  state = state.copyWith(productSales: {"list": data});
+}
+
 
   /// Called when user presses "Filter"
   Future<void> filter(String start, String end) async {

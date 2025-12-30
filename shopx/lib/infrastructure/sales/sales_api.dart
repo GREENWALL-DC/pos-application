@@ -14,15 +14,17 @@ class SalesApi {
     final res = await _dio.get("/sales/$id");
     return res.data;
   }
+// ADMIN ONLY
+Future<List<dynamic>> getAdminSales() async {
+  final res = await _dio.get("/sales");
+  return res.data;
+}
 
-  Future<List<dynamic>> getAllSales() async {
-    final res = await _dio.get("/sales");
-    return res.data;
-  }
-
-  Future<List<dynamic>> getMySales() async {
+// USER ONLY
+Future<List<dynamic>> getMySales() async {
   final res = await _dio.get("/sales/my");
   return res.data;
 }
+
 
 }

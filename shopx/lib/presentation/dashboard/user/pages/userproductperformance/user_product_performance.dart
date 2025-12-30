@@ -22,7 +22,7 @@ class UserProductPerformancePage extends HookConsumerWidget {
     useEffect(() {
       Future.microtask(() {
         ref.read(salesPerformanceNotifierProvider.notifier)
-            .loadProductPerformance(
+            .loadUserProductPerformance(
               start: state.startDate,
               end: state.endDate,
             
@@ -49,23 +49,35 @@ class UserProductPerformancePage extends HookConsumerWidget {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () async {
-              final result =
-                  await showDialog<UserProductPerformanceFilterResult>(
-                context: context,
-                builder: (_) => const UserProductPerformanceModal(),
-              );
+           onPressed: () async {
+  final result =
+      await showDialog<UserProductPerformanceFilterResult>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) {
+      return Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 80,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const UserProductPerformanceModal(),
+      );
+    },
+  );
 
-              if (result != null) {
-                ref
-                    .read(salesPerformanceNotifierProvider.notifier)
-                    .loadProductPerformance(
-                      start: result.startDate,
-                      end: result.endDate,
-                     
-                    );
-              }
-            },
+  if (result != null) {
+    ref
+        .read(salesPerformanceNotifierProvider.notifier)
+        .loadUserProductPerformance(
+          start: result.startDate,
+          end: result.endDate,
+        );
+  }
+},
+
             icon: Icon(Icons.tune, color: primaryBlue),
             label: Text(
               "Filter",
