@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/customers/customer_notifier.dart';
+import 'package:shopx/application/salesman/salesman_notifier.dart';
+import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/customers/customer.dart';
+import 'package:shopx/domain/salesman/salesman.dart';
 
 class AdminCustomerPage extends HookConsumerWidget {
   final Customer? customer; // If null = Add mode. If not = Edit mode.
@@ -40,6 +43,13 @@ class AdminCustomerPage extends HookConsumerWidget {
     final address = useState(customer?.address ?? "");
     final area = useState(customer?.area ?? "");
 
+    //new
+    final selectedSalesperson = useState<Salesman?>(null);
+    final salesmenState = ref.watch(salesmanNotifierProvider);
+final salesmen = salesmenState.salesmen;
+
+
+
     // -----------------------------
     // LISTENERS (correct placement!)
     // -----------------------------
@@ -61,6 +71,7 @@ class AdminCustomerPage extends HookConsumerWidget {
     final isButtonEnabled =
         name.value.trim().isNotEmpty &&
         address.value.trim().isNotEmpty &&
+         selectedSalesperson.value != null &&
         (phone.value.trim().isEmpty || isValidPhone(phone.value.trim())) &&
         (tin.value.trim().isEmpty || isValidTin(tin.value.trim()));
 
@@ -106,6 +117,7 @@ class AdminCustomerPage extends HookConsumerWidget {
         area: areaController.text.trim().isEmpty
             ? null
             : areaController.text.trim(),
+             salespersonId: selectedSalesperson.value!.id,
         createdAt: isEditMode ? customer!.createdAt : DateTime.now(),
       );
 
@@ -191,6 +203,51 @@ class AdminCustomerPage extends HookConsumerWidget {
                         areaController,
                         "Example: Downtown / Zone A",
                       ),
+
+                      const SizedBox(height: 20),
+
+_buildLabel("Salesperson"),
+
+Container(
+  padding: const EdgeInsets.symmetric(horizontal: 12),
+  decoration: BoxDecoration(
+    color: const Color(0xFFF2F2F2),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Autocomplete<Salesman>(
+    displayStringForOption: (s) => s.username,
+    optionsBuilder: (TextEditingValue textEditingValue) {
+      if (textEditingValue.text.isEmpty) {
+        return salesmen;
+      }
+      return salesmen.where(
+        (s) => s.username
+            .toLowerCase()
+            .contains(textEditingValue.text.toLowerCase()),
+      );
+    },
+    onSelected: (Salesman selection) {
+      selectedSalesperson.value = selection;
+    },
+    fieldViewBuilder: (
+      context,
+      controller,
+      focusNode,
+      onFieldSubmitted,
+    ) {
+      return TextField(
+        controller: controller,
+        focusNode: focusNode,
+        decoration: const InputDecoration(
+          hintText: "Search salesperson",
+          border: InputBorder.none,
+        ),
+      );
+    },
+  ),
+),
+
+
                     ],
                   ),
                 ),

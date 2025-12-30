@@ -178,11 +178,16 @@ class SalesPerformanceNotifier extends Notifier<SalesPerformanceState> {
     try {
       final repo = ref.read(salesPerformanceRepositoryProvider);
 
-      final data = await repo.fetchProductPerformance(
-        start: start,
-        end: end,
-        salespersonId: salespersonId,
-      );
+      // final data = await repo.fetchProductPerformance(
+      //   start: start,
+      //   end: end,
+      //   salespersonId: salespersonId,
+      // );
+
+final data = await repo.fetchMyProductPerformance(
+  start: start,
+  end: end,
+);
 
       state = state.copyWith(
         loading: false,

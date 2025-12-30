@@ -26,6 +26,7 @@ exports.getSaleById = asyncHandler(async (req, res) => {
 // });
 
 exports.getAllSales = asyncHandler(async (req, res) => {
+  console.log("🔍 ADMIN SALES DEBUG → req.user =", req.user);
   // ADMIN ONLY
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });

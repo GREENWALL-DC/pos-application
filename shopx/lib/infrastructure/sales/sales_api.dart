@@ -19,4 +19,10 @@ class SalesApi {
     final res = await _dio.get("/sales");
     return res.data;
   }
+
+  Future<List<dynamic>> getMySales() async {
+  final res = await _dio.get("/sales/my");
+  return res.data;
+}
+
 }

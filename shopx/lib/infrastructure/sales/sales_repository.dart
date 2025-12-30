@@ -88,7 +88,17 @@ return id;
     final list = await api.getAllSales();
     return list.map((e) => Sale.fromJson(e)).toList();
   }
+
+  
+  // ✅ ADD THIS INSIDE THE CLASS
+  Future<List<Sale>> getMySales() async {
+    final list = await api.getMySales();
+    return list.map((e) => Sale.fromJson(e)).toList();
+  }
+
 }
+
+
 
 // ----------------------------------------------------------
 // PROVIDERS (THE PART YOU MISSED)

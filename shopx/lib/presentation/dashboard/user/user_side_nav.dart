@@ -6,6 +6,7 @@ import 'package:shopx/core/constants.dart';
 import 'package:shopx/presentation/dashboard/user/pages/customers/customer_list_page.dart';
 import 'package:shopx/presentation/dashboard/user/pages/products/products_list_page.dart';
 import 'package:shopx/presentation/dashboard/user/pages/transactions/transaction_history_page.dart';
+import 'package:shopx/presentation/dashboard/user/pages/userproductperformance/user_product_performance.dart';
 import 'package:shopx/widget/usersidenav/drawer_menu_item.dart';
 
 class UserSideNav extends HookConsumerWidget {
@@ -112,6 +113,23 @@ DrawerMenuItem(
     );
   },
 ),
+
+const SizedBox(height: 24),
+
+DrawerMenuItem(
+  label: "Product Performance",
+  icon: Icons.bar_chart_outlined,
+  onTap: () {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const UserProductPerformancePage(),
+      ),
+    );
+  },
+),
+
 
 
               const SizedBox(height: 24),

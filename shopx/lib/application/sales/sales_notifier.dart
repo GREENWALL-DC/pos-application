@@ -69,7 +69,25 @@ class SalesNotifier extends Notifier<SalesState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+
+
+  Future<void> fetchMySales() async {
+  state = state.copyWith(isLoading: true);
+
+  try {
+    final repo = ref.read(salesRepositoryProvider);
+    final list = await repo.getMySales(); // 👈 calls /sales/my
+    state = state.copyWith(isLoading: false, sales: list);
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
+  }
 }
+  
+}
+
+
+
+
 
 final salesNotifierProvider = NotifierProvider<SalesNotifier, SalesState>(
   SalesNotifier.new,

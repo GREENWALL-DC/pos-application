@@ -35,3 +35,19 @@ exports.productPerformance = async (req, res) => {
 
   res.json(data);
 };
+
+
+exports.productPerformanceForUser = async (req, res) => {
+  const { start, end } = req.query;
+
+  // 🔒 FORCE salesperson from token
+  const salespersonId = req.user.id;
+
+  const data = await service.getProductPerformance(
+    start,
+    end,
+    salespersonId
+  );
+
+  res.json(data);
+};

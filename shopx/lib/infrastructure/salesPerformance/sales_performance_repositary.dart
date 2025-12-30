@@ -22,6 +22,7 @@ class SalesPerformanceRepository {
   }
 
    /// ✅ Product Performance Repository (NEW)
+   // ADMIN (unchanged)
 Future<List<Map<String, dynamic>>> fetchProductPerformance({
   required String start,
   required String end,
@@ -33,9 +34,20 @@ Future<List<Map<String, dynamic>>> fetchProductPerformance({
     salespersonId: salespersonId,
   );
 
-  return data
-      .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-      .toList();
+  return data.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+}
+
+// USER (NEW)
+Future<List<Map<String, dynamic>>> fetchMyProductPerformance({
+  required String start,
+  required String end,
+}) async {
+  final data = await api.getMyProductPerformance(
+    start: start,
+    end: end,
+  );
+
+  return data.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
 }
 
 

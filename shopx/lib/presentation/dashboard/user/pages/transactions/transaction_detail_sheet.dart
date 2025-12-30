@@ -81,18 +81,17 @@ class TransactionDetailSheet extends ConsumerWidget {
                 backgroundColor: Colors.green,
                 minimumSize: const Size(double.infinity, 48),
               ),
-              onPressed: () async {
-                await ref
-                    .read(paymentsNotifierProvider.notifier)
-                    .markPaymentAsPaid(sale.id);
+             onPressed: () async {
+  await ref
+      .read(paymentsNotifierProvider.notifier)
+      .markPaymentAsPaid(sale.id);
 
-                Navigator.pop(context);
+  Navigator.pop(context);
 
-                // Refresh list
-                ref
-                    .read(salesNotifierProvider.notifier)
-                    .fetchAllSales();
-              },
+  // ✅ DO NOTHING HERE
+  // Parent screen will refresh correctly
+},
+
               child: const Text(
                 "Mark as Paid",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

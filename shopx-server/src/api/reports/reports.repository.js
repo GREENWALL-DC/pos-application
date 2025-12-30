@@ -83,7 +83,8 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
     FROM sale_items si
     JOIN products p ON p.id = si.product_id
     JOIN sales s ON s.id = si.sale_id
-    WHERE s.sale_date BETWEEN $1 AND $2
+   WHERE s.sale_date >= $1
+      AND s.sale_date < ($2::date + INTERVAL '1 day')
     ${filter}
     GROUP BY p.id, p.name
     ORDER BY units_sold DESC;

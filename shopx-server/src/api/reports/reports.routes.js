@@ -16,5 +16,12 @@ router.get(
 );
 
 
+// USER (NEW)
+router.get(
+  "/product-performance/my",
+  validateToken,
+  controller.productPerformanceForUser
+);
+
 
 module.exports = router;

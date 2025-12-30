@@ -13,12 +13,13 @@ class TransactionHistoryPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 1. Fetch Data on Init
-    useEffect(() {
-      Future.microtask(() {
-        ref.read(salesNotifierProvider.notifier).fetchAllSales();
-      });
-      return null;
-    }, []);
+   useEffect(() {
+  Future.microtask(() {
+    ref.read(salesNotifierProvider.notifier).fetchMySales();
+  });
+  return null;
+}, []);
+
 
     // 2. Watch State
     final salesState = ref.watch(salesNotifierProvider);
@@ -220,28 +221,36 @@ class TransactionHistoryPage extends HookConsumerWidget {
     );
   }
 
-  void _openTransactionDetails(BuildContext context, WidgetRef ref, Sale sale) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.6, // 👈 half screen
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          builder: (context, scrollController) {
-            return TransactionDetailSheet(
-              sale: sale,
-              scrollController: scrollController,
-            );
-          },
-        );
-      },
-    );
-  }
+ Future<void> _openTransactionDetails(
+  BuildContext context,
+  WidgetRef ref,
+  Sale sale,
+) async {
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (_) {
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          return TransactionDetailSheet(
+            sale: sale,
+            scrollController: scrollController,
+          );
+        },
+      );
+    },
+  );
+
+  // ✅ REFRESH AFTER MODAL CLOSES
+  ref.read(salesNotifierProvider.notifier).fetchMySales();
+}
+
 }
