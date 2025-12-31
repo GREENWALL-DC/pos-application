@@ -68,7 +68,7 @@ class AdminCustomerListPage extends HookConsumerWidget {
     useEffect(() {
       if (auth.token != null) {
         Future.microtask(() async {
-          await ref.read(customerNotifierProvider.notifier).fetchCustomers();
+          await ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
           await ref
               .read(salesmanNotifierProvider.notifier)
               .fetchSalesmen(); // ✅ ADD
@@ -92,7 +92,7 @@ class AdminCustomerListPage extends HookConsumerWidget {
       if (previous?.isLoading == true &&
           next.isLoading == false &&
           next.success == true) {
-        ref.read(customerNotifierProvider.notifier).fetchCustomers();
+        ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
       }
     });
 

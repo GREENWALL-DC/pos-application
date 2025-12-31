@@ -22,25 +22,39 @@ class CustomerNotifier extends Notifier<CustomerState> {
       await ref.read(customerRepositoryProvider).createCustomer(customer);
 
        // FIX: refresh list
-    await fetchCustomers();
+    await fetchMyCustomers();
 
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+// 🔒 Manage Customers screen
+Future<void> fetchMyCustomers() async {
+  state = state.copyWith(isLoading: true, error: null, success: false);
 
-  // GET ALL
-  Future<void> fetchCustomers() async {
-state = state.copyWith(isLoading: true, error: null, success: false);
-
-    try {
-      final data = await ref.read(customerRepositoryProvider).getAllCustomers();
-      state = state.copyWith(isLoading: false, customers: data);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+  try {
+    final data =
+        await ref.read(customerRepositoryProvider).getMyCustomers();
+    state = state.copyWith(isLoading: false, customers: data);
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
   }
+}
+
+// 🧾 Cart screen (billing anyone)
+Future<void> fetchAllCustomers() async {
+  state = state.copyWith(isLoading: true, error: null, success: false);
+
+  try {
+    final data =
+        await ref.read(customerRepositoryProvider).getAllCustomers();
+    state = state.copyWith(isLoading: false, customers: data);
+  } catch (e) {
+    state = state.copyWith(isLoading: false, error: e.toString());
+  }
+}
+
 
 
     // GET SINGLE CUSTOMER BY ID
@@ -62,7 +76,7 @@ state = state.copyWith(isLoading: true, error: null, success: false);
     try {
       await ref.read(customerRepositoryProvider).updateCustomer(id, customer);
        // FIX: refresh list
-    await fetchCustomers();
+    await fetchMyCustomers();
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -76,7 +90,7 @@ state = state.copyWith(isLoading: true, error: null, success: false);
     try {
       await ref.read(customerRepositoryProvider).deleteCustomer(id);
        // FIX: refresh list
-    await fetchCustomers();
+    await fetchMyCustomers();
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

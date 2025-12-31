@@ -143,7 +143,7 @@ class OwnerLoginScreen extends HookConsumerWidget {
                     children: [
                       // Email Input
                       const Text(
-                        'Email or Phone Number',
+                        'Username',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -154,7 +154,7 @@ class OwnerLoginScreen extends HookConsumerWidget {
                       TextField(
                         controller: emailController,
                         decoration: InputDecoration(
-                          hintText: 'Email or Phone Number',
+                          hintText: 'Username',
                           hintStyle: TextStyle(
                             color: Colors.grey[500],
                             fontSize: 14,

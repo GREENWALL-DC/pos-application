@@ -16,7 +16,7 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     useEffect(() {
       Future.microtask(() {
-        // ref.read(salesNotifierProvider.notifier).fetchAdminSales();
+        ref.read(salesNotifierProvider.notifier).fetchAdminSales();
         
       });
       return null;

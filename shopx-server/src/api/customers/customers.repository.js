@@ -30,6 +30,17 @@ exports.getAllCustomers = async () => {
   return result.rows;
 };
 
+exports.getCustomersBySalesperson = async (salespersonId) => {
+  const result = await db.query(
+    `SELECT * FROM customers 
+     WHERE salesperson_id = $1 
+     ORDER BY id ASC`,
+    [salespersonId]
+  );
+  return result.rows;
+};
+
+
 exports.getCustomerById = async (id) => {
   const result = await db.query(`SELECT * FROM customers WHERE id = $1`, [id]);
   return result.rows[0];

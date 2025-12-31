@@ -13,6 +13,12 @@ exports.getAllCustomers = asyncHandler(async (req, res) => {
   res.json(customers);
 });
 
+exports.getMyCustomers = asyncHandler(async (req, res) => {
+  const customers = await service.getMyCustomers(req.user.id);
+  res.json(customers);
+});
+
+
 exports.getCustomerById = asyncHandler(async (req, res) => {
   const customer = await service.getCustomerById(req.params.id);
   res.json(customer);

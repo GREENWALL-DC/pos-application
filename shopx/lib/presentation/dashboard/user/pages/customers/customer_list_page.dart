@@ -15,12 +15,14 @@ class CustomerListPage extends HookConsumerWidget {
 final loggedInSalespersonId = authState.user?.id;
 
     // 1. Fetch Customers on Load
-    useEffect(() {
-      Future.microtask(() {
-        ref.read(customerNotifierProvider.notifier).fetchCustomers();
-      });
-      return null;
-    }, []);
+  useEffect(() {
+  Future.microtask(() {
+    // 🔒 Manage Customers → ONLY my customers
+    ref.read(customerNotifierProvider.notifier).fetchMyCustomers();
+  });
+  return null;
+}, []);
+
 
     final searchQuery = useState('');
 
@@ -29,17 +31,15 @@ final loggedInSalespersonId = authState.user?.id;
     final customerState = ref.watch(customerNotifierProvider);
     final customers = customerState.customers;
 
-    
-final filteredCustomers = customers.where((customer) {
-  // 🔒 HARD RULE: salesperson sees only own customers
-  if (customer.salespersonId != loggedInSalespersonId) {
-    return false;
-  }
-
-  // 🔍 Search
+  final filteredCustomers = customers.where((customer) {
   final query = searchQuery.value.toLowerCase();
   return customer.name.toLowerCase().contains(query);
 }).toList();
+
+
+
+
+
 
     // UI Constants
     const primaryBlue = Color(0xFF1976D2);
@@ -164,7 +164,7 @@ final filteredCustomers = customers.where((customer) {
                       MaterialPageRoute(builder: (context) => const AddCustomerPage()),
                     );
                     // Refresh list on return
-                    ref.read(customerNotifierProvider.notifier).fetchCustomers();
+                    ref.read(customerNotifierProvider.notifier).fetchMyCustomers();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,

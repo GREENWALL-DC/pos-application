@@ -17,11 +17,18 @@ class CustomerApi {
     return res.data["customer"];
   }
 
-  // GET ALL CUSTOMERS
-  Future<List<dynamic>> getCustomers() async {
-    final res = await _dio.get("/customers");
-    return res.data;
-  }
+ // GET ALL CUSTOMERS (for Cart)
+Future<List<dynamic>> getCustomers() async {
+  final res = await _dio.get("/customers");
+  return res.data;
+}
+
+// GET MY CUSTOMERS (for Manage Customers)
+Future<List<dynamic>> getMyCustomers() async {
+  final res = await _dio.get("/customers/my");
+  return res.data;
+}
+
 
   // GET CUSTOMER BY ID
   Future<Map<String, dynamic>> getCustomerById(int id) async {

@@ -18,6 +18,12 @@ exports.getAllCustomers = async () => {
   return await repo.getAllCustomers();
 };
 
+
+exports.getMyCustomers = async (salespersonId) => {
+  return await repo.getCustomersBySalesperson(salespersonId);
+};
+
+
 exports.getCustomerById = async (id) => {
   const customer = await repo.getCustomerById(id);
   if (!customer) throw new Error("Customer not found");

@@ -10,8 +10,13 @@ router.post("/", validateToken, controller.createCustomer);
 // Admin + sales get all customers
 router.get("/", validateToken, controller.getAllCustomers);
 
+// Salesperson: get only my customers
+router.get("/my", validateToken, controller.getMyCustomers);
+
+
 // Get customer by id
 router.get("/:id", validateToken, controller.getCustomerById);
+
 
 // Update customer
 router.put("/:id", validateToken, checkAdmin, controller.updateCustomer);

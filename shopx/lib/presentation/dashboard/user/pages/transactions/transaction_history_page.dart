@@ -13,36 +13,60 @@ class TransactionHistoryPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 1. Fetch Data on Init
-   useEffect(() {
-  Future.microtask(() {
-    ref.read(salesNotifierProvider.notifier).fetchMySales();
-  });
-  return null;
-}, []);
-
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(salesNotifierProvider.notifier).fetchMySales();
+      });
+      return null;
+    }, []);
 
     // 2. Watch State
     final salesState = ref.watch(salesNotifierProvider);
     final sales = salesState.sales;
 
-    // 3. Data Processing: Group by Date & Calculate Daily Totals
-    // We use useMemoized to avoid recalculating on every rebuild unless sales change
+    // // 3. Data Processing: Group by Date & Calculate Daily Totals
+    // // We use useMemoized to avoid recalculating on every rebuild unless sales change
+    // final groupedSales = useMemoized(() {
+    //   final Map<String, List<Sale>> map = {};
+
+    //   // Sort desc (newest first)
+    //   final sortedSales = [...sales]
+    //     ..sort((a, b) => b.saleDate.compareTo(a.saleDate));
+
+    //   for (var sale in sortedSales) {
+    //     final dateKey = DateFormat('EEEE, MMMM d, yyyy').format(sale.saleDate);
+    //     if (!map.containsKey(dateKey)) {
+    //       map[dateKey] = [];
+    //     }
+    //     map[dateKey]!.add(sale);
+    //   }
+    //   return map;
+    // }, [sales]);
+
+     // ✅ 3️⃣ DECLARE selectedStatus HERE (THIS WAS MISSING)
+  final selectedStatus = useState<String>('ALL');
+
     final groupedSales = useMemoized(() {
       final Map<String, List<Sale>> map = {};
 
-      // Sort desc (newest first)
-      final sortedSales = [...sales]
-        ..sort((a, b) => b.saleDate.compareTo(a.saleDate));
+      // 1️⃣ FILTER BY STATUS
+      final filteredSales = sales.where((sale) {
+        if (selectedStatus.value == 'ALL') return true;
+        return sale.paymentStatus.toUpperCase() == selectedStatus.value;
+      }).toList();
 
-      for (var sale in sortedSales) {
+      // 2️⃣ SORT DESC
+      filteredSales.sort((a, b) => b.saleDate.compareTo(a.saleDate));
+
+      // 3️⃣ GROUP BY DATE
+      for (var sale in filteredSales) {
         final dateKey = DateFormat('EEEE, MMMM d, yyyy').format(sale.saleDate);
-        if (!map.containsKey(dateKey)) {
-          map[dateKey] = [];
-        }
+        map.putIfAbsent(dateKey, () => []);
         map[dateKey]!.add(sale);
       }
+
       return map;
-    }, [sales]);
+    }, [sales, selectedStatus.value]);
 
     // Constants
     const primaryBlue = Color(0xFF1976D2);
@@ -83,9 +107,40 @@ class TransactionHistoryPage extends HookConsumerWidget {
             ),
 
             // ================= FILTER BAR (UI ONLY) =================
+            // Container(
+            //   margin: const EdgeInsets.only(bottom: 8),
+            //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            //   decoration: const BoxDecoration(
+            //     color: Colors.white,
+            //     boxShadow: [
+            //       BoxShadow(
+            //         color: Colors.black12,
+            //         blurRadius: 4,
+            //         offset: Offset(0, 2),
+            //       ),
+            //     ],
+            //   ),
+            //   child: const Row(
+            //     children: [
+            //       Icon(Icons.tune, color: Color(0xFF2C3E50), size: 20),
+            //       SizedBox(width: 12),
+            //       Expanded(
+            //         child: Text(
+            //           "Date and time of the filter",
+            //           style: TextStyle(
+            //             color: Color(0xFF2C3E50),
+            //             fontSize: 14,
+            //             fontWeight: FontWeight.w500,
+            //           ),
+            //         ),
+            //       ),
+            //       Icon(Icons.keyboard_arrow_right, color: Color(0xFF2C3E50)),
+            //     ],
+            //   ),
+            // ),
             Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -96,21 +151,38 @@ class TransactionHistoryPage extends HookConsumerWidget {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.tune, color: Color(0xFF2C3E50), size: 20),
-                  SizedBox(width: 12),
+                  const Icon(
+                    Icons.filter_list,
+                    color: Color(0xFF2C3E50),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+
+                  // STATUS DROPDOWN
                   Expanded(
-                    child: Text(
-                      "Date and time of the filter",
-                      style: TextStyle(
-                        color: Color(0xFF2C3E50),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedStatus.value,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down),
+                        items: const [
+                          DropdownMenuItem(value: 'ALL', child: Text('All')),
+                          DropdownMenuItem(value: 'PAID', child: Text('Paid')),
+                          DropdownMenuItem(
+                            value: 'PENDING',
+                            child: Text('Pending'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            selectedStatus.value = value;
+                          }
+                        },
                       ),
                     ),
                   ),
-                  Icon(Icons.keyboard_arrow_right, color: Color(0xFF2C3E50)),
                 ],
               ),
             ),
@@ -221,36 +293,35 @@ class TransactionHistoryPage extends HookConsumerWidget {
     );
   }
 
- Future<void> _openTransactionDetails(
-  BuildContext context,
-  WidgetRef ref,
-  Sale sale,
-) async {
-  await showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    builder: (_) {
-      return DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) {
-          return TransactionDetailSheet(
-            sale: sale,
-            scrollController: scrollController,
-          );
-        },
-      );
-    },
-  );
+  Future<void> _openTransactionDetails(
+    BuildContext context,
+    WidgetRef ref,
+    Sale sale,
+  ) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return TransactionDetailSheet(
+              sale: sale,
+              scrollController: scrollController,
+            );
+          },
+        );
+      },
+    );
 
-  // ✅ REFRESH AFTER MODAL CLOSES
-  ref.read(salesNotifierProvider.notifier).fetchMySales();
-}
-
+    // ✅ REFRESH AFTER MODAL CLOSES
+    ref.read(salesNotifierProvider.notifier).fetchMySales();
+  }
 }

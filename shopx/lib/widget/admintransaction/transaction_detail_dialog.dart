@@ -54,6 +54,68 @@ class TransactionDetailsDialog extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+
+            // ================= ITEMS =================
+
+const Text(
+  "Items",
+  style: TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+  ),
+),
+
+const SizedBox(height: 12),
+
+if (sale.items.isEmpty)
+  const Text(
+    "No items available",
+    style: TextStyle(color: Colors.grey),
+  )
+else
+  ...sale.items.map((item) {
+    final unitPrice = item.totalPrice / item.quantity;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.productName,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "${item.quantity} × SAR ${unitPrice.toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                "SAR ${item.totalPrice.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }),
+
+const SizedBox(height: 24),
+
+
             _statusChip(),
 
             const SizedBox(height: 24),

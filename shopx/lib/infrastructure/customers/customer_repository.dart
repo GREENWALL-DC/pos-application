@@ -12,11 +12,19 @@ class CustomerRepository {
     return Customer.fromJson(res);
   }
 
-  // GET ALL
-  Future<List<Customer>> getAllCustomers() async {
-    final res = await api.getCustomers();
-    return res.map<Customer>((json) => Customer.fromJson(json)).toList();
-  }
+  
+// ALL customers (Cart)
+Future<List<Customer>> getAllCustomers() async {
+  final res = await api.getCustomers();
+  return res.map<Customer>((json) => Customer.fromJson(json)).toList();
+}
+
+// ONLY logged-in salesperson customers (Manage Customers)
+Future<List<Customer>> getMyCustomers() async {
+  final res = await api.getMyCustomers();
+  return res.map<Customer>((json) => Customer.fromJson(json)).toList();
+}
+
 
   // GET SINGLE
   Future<Customer> getCustomerById(int id) async {
