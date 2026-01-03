@@ -18,6 +18,9 @@ router.post("/admin/login", loginValidator, controller.loginAdmin);
 // Public
 router.post("/login", loginValidator, controller.loginUser);
 
+// 🔁 REFRESH ACCESS TOKEN
+router.post("/refresh-token", controller.refreshToken);
+
 
 // Protected
 router.get("/current", validateToken, controller.currentUser);

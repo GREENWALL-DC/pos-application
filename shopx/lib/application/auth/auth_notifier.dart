@@ -8,7 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthNotifier extends Notifier<AuthState> {
   String? _tempToken;
   String? _selectedOtpMethod; // ✅ ADD: Store selected method
-  String? _jwtToken; // ✅ ADD THIS: Store permanent JWT token
+  String? _accessToken;
+  String? _refreshToken;
 
   @override
   AuthState build() {
@@ -16,55 +17,91 @@ class AuthNotifier extends Notifier<AuthState> {
     return const AuthState.initial(); // 🔥 IMPORTANT
   }
 
-  Future<void> _initAuth() async {
-    final storedToken = await _loadToken();
+  // final storedToken = await _loadToken();
 
-    if (storedToken == null) {
-      state = const AuthState.unauthenticated(); // init DONE
+  // if (storedToken == null) {
+  //   state = const AuthState.unauthenticated(); // init DONE
+  //   return;
+  // }
+
+  // try {
+  //   final user = await ref
+  //       .read(authRepositoryProvider)
+  //       .getCurrentUser(storedToken);
+
+  //   _jwtToken = storedToken;
+  //   state = AuthState.authenticated(user, token: storedToken);
+  //   //  } catch (_) {
+  //   //   // Internet OFF → do nothing
+  //   //   // Keep state as initializing
+  //   //   return;
+  //   // }
+  // } catch (_) {
+  //   // Token expired / invalid / rejected
+  //   _jwtToken = null;
+  //   await _clearToken();
+
+  //   state = const AuthState.unauthenticated(); // 🔴 EXIT SPLASH
+  //   return;
+  // }
+
+  Future<void> _initAuth() async {
+    await _loadTokens();
+
+    // No tokens at all → go to login
+    if (_accessToken == null && _refreshToken == null) {
+      state = const AuthState.unauthenticated();
       return;
     }
 
-    try {
-      final user = await ref
-          .read(authRepositoryProvider)
-          .getCurrentUser(storedToken);
+    // Access token exists → try using it
+    if (_accessToken != null) {
+      try {
+        final user = await ref
+            .read(authRepositoryProvider)
+            .getCurrentUser(_accessToken!);
 
-      _jwtToken = storedToken;
-      state = AuthState.authenticated(user, token: storedToken);
- } catch (_) {
-  // Internet OFF → do nothing
-  // Keep state as initializing
-  return;
-}
+        state = AuthState.authenticated(user, token: _accessToken);
+        return;
+      } catch (_) {
+        // access token expired → try refresh
+      }
+    }
 
+    // Access token failed but refresh token exists
+    if (_refreshToken != null) {
+      await _refreshTokenAndRecover();
+      return;
+    }
 
-
+    // Everything failed
+    state = const AuthState.unauthenticated();
   }
 
   // 🔥 LOCAL TOKEN STORAGE (SharedPreferences)
-  Future<void> _saveToken(String token) async {
+  Future<void> _saveTokens(String accessToken, String refreshToken) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("jwt_token", token);
+    await prefs.setString("access_token", accessToken);
+    await prefs.setString("refresh_token", refreshToken);
   }
 
-  Future<String?> _loadToken() async {
+  Future<void> _loadTokens() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("jwt_token");
+    _accessToken = prefs.getString("access_token");
+    _refreshToken = prefs.getString("refresh_token");
   }
 
-  Future<void> _clearToken() async {
+  Future<void> _clearAllTokens() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("jwt_token");
+    await prefs.remove("access_token");
+    await prefs.remove("refresh_token");
   }
 
   // 🔐 LOGIN: Authenticate user with username and password
+
   Future<void> loginUser(String username, String password) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(
-  user: state.user,
-  token: state.token,
-);
-
+    state = AuthState.loading(user: state.user, token: state.token);
 
     try {
       final result = await ref
@@ -72,12 +109,16 @@ class AuthNotifier extends Notifier<AuthState> {
           .loginUser(username, password);
 
       final user = result['user'] as UserModel;
-      final token = result['token'] as String;
 
-      _jwtToken = token;
-      await _saveToken(token);
+      final accessToken = result['accessToken'] as String;
+      final refreshToken = result['refreshToken'] as String;
 
-      state = AuthState.authenticated(user, token: token);
+      _accessToken = accessToken;
+      _refreshToken = refreshToken;
+
+      await _saveTokens(accessToken, refreshToken);
+
+      state = AuthState.authenticated(user, token: accessToken);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
@@ -85,11 +126,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> loginAdmin(String username, String password) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(
-  user: state.user,
-  token: state.token,
-);
-
+    state = AuthState.loading(user: state.user, token: state.token);
 
     try {
       final result = await ref
@@ -97,12 +134,16 @@ class AuthNotifier extends Notifier<AuthState> {
           .loginAdmin(username, password);
 
       final user = result['user'] as UserModel;
-      final token = result['token'] as String;
 
-      _jwtToken = token;
-      await _saveToken(token);
+      final accessToken = result['accessToken'] as String;
+      final refreshToken = result['refreshToken'] as String;
 
-      state = AuthState.authenticated(user, token: token);
+      _accessToken = accessToken;
+      _refreshToken = refreshToken;
+
+      await _saveTokens(accessToken, refreshToken);
+
+      state = AuthState.authenticated(user, token: accessToken);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
@@ -117,11 +158,7 @@ class AuthNotifier extends Notifier<AuthState> {
     String adminToken,
   ) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(
-  user: state.user,
-  token: state.token,
-);
-
+    state = AuthState.loading(user: state.user, token: state.token);
 
     try {
       // ✅ UPDATED: Get result with both user and token
@@ -130,64 +167,60 @@ class AuthNotifier extends Notifier<AuthState> {
           .register(username, email, password, phone, adminToken);
 
       final user = result['user'] as UserModel;
-      final token = result['token'] as String;
+      final accessToken = result['accessToken'] as String;
+      final refreshToken = result['refreshToken'] as String;
 
-      // ✅ Store the token
-      _jwtToken = token;
-      await _saveToken(token);
-      state = AuthState.authenticated(user, token: token);
+      _accessToken = accessToken;
+      _refreshToken = refreshToken;
+
+      await _saveTokens(accessToken, refreshToken);
+
+      state = AuthState.authenticated(user, token: accessToken);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
   }
 
   Future<void> getCurrentUser() async {
-    // ✅ REMOVED token parameter
-    if (_jwtToken == null) {
-      // ✅ Check if we have a token
+    if (_accessToken == null) {
       state = const AuthState.unauthenticated();
       return;
     }
 
-    // state = const AuthState.loading();
-    state = AuthState.loading(
-  user: state.user,
-  token: state.token,
-);
-
+    state = AuthState.loading(user: state.user, token: state.token);
 
     try {
       final user = await ref
           .read(authRepositoryProvider)
-          .getCurrentUser(_jwtToken!);
-      state = AuthState.authenticated(user, token: _jwtToken); // ✅ Pass token
-  } catch (e) {
-  // Network or server issue — do NOT logout
-  state = state.copyWith(
-    isLoading: false,
-    error: null,
-  );
+          .getCurrentUser(_accessToken!);
+
+      state = AuthState.authenticated(user, token: _accessToken);
+   } catch (_) {
+  // Do NOT logout on network error
+  if (_refreshToken != null) {
+    await _refreshTokenAndRecover();
+  }
+  // else: do nothing, keep current state
 }
 
   }
 
   // 🚪 LOGOUT: Clear user data and return to unauthenticated state
   Future<void> logout() async {
-    // ✅ Clear ALL tokens
-    _jwtToken = null;
+    _accessToken = null;
+    _refreshToken = null;
     _tempToken = null;
     _selectedOtpMethod = null;
-    await _clearToken(); // 🔥 delete token locally
-    state = const AuthState.unauthenticated();
 
-    // Here you can also clear stored tokens from secure storage
-    // await _secureStorage.deleteToken();
+    await _clearAllTokens();
+
+    state = const AuthState.unauthenticated();
   }
 
   Future<void> updateProfile(
     Map<String, dynamic> userData, // ✅ REMOVED token parameter
   ) async {
-    if (_jwtToken == null) {
+    if (_accessToken == null) {
       state = AuthState.error("Not authenticated");
       return;
     }
@@ -197,10 +230,10 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final updatedUser = await ref
           .read(authRepositoryProvider)
-          .updateUser(_jwtToken!, userData); // ✅ Use stored token
+          .updateUser(_accessToken!, userData); // ✅ Use stored token
       state = AuthState.authenticated(
         updatedUser,
-        token: _jwtToken,
+        token: _accessToken,
       ); // ✅ Keep token
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -209,22 +242,18 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> deleteAccount() async {
     // ✅ REMOVED token parameter
-    if (_jwtToken == null) {
+    if (_accessToken == null) {
       state = AuthState.error("Not authenticated");
       return;
     }
 
     // state = const AuthState.loading();
-    state = AuthState.loading(
-  user: state.user,
-  token: state.token,
-);
-
+    state = AuthState.loading(user: state.user, token: state.token);
 
     try {
       await ref
           .read(authRepositoryProvider)
-          .deleteUser(_jwtToken!); // ✅ Use stored token
+          .deleteUser(_accessToken!); // ✅ Use stored token
       state = const AuthState.unauthenticated();
     } catch (e) {
       state = AuthState.error(e.toString());
@@ -234,11 +263,7 @@ class AuthNotifier extends Notifier<AuthState> {
   // 🔑 STEP 1: Login owner and get TEMP token
   Future<void> loginOwner(String username, String password) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(
-  user: state.user,
-  token: state.token,
-);
-
+    state = AuthState.loading(user: state.user, token: state.token);
 
     try {
       _tempToken = await ref
@@ -261,11 +286,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
     _selectedOtpMethod = method; // ✅ Store the method being used
     // state = state.copyWith(isLoading: true);
-    state = state.copyWith(
-  isLoading: true,
-  isInitializing: false,
-);
-
+    state = state.copyWith(isLoading: true, isInitializing: false);
 
     try {
       await ref.read(authRepositoryProvider).sendOTP(_tempToken!, method);
@@ -304,6 +325,7 @@ class AuthNotifier extends Notifier<AuthState> {
   //     state = AuthState.error(e.toString());
   //   }
   // }
+
   Future<bool> verifyOTP(String otp) async {
     if (_tempToken == null) {
       state = AuthState.error("Session expired. Please login again");
@@ -311,11 +333,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     // state = const AuthState.loading();
-    state = AuthState.loading(
-  user: state.user,
-  token: state.token,
-);
-
+    state = AuthState.loading(user: state.user, token: state.token);
 
     try {
       final result = await ref
@@ -324,14 +342,20 @@ class AuthNotifier extends Notifier<AuthState> {
 
       // ✅ CORRECT OTP
       final user = result['user'] as UserModel;
-      final permanentToken = result['token'] as String;
 
-      _jwtToken = permanentToken;
+      final accessToken = result['accessToken'] as String;
+      final refreshToken = result['refreshToken'] as String;
+
+      _accessToken = accessToken;
+      _refreshToken = refreshToken;
+
       _tempToken = null;
       _selectedOtpMethod = null;
-      await _saveToken(permanentToken);
 
-      state = AuthState.authenticated(user, token: permanentToken);
+      await _saveTokens(accessToken, refreshToken);
+
+      state = AuthState.authenticated(user, token: accessToken);
+
       return true;
     } catch (e) {
       // ❌ WRONG OTP or server error
@@ -346,6 +370,38 @@ class AuthNotifier extends Notifier<AuthState> {
       state = state.copyWith(error: null);
     }
   }
+Future<void> _refreshTokenAndRecover() async {
+  if (_refreshToken == null) {
+    // ✅ No refresh token → force login
+    await _clearAllTokens();
+    state = const AuthState.unauthenticated();
+    return;
+  }
+
+  try {
+    final result = await ref
+        .read(authRepositoryProvider)
+        .refreshToken(_refreshToken!);
+
+    _accessToken = result['accessToken'];
+    _refreshToken = result['refreshToken'];
+
+    await _saveTokens(_accessToken!, _refreshToken!);
+
+    final user = await ref
+        .read(authRepositoryProvider)
+        .getCurrentUser(_accessToken!);
+
+    state = AuthState.authenticated(user, token: _accessToken);
+  } catch (e) {
+    // 🔥 IMPORTANT CHANGE START
+    // Refresh token EXPIRED (401) → logout & go to login screen
+    await _clearAllTokens();
+    state = const AuthState.unauthenticated();
+    // 🔥 IMPORTANT CHANGE END
+  }
+}
+
 }
 
 // 🎯 PROVIDER: Makes AuthNotifier available throughout the app

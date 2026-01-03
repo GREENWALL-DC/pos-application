@@ -71,6 +71,20 @@ const verifyOTP = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// 🔁 Refresh access token using refresh token
+const refreshToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    res.status(400);
+    throw new Error("Refresh token is required");
+  }
+
+  const result = await service.refreshAccessToken(refreshToken);
+  res.json(result);
+});
+
+
 
 module.exports = {
   registerUser,
@@ -85,4 +99,5 @@ module.exports = {
   loginOwner,
   sendOTP,
   verifyOTP,
+  refreshToken, 
 };

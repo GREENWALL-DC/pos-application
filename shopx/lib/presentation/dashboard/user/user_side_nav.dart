@@ -173,51 +173,51 @@ DrawerMenuItem(
 kHeight20,
 
    // --- BOTTOM "Last Connection" SECTION ---
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Refresh/Sync Icon Box
-                  Container(
-                    width: 45,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.sync,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
+            //   Row(
+            //     crossAxisAlignment: CrossAxisAlignment.center,
+            //     children: [
+            //       // Refresh/Sync Icon Box
+            //       Container(
+            //         width: 45,
+            //         height: 45,
+            //         decoration: BoxDecoration(
+            //           color: Colors.white.withOpacity(0.2),
+            //           borderRadius: BorderRadius.circular(12),
+            //         ),
+            //         child: const Icon(
+            //           Icons.sync,
+            //           color: Colors.white,
+            //           size: 24,
+            //         ),
+            //       ),
+            //       const SizedBox(width: 16),
 
-                  // Text Info
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Last connection:",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        lastConnectionDate,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 10,
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-             kHeight10,
+            //       // Text Info
+            //       Column(
+            //         crossAxisAlignment: CrossAxisAlignment.start,
+            //         children: [
+            //           const Text(
+            //             "Last connection:",
+            //             style: TextStyle(
+            //               color: Colors.white,
+            //               fontSize: 12,
+            //               fontWeight: FontWeight.bold,
+            //             ),
+            //           ),
+            //           const SizedBox(height: 4),
+            //           Text(
+            //             lastConnectionDate,
+            //             style: TextStyle(
+            //               color: Colors.white.withOpacity(0.8),
+            //               fontSize: 10,
+            //               height: 1.2,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //     ],
+            //   ),
+            //  kHeight10,
             ],
           ),
         ),

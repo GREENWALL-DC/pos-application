@@ -3,9 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/infrastructure/core/dio_provider.dart';
 
 final authApiProvider = Provider<AuthApi>((ref) {
-  return AuthApi(
-   ref.read(dioProvider)
-  );
+  return AuthApi(ref.read(dioProvider));
 });
 
 class AuthApi {
@@ -13,30 +11,35 @@ class AuthApi {
 
   AuthApi(this._dio);
 
-  Future<Map<String, dynamic>> loginUser(String username, String password) async {
-  try {
-    final res = await _dio.post(
-      "auth/login",
-      data: {"username": username, "password": password},
-    );
-    return res.data;
-  } on DioException catch (e) {
-    throw e.response?.data?['message'] ?? 'User login failed';
+  Future<Map<String, dynamic>> loginUser(
+    String username,
+    String password,
+  ) async {
+    try {
+      final res = await _dio.post(
+        "auth/login",
+        data: {"username": username, "password": password},
+      );
+      return res.data;
+    } on DioException catch (e) {
+      throw e.response?.data?['message'] ?? 'User login failed';
+    }
   }
-}
 
-
-Future<Map<String, dynamic>> loginAdmin(String username, String password) async {
-  try {
-    final res = await _dio.post(
-      "auth/admin/login",
-      data: {"username": username, "password": password},
-    );
-    return res.data;
-  } on DioException catch (e) {
-    throw e.response?.data?['message'] ?? 'Admin login failed';
+  Future<Map<String, dynamic>> loginAdmin(
+    String username,
+    String password,
+  ) async {
+    try {
+      final res = await _dio.post(
+        "auth/admin/login",
+        data: {"username": username, "password": password},
+      );
+      return res.data;
+    } on DioException catch (e) {
+      throw e.response?.data?['message'] ?? 'Admin login failed';
+    }
   }
-}
 
   Future<Map<String, dynamic>> register(
     String username,
@@ -102,16 +105,6 @@ Future<Map<String, dynamic>> loginAdmin(String username, String password) async 
     return res.data;
   }
 
-
-
-
-
-
-
-
-
-
-
   // ✅ NEW: Verify OTP - required for your backend's OTP verification
   // Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
   //   final res = await _dio.post(
@@ -121,46 +114,25 @@ Future<Map<String, dynamic>> loginAdmin(String username, String password) async 
   //   );
   //   return res.data;
   // }
-Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
-  try {
-    final res = await _dio.post(
-      "auth/verify-otp",
-      data: {"otp": otp},
-      options: Options(headers: {"Authorization": "Bearer $token"}),
-    );
+  Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
+    try {
+      final res = await _dio.post(
+        "auth/verify-otp",
+        data: {"otp": otp},
+        options: Options(headers: {"Authorization": "Bearer $token"}),
+      );
 
-    return res.data;
-  } on DioException catch (e) {
-    // ❗ WRONG OTP → THROW, DO NOT RETURN NULL
-    if (e.response?.statusCode == 400 ||
-        e.response?.statusCode == 401) {
-      throw Exception("Incorrect OTP");
+      return res.data;
+    } on DioException catch (e) {
+      // ❗ WRONG OTP → THROW, DO NOT RETURN NULL
+      if (e.response?.statusCode == 400 || e.response?.statusCode == 401) {
+        throw Exception("Incorrect OTP");
+      }
+
+      // Other errors
+      throw Exception("OTP verification failed");
     }
-
-    // Other errors
-    throw Exception("OTP verification failed");
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   // ✅ NEW: Admin functionality - get all users (requires admin privileges)
   Future<Map<String, dynamic>> getAllUsers(String token) async {
@@ -186,4 +158,26 @@ Future<Map<String, dynamic>> verifyOTP(String token, String otp) async {
       throw e.response?.data?['message'] ?? 'Admin login failed';
     }
   }
+
+
+  // 🔁 REFRESH ACCESS TOKEN
+Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+  try {
+    final res = await _dio.post(
+      "auth/refresh-token",
+      data: {
+        "refreshToken": refreshToken,
+      },
+    );
+
+    return res.data; // { accessToken, refreshToken }
+ } on DioException catch (e) {
+  if (e.response?.statusCode == 401) {
+    throw Exception("REFRESH_TOKEN_EXPIRED");
+  }
+  throw Exception("Session expired");
+}
+
+}
+
 }

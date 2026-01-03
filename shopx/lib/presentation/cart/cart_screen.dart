@@ -25,14 +25,29 @@ class CartScreen extends HookConsumerWidget {
       null,
     ); 
     
-    //storing selected customer
+    //storing selected 
+    
+
+
+// useEffect(() {
+//   Future.microtask(() {
+//     // 🧾 Cart needs ALL customers
+//     ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
+//   });
+//   return null;
+// }, []);
+
 useEffect(() {
   Future.microtask(() {
-    // 🧾 Cart needs ALL customers
-    ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
+    final customerState = ref.read(customerNotifierProvider);
+
+    if (customerState.customers.isEmpty) {
+      ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
+    }
   });
   return null;
 }, []);
+
 
     // Discount input controller
     final discountController = useTextEditingController();

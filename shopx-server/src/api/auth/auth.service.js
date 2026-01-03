@@ -6,6 +6,18 @@ const { sendEmail } = require("../../utils/email"); // ✅ ADD
 const { sendWhatsAppOtp } = require("../../utils/whatsapp");
 const { generateOTP } = require("../../utils/otp");
 const { sendSMS } = require("../../utils/sms");
+const crypto = require("crypto");
+
+
+
+
+// 🔁 Generate refresh token (random, secure)
+const generateRefreshToken = () => {
+  return crypto.randomBytes(40).toString("hex");
+};
+
+
+
 
 const register = async ( data,reqUser ) => {
    const { username, email, password, phone,user_type } = data;
@@ -84,11 +96,21 @@ const login = async ({ username, password }) => {
     { expiresIn: "1d" }
   );
 
+
+  // 🔐 Ensure single active session
+await repo.deleteRefreshTokensByUser(user.id);
+
+
+    // 🔽 ADD BELOW (DO NOT REMOVE EXISTING CODE)
+  const refreshToken = generateRefreshToken();
+  await repo.saveRefreshToken(user.id, refreshToken);
+
   // return { accessToken };
 
   // ✅ CRUCIAL FIX: Return BOTH token AND user data
   return {
     accessToken,
+     refreshToken,
     user: {
       id: user.id,
       username: user.username,
@@ -126,8 +148,13 @@ const loginAdmin = async ({ username, password }) => {
     { expiresIn: "1d" }
   );
 
+     const refreshToken = generateRefreshToken();
+  await repo.saveRefreshToken(user.id, refreshToken);
+
+
   return {
     accessToken,
+      refreshToken,
     user: {
       id: user.id,
       username: user.username,
@@ -242,6 +269,7 @@ const verifyOTP = async ({ userId, otp }) => {
   const user = await repo.findUserById(userId);
 
   const accessToken = jwt.sign(
+    
     {
       user: {
         id: user.id,
@@ -254,8 +282,51 @@ const verifyOTP = async ({ userId, otp }) => {
     { expiresIn: "1d" } // Token valid for 24 hours
   );
 
-  return { accessToken, user };
+  await repo.deleteRefreshTokensByUser(user.id);
+
+    const refreshToken = generateRefreshToken();
+  await repo.saveRefreshToken(user.id, refreshToken);
+
+
+  return { accessToken,refreshToken, user };
 };
+
+
+
+// 🔁 REFRESH ACCESS TOKEN
+const refreshAccessToken = async (refreshToken) => {
+  const stored = await repo.findRefreshToken(refreshToken);
+  if (!stored) throw new Error("Invalid refresh token");
+
+  // 🔥 ROTATION: delete used token
+  await repo.deleteRefreshToken(refreshToken);
+
+  const user = await repo.findUserById(stored.user_id);
+  if (!user) throw new Error("User not found");
+
+  const newAccessToken = jwt.sign(
+    {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        user_type: user.user_type,
+      },
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  // 🔁 Issue new refresh token
+  const newRefreshToken = generateRefreshToken();
+  await repo.saveRefreshToken(user.id, newRefreshToken);
+
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  };
+};
+
 
 module.exports = {
   register,
@@ -269,4 +340,5 @@ module.exports = {
   loginOwner,
   sendOTP,
   verifyOTP,
+    refreshAccessToken
 };

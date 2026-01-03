@@ -3,6 +3,7 @@ import 'package:shopx/domain/auth/user_model.dart';
 class AuthState {
   final UserModel? user;
   final String? token;
+  
   final bool isLoading;
   final bool isInitializing; // ⭐ ADD THIS
   final String? error;
@@ -32,7 +33,7 @@ const AuthState.loading({
   : user = user,
     token = token,
     isLoading = true,
-    isInitializing = true,
+    isInitializing = false,
     error = null;
 
 
@@ -54,12 +55,17 @@ const AuthState.loading({
         error = null;
 
      // 5. ⚠️ ERROR STATE: Something went wrong, show error message to user
-  const AuthState.error(String error)
-      : user = null,
-       token = null,  // ✅ NEW
-        isLoading = false,
-          isInitializing = false, // ✅ INIT IS DONE
-        error = error;
+  const AuthState.error(
+  String error, {
+  UserModel? user,
+  String? token,
+})
+    : user = user,
+      token = token,
+      isLoading = false,
+      isInitializing = false,
+      error = error;
+
 
               
   // 📊 Copy with method for easy state updates

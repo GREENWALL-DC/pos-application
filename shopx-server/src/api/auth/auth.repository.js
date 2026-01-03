@@ -87,6 +87,45 @@ const countAdmins = async () => {
 };
 
 
+// ================= REFRESH TOKEN SYSTEM =================
+
+// Save refresh token for a user
+const saveRefreshToken = async (userId, token) => {
+  await db.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at)
+     VALUES ($1, $2, NOW() + INTERVAL '90 days')`,
+    [userId, token]
+  );
+};
+
+// Find valid refresh token
+const findRefreshToken = async (token) => {
+  const r = await db.query(
+    `SELECT * FROM refresh_tokens
+     WHERE token = $1 AND expires_at > NOW()`,
+    [token]
+  );
+  return r.rows[0] || null;
+};
+
+// Delete refresh token (logout / rotation)
+const deleteRefreshToken = async (token) => {
+  await db.query(
+    `DELETE FROM refresh_tokens WHERE token = $1`,
+    [token]
+  );
+};
+
+// ❌ Delete ALL refresh tokens for a user (login / OTP)
+const deleteRefreshTokensByUser = async (userId) => {
+  await db.query(
+    `DELETE FROM refresh_tokens WHERE user_id = $1`,
+    [userId]
+  );
+};
+
+
+
 
 module.exports = {
   findUserByEmail,
@@ -99,5 +138,9 @@ module.exports = {
   saveOTP,
   findValidOTP,
   deleteOTP,
-   countAdmins  
+   countAdmins,
+   saveRefreshToken,
+  findRefreshToken,
+  deleteRefreshToken,
+   deleteRefreshTokensByUser   
 };

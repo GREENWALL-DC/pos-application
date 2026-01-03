@@ -644,24 +644,69 @@ class UserDashboard extends HookConsumerWidget {
   ) {
     // Note: 'Total' is hardcoded or sum of displayed items for UI purposes.
     // In real app, connect this to a CartProvider
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1565C0), // Darker Blue
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CartScreen()),
-              );
-            },
-            child: Row(
+
+    // return Container(
+    //   margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+    //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+    //   decoration: BoxDecoration(
+    //     color: const Color(0xFF1565C0), // Darker Blue
+    //     borderRadius: BorderRadius.circular(15),
+    //   ),
+    //   child: Row(
+    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //     children: [
+    //       GestureDetector(
+    //         onTap: () {
+    //           Navigator.push(
+    //             context,
+    //             MaterialPageRoute(builder: (_) => const CartScreen()),
+    //           );
+    //         },
+    //         child: Row(
+    //           children: [
+    //             const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+    //             const SizedBox(width: 10),
+    //             Text(
+    //               "$count elements",
+    //               style: const TextStyle(
+    //                 color: Colors.white,
+    //                 fontWeight: FontWeight.w500,
+    //               ),
+    //             ),
+    //           ],
+    //         ),
+    //       ),
+
+    //       Text(
+    //         "Total: SAR ${totalPrice.toStringAsFixed(2)}",
+    //         style: const TextStyle(
+    //           color: Colors.white,
+    //           fontWeight: FontWeight.bold,
+    //         ),
+    //       ),
+    //     ],
+    //   ),
+    // );
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(15),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CartScreen()),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1565C0),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
               children: [
                 const Icon(Icons.shopping_cart_outlined, color: Colors.white),
                 const SizedBox(width: 10),
@@ -674,16 +719,15 @@ class UserDashboard extends HookConsumerWidget {
                 ),
               ],
             ),
-          ),
-
-          Text(
-            "Total: SAR ${totalPrice.toStringAsFixed(2)}",
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+            Text(
+              "Total: SAR ${totalPrice.toStringAsFixed(2)}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

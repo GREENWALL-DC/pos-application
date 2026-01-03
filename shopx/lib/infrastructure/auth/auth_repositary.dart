@@ -20,13 +20,19 @@ class AuthRepository {
       final response = await _api.loginUser(username, password);
 
       final user = UserModel.fromJson(response["user"]);
-      final token = response["accessToken"];
 
-      if (token == null) {
-        throw Exception("No token received after user login");
+      final accessToken = response["accessToken"];
+      final refreshToken = response["refreshToken"];
+
+      if (accessToken == null || refreshToken == null) {
+        throw Exception("Tokens missing after user login");
       }
 
-      return {'user': user, 'token': token};
+      return {
+        'user': user,
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
     } catch (e) {
       throw Exception("User login failed: $e");
     }
@@ -40,13 +46,19 @@ class AuthRepository {
       final response = await _api.loginAdmin(username, password);
 
       final user = UserModel.fromJson(response["user"]);
-      final token = response["accessToken"];
 
-      if (token == null) {
-        throw Exception("No token received after admin login");
+      final accessToken = response["accessToken"];
+      final refreshToken = response["refreshToken"];
+
+      if (accessToken == null || refreshToken == null) {
+        throw Exception("Tokens missing after admin login");
       }
 
-      return {'user': user, 'token': token};
+      return {
+        'user': user,
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
     } catch (e) {
       throw Exception("Admin login failed: $e");
     }
@@ -72,25 +84,30 @@ class AuthRepository {
     final userJson = response["user"];
     final user = UserModel.fromJson(userJson);
 
-    // Extract token from response
-    final token = response["accessToken"] as String?;
+    final accessToken = response["accessToken"];
+    final refreshToken = response["refreshToken"];
 
-    if (token == null) {
-      throw Exception('No token received after registration');
+    if (accessToken == null || refreshToken == null) {
+      throw Exception("Tokens missing after registration");
     }
 
-    // ✅ Return BOTH user and token
-    return {'user': user, 'token': token};
+    return {
+      'user': user,
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+    };
   }
 
   // 🔍 GET CURRENT USER: Fetch logged-in user's profile
   Future<UserModel> getCurrentUser(String token) async {
-    // 📤 Send request to get current user profile
+  try {
     final response = await _api.current(token);
-
-    // 🎯 Your UserModel.fromJson can handle: { "id": 1, "username": "...", ... }
     return UserModel.fromJson(response);
+  } catch (e) {
+    rethrow; // IMPORTANT: let notifier decide
   }
+}
+
 
   // ✏️ UPDATE USER: Update user profile information
   Future<UserModel> updateUser(
@@ -140,12 +157,18 @@ class AuthRepository {
     final userJson = response["user"];
     final user = UserModel.fromJson(userJson);
 
-    final permanentToken = response["accessToken"] as String?;
-    if (permanentToken == null) {
-      throw Exception('No token received after OTP verification');
+    final accessToken = response["accessToken"];
+    final refreshToken = response["refreshToken"];
+
+    if (accessToken == null || refreshToken == null) {
+      throw Exception("Tokens missing after OTP verification");
     }
 
-    return {'user': user, 'token': permanentToken};
+    return {
+      'user': user,
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+    };
   }
 
   // 👥 GET ALL USERS: Admin-only - get list of all users
@@ -162,5 +185,18 @@ class AuthRepository {
     // Response: { "tempToken": "..." } - we need to return just the token
 
     return response["tempToken"] as String;
+  }
+
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    final response = await _api.refreshToken(refreshToken);
+
+    final accessToken = response["accessToken"];
+    final newRefreshToken = response["refreshToken"];
+
+    if (accessToken == null || newRefreshToken == null) {
+      throw Exception("Invalid refresh token response");
+    }
+
+    return {'accessToken': accessToken, 'refreshToken': newRefreshToken};
   }
 }
