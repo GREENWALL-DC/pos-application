@@ -10,11 +10,22 @@ class AuthNotifier extends Notifier<AuthState> {
   String? _selectedOtpMethod; // ✅ ADD: Store selected method
   String? _accessToken;
   String? _refreshToken;
+  bool _hasInitialized = false;
+
+  // @override
+  // AuthState build() {
+  //   _initAuth(); // async init
+  //   return const AuthState(isInitializing: true); // 🔥 IMPORTANT
+  // }
 
   @override
   AuthState build() {
-    _initAuth(); // async init
-    return const AuthState.initial(); // 🔥 IMPORTANT
+    if (!_hasInitialized) {
+      _hasInitialized = true;
+      _initAuth();
+    }
+
+    return const AuthState(isInitializing: true);
   }
 
   // final storedToken = await _loadToken();
@@ -64,7 +75,18 @@ class AuthNotifier extends Notifier<AuthState> {
         state = AuthState.authenticated(user, token: _accessToken);
         return;
       } catch (_) {
-        // access token expired → try refresh
+        if (_refreshToken != null) {
+          await _refreshTokenAndRecover();
+
+          // ✅ SAFETY NET: ENSURE INITIALIZATION ENDS
+          if (state.isInitializing) {
+            state = const AuthState.unauthenticated();
+          }
+          return;
+        }
+
+        state = const AuthState.unauthenticated();
+        return;
       }
     }
 
@@ -370,9 +392,15 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+
+    // 🔁 Re-run auth initialization (used when internet comes back)
+  void retryAuth() {
+    _initAuth();
+  }
+
+
   Future<void> _refreshTokenAndRecover() async {
     if (_refreshToken == null) {
-      // ✅ No refresh token → force login
       await _clearAllTokens();
       state = const AuthState.unauthenticated();
       return;
@@ -394,10 +422,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
       state = AuthState.authenticated(user, token: _accessToken);
     } catch (e) {
-      // ✅ DO NOT logout on network error
-      // ✅ Keep existing tokens and state
-      // ✅ App can recover automatically when internet comes back
-      state = state.copyWith(isLoading: false);
+      // ✅ FIX: INITIALIZATION MUST END
+      state = const AuthState.unauthenticated();
     }
   }
 }

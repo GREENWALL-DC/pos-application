@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/application/auth/auth_state.dart';
+import 'package:shopx/application/connectivity/app_bootstrap_provider.dart';
+import 'package:shopx/application/connectivity/connectivity_provider.dart';
 import 'package:shopx/application/dashboard/admin_dashboard_notifier.dart';
 import 'package:shopx/presentation/auth/selection/selection_screen.dart';
 import 'package:shopx/presentation/dashboard/admin/admin_dashboard.dart';
@@ -19,8 +21,11 @@ class MyApp extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
+    // final connectivity = ref.watch(connectivityProvider);
+    final bootstrap = ref.watch(appBootstrapProvider);
 
-    Widget home;
+
+    // Widget home;
 
     // if (authState.isInitializing) {
     //   home = const SplashScreen();
@@ -33,25 +38,31 @@ class MyApp extends HookConsumerWidget {
     // } else {
     //   home = const SelectionScreen();
     // }
-    if (authState.isInitializing) {
-      home = const SplashScreen();
-    }
-    // 🔥 NEW: No Internet case
-    else if (authState.error != null && authState.user != null) {
-      home = const NoInternetScreen();
-    }
-    // Normal authenticated flow
-    else if (authState.isAuthenticated) {
-      if (authState.user!.userType == "admin") {
-        home = const AdminDashboard();
-      } else {
-        home = const UserDashboard();
-      }
-    }
-    // Logged out
-    else {
+
+
+Widget home;
+
+switch (bootstrap) {
+  case AppBootstrapState.loading:
+    home = const SplashScreen();
+    break;
+
+  case AppBootstrapState.offline:
+    home = const NoInternetScreen();
+    break;
+
+  case AppBootstrapState.ready:
+    if (authState.isAuthenticated) {
+      home = authState.user!.userType == "admin"
+          ? const AdminDashboard()
+          : const UserDashboard();
+    } else {
       home = const SelectionScreen();
     }
+    break;
+}
+
+
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

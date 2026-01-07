@@ -112,7 +112,8 @@ const AuthState.loading({
 
 extension AuthStateHelpers on AuthState {
   bool get isAuthenticated => user != null;  // logged in if user exists
-  bool get isUnauthenticated =>
-    user == null && !isLoading && !isInitializing;
+  
+  // bool get isUnauthenticated =>
+  //   user == null && !isLoading && !isInitializing;
 
 }

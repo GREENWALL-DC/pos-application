@@ -94,7 +94,7 @@ const login = async ({ username, password }) => {
     },
     process.env.ACCESS_TOKEN_SECRET,
     // { expiresIn: "1d" }
-    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
 
   );
 
@@ -148,7 +148,7 @@ const loginAdmin = async ({ username, password }) => {
     },
     process.env.ACCESS_TOKEN_SECRET,
     // { expiresIn: "1d" }
-    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
 
   );
 
@@ -219,7 +219,7 @@ const loginOwner = async ({ username, password }) => {
 
   // Temporary short-lived token (5 min)
   const tempToken = jwt.sign({ id: user.id }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "5m",
+    expiresIn: "50m",
   });
 
   return { tempToken };
@@ -284,7 +284,7 @@ const verifyOTP = async ({ userId, otp }) => {
     },
     process.env.ACCESS_TOKEN_SECRET, // Secret key
     // { expiresIn: "1d" } // Token valid for 24 hours
-    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
 
   );
 
@@ -321,7 +321,7 @@ const refreshAccessToken = async (refreshToken) => {
     },
     process.env.ACCESS_TOKEN_SECRET,
     // { expiresIn: "1d" }
-    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
 
   );
 
