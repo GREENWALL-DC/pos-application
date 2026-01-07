@@ -195,14 +195,13 @@ class AuthNotifier extends Notifier<AuthState> {
           .getCurrentUser(_accessToken!);
 
       state = AuthState.authenticated(user, token: _accessToken);
-   } catch (_) {
-  // Do NOT logout on network error
-  if (_refreshToken != null) {
-    await _refreshTokenAndRecover();
-  }
-  // else: do nothing, keep current state
-}
-
+    } catch (_) {
+      // Do NOT logout on network error
+      if (_refreshToken != null) {
+        await _refreshTokenAndRecover();
+      }
+      // else: do nothing, keep current state
+    }
   }
 
   // 🚪 LOGOUT: Clear user data and return to unauthenticated state
@@ -370,38 +369,37 @@ class AuthNotifier extends Notifier<AuthState> {
       state = state.copyWith(error: null);
     }
   }
-Future<void> _refreshTokenAndRecover() async {
-  if (_refreshToken == null) {
-    // ✅ No refresh token → force login
-    await _clearAllTokens();
-    state = const AuthState.unauthenticated();
-    return;
+
+  Future<void> _refreshTokenAndRecover() async {
+    if (_refreshToken == null) {
+      // ✅ No refresh token → force login
+      await _clearAllTokens();
+      state = const AuthState.unauthenticated();
+      return;
+    }
+
+    try {
+      final result = await ref
+          .read(authRepositoryProvider)
+          .refreshToken(_refreshToken!);
+
+      _accessToken = result['accessToken'];
+      _refreshToken = result['refreshToken'];
+
+      await _saveTokens(_accessToken!, _refreshToken!);
+
+      final user = await ref
+          .read(authRepositoryProvider)
+          .getCurrentUser(_accessToken!);
+
+      state = AuthState.authenticated(user, token: _accessToken);
+    } catch (e) {
+      // ✅ DO NOT logout on network error
+      // ✅ Keep existing tokens and state
+      // ✅ App can recover automatically when internet comes back
+      state = state.copyWith(isLoading: false);
+    }
   }
-
-  try {
-    final result = await ref
-        .read(authRepositoryProvider)
-        .refreshToken(_refreshToken!);
-
-    _accessToken = result['accessToken'];
-    _refreshToken = result['refreshToken'];
-
-    await _saveTokens(_accessToken!, _refreshToken!);
-
-    final user = await ref
-        .read(authRepositoryProvider)
-        .getCurrentUser(_accessToken!);
-
-    state = AuthState.authenticated(user, token: _accessToken);
-  } catch (e) {
-    // 🔥 IMPORTANT CHANGE START
-    // Refresh token EXPIRED (401) → logout & go to login screen
-    await _clearAllTokens();
-    state = const AuthState.unauthenticated();
-    // 🔥 IMPORTANT CHANGE END
-  }
-}
-
 }
 
 // 🎯 PROVIDER: Makes AuthNotifier available throughout the app

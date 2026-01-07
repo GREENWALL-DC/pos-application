@@ -7,6 +7,7 @@ import 'package:shopx/presentation/auth/selection/selection_screen.dart';
 import 'package:shopx/presentation/dashboard/admin/admin_dashboard.dart';
 import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
 import 'package:shopx/presentation/splash/splash_screen.dart';
+import 'package:shopx/widget/internet/no_internet_screen.dart';
 
 void main() {
   runApp(ProviderScope(child: MyApp()));
@@ -19,19 +20,38 @@ class MyApp extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
 
-     Widget home;
+    Widget home;
 
-  if (authState.isInitializing) {
-    home = const SplashScreen();
-  } else if (authState.isAuthenticated) {
-    if (authState.user!.userType == "admin") {
-      home = const AdminDashboard();
-    } else {
-      home = const UserDashboard();
+    // if (authState.isInitializing) {
+    //   home = const SplashScreen();
+    // } else if (authState.isAuthenticated) {
+    //   if (authState.user!.userType == "admin") {
+    //     home = const AdminDashboard();
+    //   } else {
+    //     home = const UserDashboard();
+    //   }
+    // } else {
+    //   home = const SelectionScreen();
+    // }
+    if (authState.isInitializing) {
+      home = const SplashScreen();
     }
-  } else {
-    home = const SelectionScreen();
-  }
+    // 🔥 NEW: No Internet case
+    else if (authState.error != null && authState.user != null) {
+      home = const NoInternetScreen();
+    }
+    // Normal authenticated flow
+    else if (authState.isAuthenticated) {
+      if (authState.user!.userType == "admin") {
+        home = const AdminDashboard();
+      } else {
+        home = const UserDashboard();
+      }
+    }
+    // Logged out
+    else {
+      home = const SelectionScreen();
+    }
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

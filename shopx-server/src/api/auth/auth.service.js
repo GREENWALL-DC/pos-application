@@ -93,7 +93,9 @@ const login = async ({ username, password }) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "1d" }
+    // { expiresIn: "1d" }
+    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+
   );
 
 
@@ -145,7 +147,9 @@ const loginAdmin = async ({ username, password }) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "1d" }
+    // { expiresIn: "1d" }
+    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+
   );
 
      const refreshToken = generateRefreshToken();
@@ -279,7 +283,9 @@ const verifyOTP = async ({ userId, otp }) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET, // Secret key
-    { expiresIn: "1d" } // Token valid for 24 hours
+    // { expiresIn: "1d" } // Token valid for 24 hours
+    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+
   );
 
   await repo.deleteRefreshTokensByUser(user.id);
@@ -314,7 +320,9 @@ const refreshAccessToken = async (refreshToken) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "1d" }
+    // { expiresIn: "1d" }
+    { expiresIn: "5m" } // ⏱ TEMP: for refresh-token testing
+
   );
 
   // 🔁 Issue new refresh token
