@@ -57,48 +57,43 @@ class AuthNotifier extends Notifier<AuthState> {
   // }
 
   Future<void> _initAuth() async {
-    await _loadTokens();
+    try {
+      await _loadTokens();
 
-    // No tokens at all → go to login
-    if (_accessToken == null && _refreshToken == null) {
-      state = const AuthState.unauthenticated();
-      return;
-    }
-
-    // Access token exists → try using it
-    if (_accessToken != null) {
-      try {
-        final user = await ref
-            .read(authRepositoryProvider)
-            .getCurrentUser(_accessToken!);
-
-        state = AuthState.authenticated(user);
-        return;
-      } catch (_) {
-        if (_refreshToken != null) {
-          await _refreshTokenAndRecover();
-
-          // ✅ SAFETY NET: ENSURE INITIALIZATION ENDS
-          // if (state.isInitializing) {
-          //   state = const AuthState.unauthenticated();
-          // }
-          state = const AuthState.unauthenticated();
-          return;
-        }
-
+      if (_accessToken == null && _refreshToken == null) {
         state = const AuthState.unauthenticated();
         return;
       }
-    }
 
-    // Access token failed but refresh token exists
-    if (_refreshToken != null) {
-      await _refreshTokenAndRecover();
-      return;
-    }
+      if (_accessToken != null) {
+        try {
+          final user = await ref
+              .read(authRepositoryProvider)
+              .getCurrentUser(_accessToken!)
+              .timeout(const Duration(seconds: 4));
 
-    // Everything failed
-    state = const AuthState.unauthenticated();
+          state = AuthState.authenticated(user);
+          return;
+        } catch (_) {
+          if (_refreshToken != null) {
+            await _refreshTokenAndRecover();
+            return;
+          }
+        }
+      }
+
+      if (_refreshToken != null) {
+        await _refreshTokenAndRecover();
+        return;
+      }
+
+      state = const AuthState.unauthenticated();
+    } finally {
+      // 🔒 ABSOLUTE GUARANTEE: splash can NEVER be infinite
+      if (state.isInitializing) {
+        state = const AuthState.unauthenticated();
+      }
+    }
   }
 
   // 🔥 LOCAL TOKEN STORAGE (SharedPreferences)
@@ -399,6 +394,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
   // 🔁 Re-run auth initialization (used when internet comes back)
   void retryAuth() {
+    if (state.isInitializing) return;
+    state = state.copyWith(isInitializing: true);
     _initAuth();
   }
 
@@ -421,7 +418,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
       final user = await ref
           .read(authRepositoryProvider)
-          .getCurrentUser(_accessToken!);
+          .getCurrentUser(_accessToken!)
+          .timeout(const Duration(seconds: 4));
 
       state = AuthState.authenticated(user);
     } catch (e) {
@@ -429,6 +427,8 @@ class AuthNotifier extends Notifier<AuthState> {
       state = const AuthState.unauthenticated();
     }
   }
+
+  bool get hasLocalSession => _accessToken != null || _refreshToken != null;
 }
 
 // 🎯 PROVIDER: Makes AuthNotifier available throughout the app

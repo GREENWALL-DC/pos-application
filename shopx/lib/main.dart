@@ -24,41 +24,30 @@ class MyApp extends HookConsumerWidget {
     // final connectivity = ref.watch(connectivityProvider);
     final bootstrap = ref.watch(appBootstrapProvider);
 
-    // Widget home;
 
-    // if (authState.isInitializing) {
-    //   home = const SplashScreen();
-    // } else if (authState.isAuthenticated) {
-    //   if (authState.user!.userType == "admin") {
-    //     home = const AdminDashboard();
-    //   } else {
-    //     home = const UserDashboard();
-    //   }
-    // } else {
-    //   home = const SelectionScreen();
-    // }
 
-    Widget home;
+  Widget home;
 
-    switch (bootstrap) {
-      case AppBootstrapState.loading:
-        home = const SplashScreen();
-        break;
+if (authState.isInitializing) {
+  home = const SplashScreen(); // 🔒 ONLY HERE
+} else {
+  switch (bootstrap) {
+    case AppBootstrapState.offline:
+      home = const NoInternetScreen();
+      break;
 
-      case AppBootstrapState.offline:
-        home = const NoInternetScreen();
-        break;
+    case AppBootstrapState.ready:
+      if (authState.isAuthenticated) {
+        home = authState.user!.userType == "admin"
+            ? const AdminDashboard()
+            : const UserDashboard();
+      } else {
+        home = const SelectionScreen();
+      }
+      break;
+  }
+}
 
-      case AppBootstrapState.ready:
-        if (authState.isAuthenticated) {
-          home = authState.user!.userType == "admin"
-              ? const AdminDashboard()
-              : const UserDashboard();
-        } else {
-          home = const SelectionScreen();
-        }
-        break;
-    }
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
