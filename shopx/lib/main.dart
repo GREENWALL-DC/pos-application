@@ -24,7 +24,6 @@ class MyApp extends HookConsumerWidget {
     // final connectivity = ref.watch(connectivityProvider);
     final bootstrap = ref.watch(appBootstrapProvider);
 
-
     // Widget home;
 
     // if (authState.isInitializing) {
@@ -39,30 +38,27 @@ class MyApp extends HookConsumerWidget {
     //   home = const SelectionScreen();
     // }
 
+    Widget home;
 
-Widget home;
+    switch (bootstrap) {
+      case AppBootstrapState.loading:
+        home = const SplashScreen();
+        break;
 
-switch (bootstrap) {
-  case AppBootstrapState.loading:
-    home = const SplashScreen();
-    break;
+      case AppBootstrapState.offline:
+        home = const NoInternetScreen();
+        break;
 
-  case AppBootstrapState.offline:
-    home = const NoInternetScreen();
-    break;
-
-  case AppBootstrapState.ready:
-    if (authState.isAuthenticated) {
-      home = authState.user!.userType == "admin"
-          ? const AdminDashboard()
-          : const UserDashboard();
-    } else {
-      home = const SelectionScreen();
+      case AppBootstrapState.ready:
+        if (authState.isAuthenticated) {
+          home = authState.user!.userType == "admin"
+              ? const AdminDashboard()
+              : const UserDashboard();
+        } else {
+          home = const SelectionScreen();
+        }
+        break;
     }
-    break;
-}
-
-
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

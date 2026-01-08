@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shopx/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shopx/application/auth/auth_notifier.dart';
 
-class NoInternetScreen extends StatelessWidget {
+class NoInternetScreen extends ConsumerWidget {
   const NoInternetScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -26,15 +27,12 @@ class NoInternetScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  // Forces rebuild & provider re-evaluation
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const MyApp()),
-                    (_) => false,
-                  );
+                  // ✅ Correct: re-run auth logic, DO NOT restart app
+                  ref.read(authNotifierProvider.notifier).retryAuth();
                 },
-
                 child: const Text("Retry"),
               ),
             ],

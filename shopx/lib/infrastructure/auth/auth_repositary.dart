@@ -34,7 +34,7 @@ class AuthRepository {
         'refreshToken': refreshToken,
       };
     } catch (e) {
-      throw Exception("User login failed: $e");
+      rethrow; // 🔥 DO NOT WRAP
     }
   }
 
@@ -60,7 +60,7 @@ class AuthRepository {
         'refreshToken': refreshToken,
       };
     } catch (e) {
-      throw Exception("Admin login failed: $e");
+      rethrow; // 🔥 DO NOT WRAP
     }
   }
 
@@ -88,7 +88,7 @@ class AuthRepository {
     final refreshToken = response["refreshToken"];
 
     if (accessToken == null || refreshToken == null) {
-      throw Exception("Tokens missing after registration");
+      throw 'INVALID_AUTH_RESPONSE';
     }
 
     return {
@@ -100,14 +100,13 @@ class AuthRepository {
 
   // 🔍 GET CURRENT USER: Fetch logged-in user's profile
   Future<UserModel> getCurrentUser(String token) async {
-  try {
-    final response = await _api.current(token);
-    return UserModel.fromJson(response);
-  } catch (e) {
-    rethrow; // IMPORTANT: let notifier decide
+    try {
+      final response = await _api.current(token);
+      return UserModel.fromJson(response);
+    } catch (e) {
+      rethrow; // IMPORTANT: let notifier decide
+    }
   }
-}
-
 
   // ✏️ UPDATE USER: Update user profile information
   Future<UserModel> updateUser(
@@ -161,7 +160,7 @@ class AuthRepository {
     final refreshToken = response["refreshToken"];
 
     if (accessToken == null || refreshToken == null) {
-      throw Exception("Tokens missing after OTP verification");
+      throw 'INVALID_AUTH_RESPONSE';
     }
 
     return {
@@ -194,9 +193,16 @@ class AuthRepository {
     final newRefreshToken = response["refreshToken"];
 
     if (accessToken == null || newRefreshToken == null) {
-      throw Exception("Invalid refresh token response");
+      throw 'SESSION_EXPIRED';
     }
 
     return {'accessToken': accessToken, 'refreshToken': newRefreshToken};
   }
+
+
+    // 🚪 LOGOUT: Invalidate refresh token on backend
+  Future<void> logout(String refreshToken) async {
+    await _api.logout(refreshToken);
+  }
+
 }

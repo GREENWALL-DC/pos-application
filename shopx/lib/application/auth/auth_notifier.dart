@@ -72,16 +72,17 @@ class AuthNotifier extends Notifier<AuthState> {
             .read(authRepositoryProvider)
             .getCurrentUser(_accessToken!);
 
-        state = AuthState.authenticated(user, token: _accessToken);
+        state = AuthState.authenticated(user);
         return;
       } catch (_) {
         if (_refreshToken != null) {
           await _refreshTokenAndRecover();
 
           // ✅ SAFETY NET: ENSURE INITIALIZATION ENDS
-          if (state.isInitializing) {
-            state = const AuthState.unauthenticated();
-          }
+          // if (state.isInitializing) {
+          //   state = const AuthState.unauthenticated();
+          // }
+          state = const AuthState.unauthenticated();
           return;
         }
 
@@ -123,7 +124,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> loginUser(String username, String password) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(user: state.user, token: state.token);
+    state = AuthState.loading(user: state.user);
 
     try {
       final result = await ref
@@ -140,7 +141,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
       await _saveTokens(accessToken, refreshToken);
 
-      state = AuthState.authenticated(user, token: accessToken);
+      state = AuthState.authenticated(user);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
@@ -148,7 +149,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> loginAdmin(String username, String password) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(user: state.user, token: state.token);
+    state = AuthState.loading(user: state.user);
 
     try {
       final result = await ref
@@ -165,7 +166,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
       await _saveTokens(accessToken, refreshToken);
 
-      state = AuthState.authenticated(user, token: accessToken);
+      state = AuthState.authenticated(user);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
@@ -180,7 +181,7 @@ class AuthNotifier extends Notifier<AuthState> {
     String adminToken,
   ) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(user: state.user, token: state.token);
+    state = AuthState.loading(user: state.user);
 
     try {
       // ✅ UPDATED: Get result with both user and token
@@ -197,7 +198,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
       await _saveTokens(accessToken, refreshToken);
 
-      state = AuthState.authenticated(user, token: accessToken);
+      state = AuthState.authenticated(user);
     } catch (e) {
       state = AuthState.error(e.toString());
     }
@@ -209,14 +210,14 @@ class AuthNotifier extends Notifier<AuthState> {
       return;
     }
 
-    state = AuthState.loading(user: state.user, token: state.token);
+    state = AuthState.loading(user: state.user);
 
     try {
       final user = await ref
           .read(authRepositoryProvider)
           .getCurrentUser(_accessToken!);
 
-      state = AuthState.authenticated(user, token: _accessToken);
+      state = AuthState.authenticated(user);
     } catch (_) {
       // Do NOT logout on network error
       if (_refreshToken != null) {
@@ -228,13 +229,20 @@ class AuthNotifier extends Notifier<AuthState> {
 
   // 🚪 LOGOUT: Clear user data and return to unauthenticated state
   Future<void> logout() async {
+    try {
+      if (_refreshToken != null) {
+        await ref.read(authRepositoryProvider).logout(_refreshToken!);
+      }
+    } catch (_) {
+      // ignore backend failure
+    }
+
     _accessToken = null;
     _refreshToken = null;
     _tempToken = null;
     _selectedOtpMethod = null;
 
     await _clearAllTokens();
-
     state = const AuthState.unauthenticated();
   }
 
@@ -252,10 +260,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final updatedUser = await ref
           .read(authRepositoryProvider)
           .updateUser(_accessToken!, userData); // ✅ Use stored token
-      state = AuthState.authenticated(
-        updatedUser,
-        token: _accessToken,
-      ); // ✅ Keep token
+      state = AuthState.authenticated(updatedUser); // ✅ Keep token
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -269,7 +274,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     // state = const AuthState.loading();
-    state = AuthState.loading(user: state.user, token: state.token);
+    state = AuthState.loading(user: state.user);
 
     try {
       await ref
@@ -284,7 +289,7 @@ class AuthNotifier extends Notifier<AuthState> {
   // 🔑 STEP 1: Login owner and get TEMP token
   Future<void> loginOwner(String username, String password) async {
     // state = const AuthState.loading();
-    state = AuthState.loading(user: state.user, token: state.token);
+    state = AuthState.loading(user: state.user);
 
     try {
       _tempToken = await ref
@@ -354,7 +359,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     // state = const AuthState.loading();
-    state = AuthState.loading(user: state.user, token: state.token);
+    state = AuthState.loading(user: state.user);
 
     try {
       final result = await ref
@@ -375,7 +380,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
       await _saveTokens(accessToken, refreshToken);
 
-      state = AuthState.authenticated(user, token: accessToken);
+      state = AuthState.authenticated(user);
 
       return true;
     } catch (e) {
@@ -392,12 +397,10 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-
-    // 🔁 Re-run auth initialization (used when internet comes back)
+  // 🔁 Re-run auth initialization (used when internet comes back)
   void retryAuth() {
     _initAuth();
   }
-
 
   Future<void> _refreshTokenAndRecover() async {
     if (_refreshToken == null) {
@@ -420,7 +423,7 @@ class AuthNotifier extends Notifier<AuthState> {
           .read(authRepositoryProvider)
           .getCurrentUser(_accessToken!);
 
-      state = AuthState.authenticated(user, token: _accessToken);
+      state = AuthState.authenticated(user);
     } catch (e) {
       // ✅ FIX: INITIALIZATION MUST END
       state = const AuthState.unauthenticated();

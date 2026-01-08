@@ -22,7 +22,13 @@ class AuthApi {
       );
       return res.data;
     } on DioException catch (e) {
-      throw e.response?.data?['message'] ?? 'User login failed';
+      final data = e.response?.data;
+
+      if (data is Map && data['code'] != null) {
+        throw data['code'];
+      }
+
+      throw data?['message'] ?? 'LOGIN_FAILED';
     }
   }
 
@@ -37,7 +43,13 @@ class AuthApi {
       );
       return res.data;
     } on DioException catch (e) {
-      throw e.response?.data?['message'] ?? 'Admin login failed';
+      final data = e.response?.data;
+
+      if (data is Map && data['code'] != null) {
+        throw data['code'];
+      }
+
+      throw data?['message'] ?? 'LOGIN_FAILED';
     }
   }
 
@@ -124,13 +136,11 @@ class AuthApi {
 
       return res.data;
     } on DioException catch (e) {
-      // ❗ WRONG OTP → THROW, DO NOT RETURN NULL
       if (e.response?.statusCode == 400 || e.response?.statusCode == 401) {
-        throw Exception("Incorrect OTP");
+        throw 'INCORRECT_OTP';
       }
 
-      // Other errors
-      throw Exception("OTP verification failed");
+      throw 'OTP_VERIFICATION_FAILED';
     }
   }
 
@@ -155,29 +165,41 @@ class AuthApi {
       );
       return res.data;
     } on DioException catch (e) {
-      throw e.response?.data?['message'] ?? 'Admin login failed';
+      final data = e.response?.data;
+
+      if (data is Map && data['code'] != null) {
+        throw data['code'];
+      }
+
+      throw data?['message'] ?? 'LOGIN_FAILED';
     }
   }
 
-
   // 🔁 REFRESH ACCESS TOKEN
-Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-  try {
-    final res = await _dio.post(
-      "auth/refresh-token",
-      data: {
-        "refreshToken": refreshToken,
-      },
-    );
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final res = await _dio.post(
+        "auth/refresh-token",
+        data: {"refreshToken": refreshToken},
+      );
 
-    return res.data; // { accessToken, refreshToken }
- } on DioException catch (e) {
-  if (e.response?.statusCode == 401) {
-    throw Exception("REFRESH_TOKEN_EXPIRED");
+      return res.data; // { accessToken, refreshToken }
+    } on DioException catch (e) {
+      final data = e.response?.data;
+
+      if (data is Map && data['code'] == 'SESSION_EXPIRED') {
+        throw 'SESSION_EXPIRED';
+      }
+
+      throw 'SESSION_EXPIRED';
+    }
   }
-  throw Exception("Session expired");
-}
 
-}
-
+  Future<void> logout(String refreshToken) async {
+    try {
+      await _dio.post("auth/logout", data: {"refreshToken": refreshToken});
+    } catch (_) {
+      // Ignore failure – logout is user intent
+    }
+  }
 }

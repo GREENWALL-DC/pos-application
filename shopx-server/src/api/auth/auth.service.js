@@ -8,25 +8,18 @@ const { generateOTP } = require("../../utils/otp");
 const { sendSMS } = require("../../utils/sms");
 const crypto = require("crypto");
 
-
-
-
 // 🔁 Generate refresh token (random, secure)
 const generateRefreshToken = () => {
   return crypto.randomBytes(40).toString("hex");
 };
 
-
-
-
-const register = async ( data,reqUser ) => {
-   const { username, email, password, phone,user_type } = data;
+const register = async (data, reqUser) => {
+  const { username, email, password, phone, user_type } = data;
 
   if (!username || !email || !password || !phone) {
     throw new Error("ALL fields are mandatory");
   }
 
-  
   // 🔥 Check if any admin exists
   const adminCount = await repo.countAdmins();
 
@@ -40,12 +33,10 @@ const register = async ( data,reqUser ) => {
     if (!reqUser || reqUser.user_type !== "admin") {
       throw new Error("Only admin can create new accounts");
     }
-     // If admin sets user_type=admin → create admin
+    // If admin sets user_type=admin → create admin
     // else create normal user
     finalType = user_type === "admin" ? "admin" : "user";
   }
-
-
 
   const existing = await repo.findUserByEmail(email);
   if (existing) throw new Error("User Already Registered!");
@@ -78,7 +69,7 @@ const login = async ({ username, password }) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) throw new Error("Invalid credentials");
 
-    // 🚨 BLOCK ADMINS FROM EMPLOYEE LOGIN
+  // 🚨 BLOCK ADMINS FROM EMPLOYEE LOGIN
   if (user.user_type === "admin") {
     throw new Error("Admins must login through admin route");
   }
@@ -95,15 +86,12 @@ const login = async ({ username, password }) => {
     process.env.ACCESS_TOKEN_SECRET,
     // { expiresIn: "1d" }
     { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
-
   );
 
-
   // 🔐 Ensure single active session
-await repo.deleteRefreshTokensByUser(user.id);
+  // await repo.deleteRefreshTokensByUser(user.id);
 
-
-    // 🔽 ADD BELOW (DO NOT REMOVE EXISTING CODE)
+  // 🔽 ADD BELOW (DO NOT REMOVE EXISTING CODE)
   const refreshToken = generateRefreshToken();
   await repo.saveRefreshToken(user.id, refreshToken);
 
@@ -112,7 +100,7 @@ await repo.deleteRefreshTokensByUser(user.id);
   // ✅ CRUCIAL FIX: Return BOTH token AND user data
   return {
     accessToken,
-     refreshToken,
+    refreshToken,
     user: {
       id: user.id,
       username: user.username,
@@ -121,8 +109,6 @@ await repo.deleteRefreshTokensByUser(user.id);
     },
   };
 };
-
-
 
 const loginAdmin = async ({ username, password }) => {
   if (!username || !password) throw new Error("All fields are mandatory");
@@ -149,16 +135,14 @@ const loginAdmin = async ({ username, password }) => {
     process.env.ACCESS_TOKEN_SECRET,
     // { expiresIn: "1d" }
     { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
-
   );
 
-     const refreshToken = generateRefreshToken();
+  const refreshToken = generateRefreshToken();
   await repo.saveRefreshToken(user.id, refreshToken);
-
 
   return {
     accessToken,
-      refreshToken,
+    refreshToken,
     user: {
       id: user.id,
       username: user.username,
@@ -167,9 +151,6 @@ const loginAdmin = async ({ username, password }) => {
     },
   };
 };
-
-
-
 
 const updateUser = async (userId, { username, email }) => {
   if (!username && !email) throw new Error("Provide username or email");
@@ -244,10 +225,9 @@ const sendOTP = async ({ userId, method }) => {
 
   // 🟢 WHATSAPP OTP (FREE TRIAL)
   else if (method === "whatsapp") {
-  if (!user.phone) throw new Error("User phone number not found");
-  await sendWhatsAppOtp(user.phone, otp);
-}
-
+    if (!user.phone) throw new Error("User phone number not found");
+    await sendWhatsAppOtp(user.phone, otp);
+  }
 
   // 🔴 SMS OTP (REQUIRES PAID TWILIO)
   else if (method === "sms") {
@@ -273,7 +253,6 @@ const verifyOTP = async ({ userId, otp }) => {
   const user = await repo.findUserById(userId);
 
   const accessToken = jwt.sign(
-    
     {
       user: {
         id: user.id,
@@ -285,30 +264,68 @@ const verifyOTP = async ({ userId, otp }) => {
     process.env.ACCESS_TOKEN_SECRET, // Secret key
     // { expiresIn: "1d" } // Token valid for 24 hours
     { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
-
   );
 
-  await repo.deleteRefreshTokensByUser(user.id);
+  // await repo.deleteRefreshTokensByUser(user.id);
 
-    const refreshToken = generateRefreshToken();
+  const refreshToken = generateRefreshToken();
   await repo.saveRefreshToken(user.id, refreshToken);
 
-
-  return { accessToken,refreshToken, user };
+  return { accessToken, refreshToken, user };
 };
 
+// // 🔁 REFRESH ACCESS TOKEN
+// const refreshAccessToken = async (refreshToken) => {
+//   const stored = await repo.findRefreshToken(refreshToken);
+//   if (!stored) throw new Error("Invalid refresh token");
 
+//   // 🔥 ROTATION: delete used token
+//   await repo.deleteRefreshToken(refreshToken);
 
-// 🔁 REFRESH ACCESS TOKEN
+//   const user = await repo.findUserById(stored.user_id);
+//   if (!user) throw new Error("User not found");
+
+//   const newAccessToken = jwt.sign(
+//     {
+//       user: {
+//         id: user.id,
+//         username: user.username,
+//         email: user.email,
+//         user_type: user.user_type,
+//       },
+//     },
+//     process.env.ACCESS_TOKEN_SECRET,
+//     // { expiresIn: "1d" }
+//     { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
+//   );
+
+//   // 🔁 Issue new refresh token
+//   const newRefreshToken = generateRefreshToken();
+//   await repo.saveRefreshToken(user.id, newRefreshToken);
+
+//   return {
+//     accessToken: newAccessToken,
+//     refreshToken: newRefreshToken,
+//   };
+// };
 const refreshAccessToken = async (refreshToken) => {
   const stored = await repo.findRefreshToken(refreshToken);
-  if (!stored) throw new Error("Invalid refresh token");
 
-  // 🔥 ROTATION: delete used token
+  if (!stored) {
+    const err = new Error("SESSION_EXPIRED");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  // 🔁 ROTATION: delete old refresh token
   await repo.deleteRefreshToken(refreshToken);
 
   const user = await repo.findUserById(stored.user_id);
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    const err = new Error("SESSION_EXPIRED");
+    err.statusCode = 401;
+    throw err;
+  }
 
   const newAccessToken = jwt.sign(
     {
@@ -320,12 +337,9 @@ const refreshAccessToken = async (refreshToken) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    // { expiresIn: "1d" }
-    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
-
+    { expiresIn: "50m" }
   );
 
-  // 🔁 Issue new refresh token
   const newRefreshToken = generateRefreshToken();
   await repo.saveRefreshToken(user.id, newRefreshToken);
 
@@ -334,6 +348,14 @@ const refreshAccessToken = async (refreshToken) => {
     refreshToken: newRefreshToken,
   };
 };
+// ---------------- LOGOUT ----------------
+const logout = async (refreshToken) => {
+  if (!refreshToken) return;
+
+  await repo.deleteRefreshToken(refreshToken);
+};
+
+
 
 
 module.exports = {
@@ -348,5 +370,6 @@ module.exports = {
   loginOwner,
   sendOTP,
   verifyOTP,
-    refreshAccessToken
+  refreshAccessToken,
+  logout
 };

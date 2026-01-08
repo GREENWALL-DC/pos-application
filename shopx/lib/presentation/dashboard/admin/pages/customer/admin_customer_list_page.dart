@@ -66,7 +66,7 @@ class AdminCustomerListPage extends HookConsumerWidget {
     }).toList();
 
     useEffect(() {
-      if (auth.token != null) {
+      if (auth.isAuthenticated) {
         Future.microtask(() async {
           await ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
           await ref
@@ -75,7 +75,7 @@ class AdminCustomerListPage extends HookConsumerWidget {
         });
       }
       return null;
-    }, [auth.token]);
+    }, [auth.isAuthenticated]);
 
     // LISTENER: Handle side effects (Success/Error)
     ref.listen(customerNotifierProvider, (previous, next) {
