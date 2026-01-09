@@ -20,6 +20,8 @@ class MyApp extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+     // 🔥 ADD THIS LINE: Initialize the auth retry listener
+    ref.read(authRetryOnConnectivityProvider);
     final authState = ref.watch(authNotifierProvider);
     // final connectivity = ref.watch(connectivityProvider);
     final bootstrap = ref.watch(appBootstrapProvider);

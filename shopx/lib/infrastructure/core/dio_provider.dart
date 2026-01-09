@@ -18,25 +18,27 @@ final dioProvider = Provider<Dio>((ref) {
       },
     ),
   );
+dio.interceptors.add(
+  InterceptorsWrapper(
+    onRequest: (options, handler) {
+      final authNotifier = ref.read(authNotifierProvider.notifier);
+      final token = authNotifier.accessToken;
 
-  dio.interceptors.add(
-    InterceptorsWrapper(
-      // onRequest: (options, handler) {
-      //   final token = ref.read(authNotifierProvider).token;
+      if (token != null && token.isNotEmpty) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
 
-      //   if (token != null && token.isNotEmpty) {
-      //     options.headers["Authorization"] = "Bearer $token";
-      //   }
+      return handler.next(options);
+    },
+    onError: (error, handler) {
+      // Optional: helpful debug
+      // print('Dio error: ${error.response?.statusCode}');
+      return handler.next(error);
+    },
+  ),
+);
 
-      //   return handler.next(options);
-      // },
-      onRequest: (options, handler) {
-        // 🔥 DO NOTHING HERE
-        // Authorization is handled explicitly per API call
-        return handler.next(options);
-      },
-    ),
-  );
+
 
   return dio;
 });

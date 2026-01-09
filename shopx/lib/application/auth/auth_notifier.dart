@@ -393,11 +393,21 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   // 🔁 Re-run auth initialization (used when internet comes back)
-  void retryAuth() {
-    if (state.isInitializing) return;
-    state = state.copyWith(isInitializing: true);
-    _initAuth();
+ // 🔁 Re-run auth initialization (used when internet comes back)
+void retryAuth() {
+  // Don't retry if already initializing
+  if (state.isInitializing) return;
+  
+  // Don't retry if we don't have any stored tokens
+  if (_accessToken == null && _refreshToken == null) {
+    state = const AuthState.unauthenticated();
+    return;
   }
+  
+  // Reset to initializing state and retry
+  state = state.copyWith(isInitializing: true);
+  _initAuth();
+}
 
   Future<void> _refreshTokenAndRecover() async {
     if (_refreshToken == null) {
@@ -429,6 +439,8 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   bool get hasLocalSession => _accessToken != null || _refreshToken != null;
+  String? get accessToken => _accessToken;
+
 }
 
 // 🎯 PROVIDER: Makes AuthNotifier available throughout the app

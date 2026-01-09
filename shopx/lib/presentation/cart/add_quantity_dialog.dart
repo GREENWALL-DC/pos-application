@@ -231,16 +231,16 @@ final bool isValid = enteredQty > 0;
 
         Navigator.of(context).pop();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isBackorder
-                  ? "Added to cart as backorder"
-                  : "Added to cart",
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text(
+        //       isBackorder
+        //           ? "Added to cart as backorder"
+        //           : "Added to cart",
+        //     ),
+        //     duration: const Duration(seconds: 2),
+        //   ),
+        // );
       }
     : null,
 

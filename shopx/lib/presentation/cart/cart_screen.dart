@@ -70,6 +70,8 @@ useEffect(() {
     // Value is 'cash' or 'card'
 final paymentMethod = useState<String>("cash");
 final paymentStatus = useState<String>("paid"); // 👈 NEW
+final hasCustomerError = useState<bool>(false);
+
 
     // ================= DISCOUNT + VAT LOGIC =================
 
@@ -399,10 +401,15 @@ final paymentStatus = useState<String>("paid"); // 👈 NEW
                                   });
 
                                   return Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF3F4F6),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                   decoration: BoxDecoration(
+  color: const Color(0xFFF3F4F6),
+  borderRadius: BorderRadius.circular(12),
+  border: Border.all(
+    color: hasCustomerError.value ? Colors.red : Colors.blue,
+    width: 1.5,
+  ),
+),
+
                                     child: TextField(
                                       controller: controller,
                                       focusNode: focusNode,
@@ -436,6 +443,8 @@ final paymentStatus = useState<String>("paid"); // 👈 NEW
                               nameCtrl.text = selected.name;
                               phoneCtrl.text = selected.phone ?? "";
                               addressCtrl.text = selected.address;
+
+                               hasCustomerError.value = false; // ✅ clear red state
                             },
                           ),
 
