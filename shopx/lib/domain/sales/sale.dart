@@ -25,6 +25,9 @@ class Sale {
   final String paymentStatus;
   final DateTime saleDate;
 
+  final String saleStatus; // <-- NEW
+
+
   Sale({
     required this.id,
     required this.customerId,
@@ -41,6 +44,8 @@ class Sale {
     required this.totalAmount,
     required this.paymentStatus,
     required this.saleDate,
+
+     required this.saleStatus, // <-- ADD
   });
 
   // factory Sale.fromJson(Map<String, dynamic> json) {
@@ -99,6 +104,7 @@ class Sale {
     totalAmount: double.tryParse(saleData["total_amount"].toString()) ?? 0,
     paymentStatus: saleData["payment_status"] ?? "paid",
     saleDate: DateTime.tryParse(saleData["sale_date"]) ?? DateTime.now(),
+saleStatus: (saleData["sale_status"] ?? "completed").toLowerCase(),
   );
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shopx/application/payments/payments_notifier.dart';
 import 'package:shopx/application/sales/sales_notifier.dart';
 import 'package:shopx/domain/sales/sale.dart';
 import 'package:shopx/widget/admintransaction/transaction_detail_dialog.dart';
@@ -17,7 +18,6 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
     useEffect(() {
       Future.microtask(() {
         ref.read(salesNotifierProvider.notifier).fetchAdminSales();
-        
       });
       return null;
     }, []);
@@ -28,7 +28,7 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
     final filter = useState<TransactionFilterResult?>(null);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -92,8 +92,7 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
     List<Sale> sales,
     TransactionFilterResult? filter,
   ) {
-  var filteredSales = List<Sale>.from(sales);
-
+    var filteredSales = List<Sale>.from(sales);
 
     if (filter != null) {
       // Salesperson filter
@@ -108,10 +107,20 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
       }
 
       // Status filter
+      // if (filter.status != 'ALL') {
+      //   filteredSales = filteredSales
+      //       .where((s) => s.paymentStatus.toUpperCase() == filter.status)
+      //       .toList();
+      // }
+
       if (filter.status != 'ALL') {
-        filteredSales = filteredSales
-            .where((s) => s.paymentStatus.toUpperCase() == filter.status)
-            .toList();
+        filteredSales = filteredSales.where((s) {
+          if (filter.status == 'CANCELLED') {
+            return s.saleStatus == 'voided';
+          }
+          return s.saleStatus != 'voided' &&
+              s.paymentStatus.toUpperCase() == filter.status;
+        }).toList();
       }
 
       // From date
@@ -145,10 +154,19 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
         final dateKey = groupedSales.keys.elementAt(index);
         final dailySales = groupedSales[dateKey]!;
 
-        final dailyTotal = dailySales.fold<double>(
-          0,
-          (sum, sale) => sum + sale.totalAmount,
-        );
+        // //old
+        //         final dailyTotal = dailySales.fold<double>(
+        //           0,
+        //           (sum, sale) => sum + sale.totalAmount,
+        //         );
+
+        final dailyTotal = dailySales
+            .where(
+              (s) =>
+                  s.paymentStatus.toUpperCase() == 'PAID' &&
+                  s.saleStatus != 'voided',
+            )
+            .fold<double>(0, (sum, sale) => sum + sale.totalAmount);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,9 +198,18 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
             ),
 
             // TRANSACTION CARDS
+            // ...dailySales.map(
+            //   (sale) => _buildTransactionCard(context, sale, () async {
+            //     await ref
+            //         .read(salesNotifierProvider.notifier)
+            //         .fetchAdminSales();
+            //   }),
+            // ),
             ...dailySales.map(
-              (sale) => _buildTransactionCard(context, sale, () async {
-                await ref.read(salesNotifierProvider.notifier).fetchAdminSales();
+              (sale) => _buildTransactionCard(context, ref, sale, () async {
+                await ref
+                    .read(salesNotifierProvider.notifier)
+                    .fetchAdminSales();
               }),
             ),
 
@@ -212,29 +239,69 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
 
   Widget _buildTransactionCard(
     BuildContext context,
+    WidgetRef ref, // 👈 ADD THIS
     Sale sale,
     VoidCallback onRefresh,
   ) {
     final timeString = DateFormat('hh:mm a').format(sale.saleDate);
     final trxId = "#TRX${sale.id.toString().padLeft(10, '0')}";
-    final statusColor = _getStatusColor(sale.paymentStatus);
+
+    // //old
+    // final statusColor = _getStatusColor(sale.paymentStatus);
+
+    final isVoided = sale.saleStatus == 'voided';
+    final statusColor = isVoided
+        ? Colors.red
+        : _getStatusColor(sale.paymentStatus);
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
+
       onTap: () {
         showDialog(
           context: context,
           builder: (_) => TransactionDetailsDialog(
             sale: sale,
-            onMarkAsPaid: sale.paymentStatus.toUpperCase() == 'PENDING'
-                ? () {
-                    Navigator.of(context).pop();
-                    onRefresh();
-                  }
-                : null,
+
+          onMarkAsPaid:
+    sale.paymentStatus.toUpperCase() == 'PENDING' &&
+            sale.saleStatus != 'voided'
+        ? () async {
+            await ref
+                .read(paymentsNotifierProvider.notifier)
+                .markPaymentAsPaid(sale.id);
+
+            // ✅ CLOSE DIALOG FIRST
+            Navigator.of(context).pop();
+
+            // ✅ REFRESH LIST AFTER
+            await ref
+                .read(salesNotifierProvider.notifier)
+                .fetchAdminSales();
+          }
+        : null,
+
+
+          onCancelSale: sale.saleStatus != 'voided'
+    ? () async {
+        await ref
+            .read(salesNotifierProvider.notifier)
+            .voidSale(sale.id);
+
+        // ✅ CLOSE DIALOG FIRST
+        Navigator.of(context).pop();
+
+        // ✅ REFRESH LIST AFTER
+        await ref
+            .read(salesNotifierProvider.notifier)
+            .fetchAdminSales();
+      }
+    : null,
+
           ),
         );
       },
+
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -285,7 +352,10 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                sale.paymentStatus.toUpperCase(),
+                // sale.paymentStatus.toUpperCase(),
+                sale.saleStatus == 'voided'
+                    ? 'CANCELLED'
+                    : sale.paymentStatus.toUpperCase(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -302,14 +372,25 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
 
   // ================= STATUS COLOR =================
 
+  // Color _getStatusColor(String status) {
+  //   switch (status.toUpperCase()) {
+  //     case 'PAID':
+  //       return const Color(0xFF1D72D6);
+  //     case 'PENDING':
+  //       return const Color(0xFFF59E0B);
+  //     case 'VOID':
+  //       return const Color(0xFF9CA3AF);
+  //     default:
+  //       return const Color(0xFF1D72D6);
+  //   }
+  // }
+
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'PAID':
         return const Color(0xFF1D72D6);
       case 'PENDING':
         return const Color(0xFFF59E0B);
-      case 'VOID':
-        return const Color(0xFF9CA3AF);
       default:
         return const Color(0xFF1D72D6);
     }

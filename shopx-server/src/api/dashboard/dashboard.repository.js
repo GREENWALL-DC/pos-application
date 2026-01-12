@@ -1,38 +1,40 @@
 const db = require("../../config/db");
 
 module.exports = {
- getTotalSales: async () => {
-  return await db.query(`
+  getTotalSales: async () => {
+    return await db.query(`
     SELECT 
       COUNT(id) AS total_sales,
       COALESCE(SUM(total_amount), 0) AS total_revenue,
       COALESCE(AVG(total_amount), 0) AS avg_order_value
     FROM sales
+    WHERE payment_status = 'paid'
+      AND sale_status != 'voided'
   `);
-},
-
-
-  getTotalPayments: async () => {
-    return await db.query(`SELECT COALESCE(SUM(amount), 0) AS total_payments FROM payments`);
   },
 
-  
+  getTotalPayments: async () => {
+    return await db.query(
+      `SELECT COALESCE(SUM(amount), 0) AS total_payments FROM payments`
+    );
+  },
 
   getCustomerCount: async () => {
-  return await db.query(`SELECT COUNT(*) AS total_customers FROM customers`);
-},
-
-
+    return await db.query(`SELECT COUNT(*) AS total_customers FROM customers`);
+  },
 
   getTodaySales: async () => {
     return await db.query(`
-      SELECT COALESCE(SUM(total_amount), 0) AS today_sales
-      FROM sales
-      WHERE DATE(sale_date) = CURRENT_DATE
-    `);
+    SELECT COALESCE(SUM(total_amount), 0) AS today_sales
+    FROM sales
+    WHERE DATE(sale_date) = CURRENT_DATE
+      AND payment_status = 'paid'
+      AND sale_status != 'voided'
+  `);
   },
-getWeeklySales: async () => {
-  return await db.query(`
+
+  getWeeklySales: async () => {
+    return await db.query(`
     WITH days AS (
       SELECT unnest(ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN']) AS day
     ),
@@ -42,8 +44,11 @@ getWeeklySales: async () => {
         SUM(total_amount) AS revenue,
         COUNT(*) AS transactions
       FROM sales
-      WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
-      GROUP BY TO_CHAR(sale_date, 'DY')
+WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
+  AND payment_status = 'paid'
+  AND sale_status != 'voided'
+GROUP BY TO_CHAR(sale_date, 'DY')
+
     )
     SELECT 
       d.day,
@@ -55,9 +60,7 @@ getWeeklySales: async () => {
       ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN'], d.day
     );
   `);
-},
-
-
+  },
 
   getTopProducts: async () => {
     return await db.query(`
@@ -72,22 +75,33 @@ getWeeklySales: async () => {
 
   getSalesBySalesperson: async () => {
     return await db.query(`
-      SELECT sp.name, COALESCE(SUM(s.total_amount),0) AS total_sales
-      FROM salespersons sp
-      LEFT JOIN sales s ON s.salesperson_id = sp.id
-      GROUP BY sp.name
-      ORDER BY total_sales DESC
+     SELECT sp.name, COALESCE(SUM(s.total_amount),0) AS total_sales
+FROM salespersons sp
+LEFT JOIN sales s 
+  ON s.salesperson_id = sp.id
+  AND s.payment_status = 'paid'
+  AND s.sale_status != 'voided'
+GROUP BY sp.name
+ORDER BY total_sales DESC
+
     `);
   },
-
   getRecentSales: async () => {
     return await db.query(`
-      SELECT s.id, s.total_amount, c.name AS customer, s.sale_date
-      FROM sales s
-      LEFT JOIN customers c ON c.id = s.customer_id
-      ORDER BY s.sale_date DESC
-      LIMIT 10
-    `);
+    SELECT 
+      s.id,
+      s.total_amount,
+      c.name AS customer,
+      s.sale_date,
+      s.payment_status,
+      s.sale_status
+    FROM sales s
+    LEFT JOIN customers c ON c.id = s.customer_id
+    WHERE s.payment_status = 'paid'
+      AND s.sale_status != 'voided'
+    ORDER BY s.sale_date DESC
+    LIMIT 10
+  `);
   },
 
   getLowStock: async () => {
@@ -101,11 +115,10 @@ getWeeklySales: async () => {
   },
 
   getTotalDiscount: async () => {
-  return await db.query(`
+    return await db.query(`
     SELECT 
       COALESCE(SUM(quantity * discount), 0) AS total_discount
     FROM sale_items
   `);
-},
-
+  },
 };

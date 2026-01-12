@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart'; 
+import 'package:hooks_riverpod/hooks_riverpod.dart'; 
 import 'package:intl/intl.dart';
+import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/sales/sale.dart';
 
-class TransactionDetailsDialog extends StatelessWidget {
+class TransactionDetailsDialog extends HookConsumerWidget {
   final Sale sale;
-  final VoidCallback? onMarkAsPaid;
+  // final VoidCallback? onMarkAsPaid;
+  // final VoidCallback? onCancelSale;
+  final Future<void> Function()? onMarkAsPaid;
+final Future<void> Function()? onCancelSale;
+
 
   const TransactionDetailsDialog({
     super.key,
     required this.sale,
     this.onMarkAsPaid,
+    this.onCancelSale, // 👈 ADD
   });
 
-  bool get _isPending => sale.paymentStatus.toUpperCase() == 'PENDING';
+  // bool get _isPending => sale.paymentStatus.toUpperCase() == 'PENDING';
 
-  @override
-  Widget build(BuildContext context) {
+  bool get _isPending =>
+      sale.paymentStatus.toUpperCase() == 'PENDING' &&
+      sale.saleStatus != 'voided';
+
+  bool get _isVoided => sale.saleStatus == 'voided';
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final isSubmitting = useState(false);
+
+    
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.all(16),
@@ -46,81 +62,88 @@ class TransactionDetailsDialog extends StatelessWidget {
 
             const Divider(height: 24),
 
-            _amountRow(
-              "Total Amount",
-              sale.totalAmount,
-              isBold: true,
-            ),
+            _amountRow("Total Amount", sale.totalAmount, isBold: true),
 
             const SizedBox(height: 20),
 
-
             // ================= ITEMS =================
-
-const Text(
-  "Items",
-  style: TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.bold,
-  ),
-),
-
-const SizedBox(height: 12),
-
-if (sale.items.isEmpty)
-  const Text(
-    "No items available",
-    style: TextStyle(color: Colors.grey),
-  )
-else
-  ...sale.items.map((item) {
-    final unitPrice = item.totalPrice / item.quantity;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            item.productName,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+            const Text(
+              "Items",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "${item.quantity} × SAR ${unitPrice.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                "SAR ${item.totalPrice.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }),
 
-const SizedBox(height: 24),
+            const SizedBox(height: 12),
 
+            if (sale.items.isEmpty)
+              const Text(
+                "No items available",
+                style: TextStyle(color: Colors.grey),
+              )
+            else
+              ...sale.items.map((item) {
+                final unitPrice = item.totalPrice / item.quantity;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.productName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "${item.quantity} × SAR ${unitPrice.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            "SAR ${item.totalPrice.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+
+            const SizedBox(height: 24),
 
             _statusChip(),
 
             const SizedBox(height: 24),
 
-            if (_isPending) _markAsPaidButton(context),
+            // if (_isPending) _markAsPaidButton(context),
+           if (!_isVoided && _isPending)
+  _markAsPaidButton(context, isSubmitting),
+
+  kHeight20,
+
+if (!_isVoided && onCancelSale != null)
+  _cancelSaleButton(context, isSubmitting),
+
+
+            if (_isVoided)
+              const Text(
+                "This sale has been cancelled.",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
           ],
         ),
       ),
@@ -135,10 +158,7 @@ const SizedBox(height: 24),
       children: [
         const Text(
           "Transaction Details",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         IconButton(
           icon: const Icon(Icons.close),
@@ -160,19 +180,13 @@ const SizedBox(height: 24),
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
           ),
           Expanded(
             child: Text(
               value.isEmpty ? "-" : value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -190,10 +204,7 @@ const SizedBox(height: 24),
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF374151),
-            ),
+            style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
           ),
           Text(
             "SAR ${amount.toStringAsFixed(2)}",
@@ -209,23 +220,54 @@ const SizedBox(height: 24),
 
   // ================= STATUS CHIP =================
 
-  Widget _statusChip() {
-    final status = sale.paymentStatus.toUpperCase();
+  // Widget _statusChip() {
+  //   final status = sale.paymentStatus.toUpperCase();
 
-    Color bgColor;
-    switch (status) {
-      case 'PAID':
-        bgColor = const Color(0xFF1D72D6);
-        break;
-      case 'PENDING':
-        bgColor = const Color(0xFFF59E0B);
-        break;
-      case 'VOID':
-        bgColor = const Color(0xFF9CA3AF);
-        break;
-      default:
-        bgColor = const Color(0xFF1D72D6);
-    }
+  //   Color bgColor;
+  //   switch (status) {
+  //     case 'PAID':
+  //       bgColor = const Color(0xFF1D72D6);
+  //       break;
+  //     case 'PENDING':
+  //       bgColor = const Color(0xFFF59E0B);
+  //       break;
+  //     case 'VOID':
+  //       bgColor = const Color(0xFF9CA3AF);
+  //       break;
+  //     default:
+  //       bgColor = const Color(0xFF1D72D6);
+  //   }
+
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+  //     decoration: BoxDecoration(
+  //       color: bgColor,
+  //       borderRadius: BorderRadius.circular(12),
+  //     ),
+  //     child: Text(
+  //       status,
+  //       style: const TextStyle(
+  //         color: Colors.white,
+  //         fontSize: 12,
+  //         fontWeight: FontWeight.bold,
+  //         letterSpacing: 0.5,
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  Widget _statusChip() {
+    final bool isVoided = sale.saleStatus == 'voided';
+
+    final String label = isVoided
+        ? 'CANCELLED'
+        : sale.paymentStatus.toUpperCase();
+
+    final Color bgColor = isVoided
+        ? Colors.red
+        : sale.paymentStatus.toUpperCase() == 'PAID'
+        ? const Color(0xFF1D72D6)
+        : const Color(0xFFF59E0B);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -234,7 +276,7 @@ const SizedBox(height: 24),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        status,
+        label,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
@@ -247,26 +289,78 @@ const SizedBox(height: 24),
 
   // ================= MARK AS PAID =================
 
-  Widget _markAsPaidButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onMarkAsPaid,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          backgroundColor: const Color(0xFF1D72D6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: const Text(
-          "Mark as Paid",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+ Widget _markAsPaidButton(
+  BuildContext context,
+  ValueNotifier<bool> isSubmitting,
+) {
+  return SizedBox(
+    width: double.infinity,
+    child: ElevatedButton(
+      onPressed: isSubmitting.value || onMarkAsPaid == null
+          ? null
+          : () async {
+              isSubmitting.value = true;
+            await   onMarkAsPaid!();
+            },
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        backgroundColor: const Color(0xFF1D72D6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
-    );
-  }
+      child: isSubmitting.value
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Text(
+              "Mark as Paid",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,color: Colors.white),
+            ),
+    ),
+  );
+}
+
+Widget _cancelSaleButton(
+  BuildContext context,
+  ValueNotifier<bool> isSubmitting,
+) {
+  return SizedBox(
+    width: double.infinity,
+    child: ElevatedButton(
+      onPressed: isSubmitting.value || onCancelSale == null
+          ? null
+          : () async {
+              isSubmitting.value = true;
+           await    onCancelSale!();
+            },
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        backgroundColor: Colors.red,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: isSubmitting.value
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Text(
+              "Cancel Sale",
+              style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),
+            ),
+    ),
+  );
+}
+
 }

@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -14,41 +12,39 @@ class AdminDashboard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Read notifier state
+    final dashboard = ref.watch(adminDashboardNotifierProvider);
 
-  
+    // ADD THIS
+    if (dashboard.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
+    if (dashboard.error != null) {
+      return Center(
+        child: Text(
+          "Error loading dashboard: ${dashboard.error}",
+          style: const TextStyle(color: Colors.red),
+        ),
+      );
+    }
 
+    final weekly = dashboard.weeklySummary;
 
-// Read notifier state
-final dashboard = ref.watch(adminDashboardNotifierProvider);
+    // final totalRevenue = dashboard.grossRevenue; // Total Revenue
+    final totalRevenue = dashboard.netSales;
 
+    final totalSales = dashboard.totalSales; // Total Sales (count)
 
-// ADD THIS
-if (dashboard.loading) {
-  return const Center(child: CircularProgressIndicator());
-}
+    // final avgOrder = dashboard.totalSales == 0
+    //     ? 0
+    //     : dashboard.grossRevenue / dashboard.totalSales; // Avg. Order Value
 
-if (dashboard.error != null) {
-  return Center(
-    child: Text(
-      "Error loading dashboard: ${dashboard.error}",
-      style: const TextStyle(color: Colors.red),
-    ),
-  );
-}
+    final avgOrder = dashboard.totalSales == 0
+        ? 0
+        : dashboard.netSales / dashboard.totalSales;
 
-final weekly = dashboard.weeklySummary;
-
-
-final totalRevenue = dashboard.grossRevenue;          // Total Revenue
-final totalSales = dashboard.totalSales;              // Total Sales (count)
-final avgOrder = dashboard.totalSales == 0
-    ? 0
-    : dashboard.grossRevenue / dashboard.totalSales;  // Avg. Order Value
-final totalCustomers = dashboard.totalCustomers;
-
-
-
+    final totalCustomers = dashboard.totalCustomers;
 
     // -------------------------------------------------------------------------
     // 2. STYLES & CONSTANTS
@@ -68,16 +64,16 @@ final totalCustomers = dashboard.totalCustomers;
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-       leading: Builder(
-  builder: (context) {
-    return IconButton(
-      icon: const Icon(Icons.menu, color: kPrimaryBlue),
-      onPressed: () {
-        Scaffold.of(context).openDrawer(); // Works now
-      },
-    );
-  },
-),
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu, color: kPrimaryBlue),
+              onPressed: () {
+                Scaffold.of(context).openDrawer(); // Works now
+              },
+            );
+          },
+        ),
 
         title: Text(
           "Admin",
@@ -87,19 +83,15 @@ final totalCustomers = dashboard.totalCustomers;
             fontWeight: FontWeight.bold,
           ),
         ),
-      
       ),
 
-      
-      body:
-      
-       RefreshIndicator(
-        onRefresh: ()async{
-          await ref 
-          .read(adminDashboardNotifierProvider.notifier)
-        .fetchDashboard();
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref
+              .read(adminDashboardNotifierProvider.notifier)
+              .fetchDashboard();
         },
-         child: SingleChildScrollView(
+        child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -117,10 +109,10 @@ final totalCustomers = dashboard.totalCustomers;
                 icon: Icons.shopping_cart_outlined,
               ),
               const SizedBox(height: 12),
-             _MetricCard(
-           title: "Avg. Order value",
-           value: "\$${avgOrder.toStringAsFixed(2)}",
-           icon: Icons.show_chart,
+              _MetricCard(
+                title: "Avg. Order value",
+                value: "\$${avgOrder.toStringAsFixed(2)}",
+                icon: Icons.show_chart,
               ),
               const SizedBox(height: 12),
               _MetricCard(
@@ -128,29 +120,28 @@ final totalCustomers = dashboard.totalCustomers;
                 value: "$totalCustomers",
                 icon: Icons.people_outline,
               ),
-         
+
               const SizedBox(height: 24),
-         
+
               // --- WEEKLY SUMMARY CHART ---
-         _WeeklySummarySection(
-           weekly: dashboard.weeklySummary,
-           grossRevenue: dashboard.grossRevenue,
-           netSales: dashboard.netSales,
-           totalDiscount: dashboard.totalDiscount,
-         ),
-         
-         
+              _WeeklySummarySection(
+                weekly: dashboard.weeklySummary,
+                grossRevenue: dashboard.netSales, // show NET as revenue
+                netSales: dashboard.netSales,
+                totalDiscount: dashboard.totalDiscount,
+              ),
+
               const SizedBox(height: 24),
-         
+
               // --- LATEST TRANSACTIONS ---
-         _LatestTransactionsSection(recentSales: dashboard.recentSales),
-              
+              _LatestTransactionsSection(recentSales: dashboard.recentSales),
+
               // Bottom padding for scrolling
               const SizedBox(height: 20),
             ],
           ),
-               ),
-       ),
+        ),
+      ),
     );
   }
 }
@@ -241,21 +232,18 @@ class _WeeklySummarySection extends StatelessWidget {
     required this.totalDiscount,
   });
 
-
   @override
   Widget build(BuildContext context) {
+    // 1️⃣ Compute maximum revenue dynamically
+    double maxRevenue = 0;
 
+    for (final row in weekly) {
+      final value = double.tryParse(row["revenue"].toString()) ?? 0;
+      if (value > maxRevenue) maxRevenue = value;
+    }
 
-     // 1️⃣ Compute maximum revenue dynamically
-  double maxRevenue = 0;
-
-  for (final row in weekly) {
-    final value = double.tryParse(row["revenue"].toString()) ?? 0;
-    if (value > maxRevenue) maxRevenue = value;
-  }
-
-  // 2️⃣ Add padding so chart never touches the box border
-  double maxYValue = maxRevenue == 0 ? 100 : maxRevenue * 1.2;
+    // 2️⃣ Add padding so chart never touches the box border
+    double maxYValue = maxRevenue == 0 ? 100 : maxRevenue * 1.2;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -288,50 +276,38 @@ class _WeeklySummarySection extends StatelessWidget {
               const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
             ],
           ),
-         kHeight20,
+          kHeight20,
 
           // Chart
-
-
-          
           SizedBox(
             height: 180,
-            child: LineChart(     
+            child: LineChart(
               LineChartData(
                 gridData: FlGridData(show: false),
                 titlesData: FlTitlesData(
                   show: true,
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                 leftTitles: AxisTitles(
-  sideTitles: SideTitles(
-    showTitles: true,
-    reservedSize: 30,
-    interval: maxYValue / 4,   // ⭐ FIXED
-    getTitlesWidget: (val, meta) {
-      return Text(
-        val.toInt().toString(),
-        style: const TextStyle(fontSize: 10, color: Colors.grey),
-      );
-    },
-  ),
-),
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      interval: maxYValue / 4, // ⭐ FIXED
+                      getTitlesWidget: (val, meta) {
+                        return Text(
+                          val.toInt().toString(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
 
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
@@ -362,21 +338,23 @@ class _WeeklySummarySection extends StatelessWidget {
                 maxY: maxYValue,
                 lineBarsData: [
                   LineChartBarData(
-                 spots: weekly.asMap().entries.map((e) {
-  final index = e.key;
-  final row = e.value;
+                    spots: weekly.asMap().entries.map((e) {
+                      final index = e.key;
+                      final row = e.value;
 
-final revenue = double.tryParse(row["revenue"].toString()) ?? 0.7;
+                      final revenue =
+                          double.tryParse(row["revenue"].toString()) ?? 0.7;
 
-  return FlSpot(index.toDouble(), revenue);
-}).toList(),
+                      return FlSpot(index.toDouble(), revenue);
+                    }).toList(),
 
                     isCurved: true,
                     color: const Color(0xFF1E75D5),
                     barWidth: 2,
                     dotData: FlDotData(
                       show: true,
-                      checkToShowDot: (spot, barData) => spot.x == 2, // Only show dot on peak
+                      checkToShowDot: (spot, barData) =>
+                          spot.x == 2, // Only show dot on peak
                     ),
                     belowBarData: BarAreaData(
                       show: true,
@@ -395,7 +373,7 @@ final revenue = double.tryParse(row["revenue"].toString()) ?? 0.7;
                 lineTouchData: LineTouchData(
                   enabled: true,
                   touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor:(spot) => const Color(0xFFE3F2FD),
+                    getTooltipColor: (spot) => const Color(0xFFE3F2FD),
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((LineBarSpot touchedSpot) {
                         return LineTooltipItem(
@@ -414,26 +392,22 @@ final revenue = double.tryParse(row["revenue"].toString()) ?? 0.7;
             ),
           ),
           const SizedBox(height: 20),
-          
-          // Stats Row
-        Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    _buildSummaryStat(
-      "Gross Revenue",
-      "\$${grossRevenue.toStringAsFixed(2)}",
-    ),
-    _buildSummaryStat(
-      "Net sales",
-      "$netSales",
-    ),
-    _buildSummaryStat(
-      "Discount",
-      "\$${totalDiscount.toStringAsFixed(2)}",
-    ),
-  ],
-)
 
+          // Stats Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSummaryStat(
+                "Gross Revenue",
+                "\$${grossRevenue.toStringAsFixed(2)}",
+              ),
+              _buildSummaryStat("Net sales", "$netSales"),
+              _buildSummaryStat(
+                "Discount",
+                "\$${totalDiscount.toStringAsFixed(2)}",
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -445,10 +419,7 @@ final revenue = double.tryParse(row["revenue"].toString()) ?? 0.7;
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            color: Colors.grey,
-          ),
+          style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
         ),
         const SizedBox(height: 4),
         Text(
@@ -506,9 +477,13 @@ class _LatestTransactionsSection extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Today",
-                        style: GoogleFonts.poppins(
-                            fontSize: 12, color: Colors.grey)),
+                    Text(
+                      "Today",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
                     Text(
                       "SAR ${_todayTotal().toStringAsFixed(2)}",
                       style: GoogleFonts.poppins(
@@ -536,9 +511,12 @@ class _LatestTransactionsSection extends StatelessWidget {
               final sale = recentSales[index];
               return _TransactionItem(
                 amount: "SAR ${sale['total_amount']}",
-                timeId:
-                    "${_formatDate(sale['sale_date'])} - #TRX${sale['id']}",
-                status: "PAID",
+                timeId: "${_formatDate(sale['sale_date'])} - #TRX${sale['id']}",
+
+                status: sale['sale_status'] == 'voided'
+                    ? 'CANCELLED'
+                    : sale['payment_status']?.toString().toUpperCase() ??
+                          'PENDING',
               );
             },
           ),
@@ -566,10 +544,11 @@ class _LatestTransactionsSection extends StatelessWidget {
   }
 
   double _todayTotal() {
-    return recentSales.fold(
-      0,
-      (sum, item) => sum + (item['total_amount'] as num),
-    );
+    return recentSales.fold(0, (sum, item) {
+      if (item['sale_status'] == 'voided') return sum;
+      if (item['payment_status'] != 'PAID') return sum;
+      return sum + (item['total_amount'] as num);
+    });
   }
 
   String _formatDate(String date) {
@@ -577,7 +556,6 @@ class _LatestTransactionsSection extends StatelessWidget {
     return "${d.hour}:${d.minute.toString().padLeft(2, '0')}";
   }
 }
-
 
 class _TransactionItem extends StatelessWidget {
   final String amount;
@@ -611,10 +589,7 @@ class _TransactionItem extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 timeId,
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  color: Colors.grey,
-                ),
+                style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
               ),
             ],
           ),

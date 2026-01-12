@@ -2,36 +2,48 @@ const db = require("../../config/db");
 
 // ---------------------- SUMMARY ----------------------
 exports.getSummary = async (start, end) => {
-  const summary = await db.query(`
+  const summary = await db.query(
+    `
     SELECT 
       SUM(s.total_amount) AS revenue,
       SUM(si.quantity) AS units,
       AVG(s.total_amount) AS avg_value
     FROM sales s
     LEFT JOIN sale_items si ON si.sale_id = s.id
-    WHERE s.sale_date BETWEEN $1 AND $2;
-  `, [start, end]);
+   WHERE s.sale_date BETWEEN $1 AND $2
+  AND s.payment_status = 'paid'
+  AND s.sale_status != 'voided';
 
-  const chart = await db.query(`
+  `,
+    [start, end]
+  );
+
+  const chart = await db.query(
+    `
     SELECT 
       u.username AS name,
       SUM(s.total_amount) AS revenue
     FROM sales s
     LEFT JOIN users u ON u.id = s.salesperson_id
-    WHERE s.sale_date BETWEEN $1 AND $2
+   WHERE s.sale_date BETWEEN $1 AND $2
+  AND s.payment_status = 'paid'
+  AND s.sale_status != 'voided'
     GROUP BY u.username
     ORDER BY revenue DESC;
-  `, [start, end]);
+  `,
+    [start, end]
+  );
 
   return {
     summary: summary.rows[0],
-    chart: chart.rows
+    chart: chart.rows,
   };
 };
 
 // ---------------------- SALESMAN PERFORMANCE ----------------------
 exports.getSalesmanPerformance = async (start, end) => {
-  const rows = await db.query(`
+  const rows = await db.query(
+    `
     SELECT 
       u.username AS name,
       SUM(s.total_amount) AS revenue,
@@ -39,27 +51,36 @@ exports.getSalesmanPerformance = async (start, end) => {
     FROM sales s
     LEFT JOIN users u ON u.id = s.salesperson_id
     LEFT JOIN sale_items si ON si.sale_id = s.id
-    WHERE s.sale_date BETWEEN $1 AND $2
+   WHERE s.sale_date BETWEEN $1 AND $2
+  AND s.payment_status = 'paid'
+  AND s.sale_status != 'voided'
     GROUP BY u.username
     ORDER BY revenue DESC;
-  `, [start, end]);
+  `,
+    [start, end]
+  );
 
   return rows.rows;
 };
 
 // ---------------------- PRODUCT SALES ----------------------
 exports.getProductSales = async (start, end) => {
-  const rows = await db.query(`
+  const rows = await db.query(
+    `
     SELECT 
       p.name,
       SUM(si.total_price) AS revenue
     FROM sale_items si
     JOIN products p ON p.id = si.product_id
     JOIN sales s ON s.id = si.sale_id
-    WHERE s.sale_date BETWEEN $1 AND $2
+  WHERE s.sale_date BETWEEN $1 AND $2
+  AND s.payment_status = 'paid'
+  AND s.sale_status != 'voided'
     GROUP BY p.name
     ORDER BY revenue DESC;
-  `, [start, end]);
+  `,
+    [start, end]
+  );
 
   return rows.rows;
 };
@@ -74,7 +95,8 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
     filter = "AND s.salesperson_id = $3";
   }
 
-  const rows = await db.query(`
+  const rows = await db.query(
+    `
     SELECT 
       p.id AS product_id,
       p.name AS product_name,
@@ -83,19 +105,23 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
     FROM sale_items si
     JOIN products p ON p.id = si.product_id
     JOIN sales s ON s.id = si.sale_id
-   WHERE s.sale_date >= $1
-      AND s.sale_date < ($2::date + INTERVAL '1 day')
+  WHERE s.sale_date >= $1
+  AND s.sale_date < ($2::date + INTERVAL '1 day')
+  AND s.payment_status = 'paid'
+  AND s.sale_status != 'voided'
     ${filter}
     GROUP BY p.id, p.name
     ORDER BY units_sold DESC;
-  `, params);
+  `,
+    params
+  );
 
   return rows.rows;
 };
 
-
 exports.getCustomerPerformance = async (start, end) => {
-  const rows = await db.query(`
+  const rows = await db.query(
+    `
     SELECT 
       c.name AS customer,
       SUM(sa.total_amount) AS revenue,
@@ -104,11 +130,14 @@ exports.getCustomerPerformance = async (start, end) => {
     FROM sales sa
     LEFT JOIN sale_items si ON si.sale_id = sa.id
     JOIN customers c ON sa.customer_id = c.id
-    WHERE sa.sale_date BETWEEN $1 AND $2
+   WHERE sa.sale_date BETWEEN $1 AND $2
+  AND sa.payment_status = 'paid'
+  AND sa.sale_status != 'voided'
     GROUP BY c.name
     ORDER BY revenue DESC;
-  `, [start, end]);
+  `,
+    [start, end]
+  );
 
   return rows.rows;
 };
-
