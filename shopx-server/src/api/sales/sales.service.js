@@ -68,18 +68,17 @@ exports.createSale = async (data) => {
     }
 
     // 3️⃣ CREATE MAIN SALE
-  const sale = await repo.createSale(client, {
-  salesperson_id: data.salesperson_id,
-  customer_id: data.customer_id,
-  subtotal_amount: gross_subtotal,
-  discount_amount,
-  vat_percentage: VAT_PERCENTAGE,
-  vat_amount,
-  total_amount,
-  payment_method: data.payment_method,
-  payment_status: data.payment_status,
-});
-
+    const sale = await repo.createSale(client, {
+      salesperson_id: data.salesperson_id,
+      customer_id: data.customer_id,
+      subtotal_amount: gross_subtotal,
+      discount_amount,
+      vat_percentage: VAT_PERCENTAGE,
+      vat_amount,
+      total_amount,
+      payment_method: data.payment_method,
+      payment_status: data.payment_status,
+    });
 
     let isBackorder = false;
 
@@ -139,28 +138,39 @@ exports.createSale = async (data) => {
     await repo.updateSaleStatus(client, sale.id, saleStatus);
 
     // 7️⃣ CREATE ONE FULL PAYMENT (ALWAYS PAID – CLIENT RULE)
-   // 7️⃣ CREATE PAYMENT (PAID or PENDING)
-const paymentStatus = data.payment_status || "paid";
+    // 7️⃣ CREATE PAYMENT (PAID or PENDING)
 
-const payment = await paymentsRepo.createPayment(client, {
-  saleId: sale.id,
-  customerId: data.customer_id,
-  amount: total_amount,
-  method: data.payment_method || "cash",
-  status: paymentStatus,
-});
+    // 7️⃣ HANDLE PAYMENT CORRECTLY (PRODUCTION LOGIC)
 
-// 🔁 Sync sale payment status
-await client.query(
-  `UPDATE sales SET payment_status = $1 WHERE id = $2`,
-  [paymentStatus, sale.id]
-);
+const paymentStatus =
+  data.payment_status === "paid" ? "paid" : "pending";
+
+    // 🔁 Always update sale payment status
+    await client.query(`UPDATE sales SET payment_status = $1 WHERE id = $2`, [
+      paymentStatus,
+      sale.id,
+    ]);
+
+    // ✅ ONLY create payment record if PAID
+    let payment = null;
+
+    if (paymentStatus === "paid") {
+      const paymentResult = await paymentsRepo.createPayment(client, {
+        saleId: sale.id,
+        customerId: data.customer_id,
+        amount: total_amount,
+        method: data.payment_method || "cash",
+        status: "paid",
+      });
+
+      payment = paymentResult.rows[0];
+    }
 
     await client.query("COMMIT");
 
     return {
       sale,
-      payment: payment.rows[0],
+      payment,
     };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -191,7 +201,7 @@ exports.voidSale = async (saleId, user) => {
     for (const item of items) {
       await stockService.adjustStock(
         item.product_id,
-        item.quantity,   // ADD BACK
+        item.quantity, // ADD BACK
         "sale_void"
       );
     }
@@ -213,7 +223,6 @@ exports.voidSale = async (saleId, user) => {
   }
 };
 
-
 exports.getFullInvoice = async (id) => {
   return await repo.getFullInvoice(id);
 };
@@ -224,4 +233,3 @@ exports.getAllSales = async () => {
 exports.getSalesBySalesperson = async (salespersonId) => {
   return await repo.getSalesBySalesperson(salespersonId);
 };
-

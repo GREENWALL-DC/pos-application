@@ -10,7 +10,8 @@ final dioProvider = Provider<Dio>((ref) {
       // baseUrl: "http://localhost:5000/api/",
       // baseUrl: "https://shopx-server-p9ov.onrender.com/api/",this is render
       //  baseUrl: "https://aba65707ae3f.ngrok-free.app/api/",
-      baseUrl: "http://16.112.120.235:5000/api/", // Aws
+      // baseUrl: "http://16.112.120.235:5000/api/", // Aws
+      baseUrl: "http://sellops.cloud:5000/api/",
 
       connectTimeout: Duration(seconds: 20),
       receiveTimeout: Duration(seconds: 20),

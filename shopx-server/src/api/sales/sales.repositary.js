@@ -40,13 +40,12 @@ exports.createSale = async (
       vat_amount,
       total_amount,
       payment_method,
-      payment_status
+      payment_status,
     ]
   );
 
   return result.rows[0];
 };
-
 
 // INSERT SALE ITEM
 exports.addSaleItem = async (client, sale_id, item) => {
@@ -92,8 +91,8 @@ exports.getFullInvoice = async (id) => {
     `,
     [id]
   );
-const items = await db.query(
-  `
+  const items = await db.query(
+    `
     SELECT 
       si.id,
       si.sale_id,
@@ -108,9 +107,8 @@ const items = await db.query(
     FROM sale_items si
     WHERE si.sale_id = $1
   `,
-  [id]
-);
-
+    [id]
+  );
 
   const payments = await db.query(
     `SELECT * FROM payments WHERE sale_id = $1 ORDER BY created_at ASC`,
@@ -124,23 +122,17 @@ const items = await db.query(
   };
 };
 
-
 exports.getSaleById = async (client, id) => {
-  const r = await client.query(
-    `SELECT * FROM sales WHERE id = $1`,
-    [id]
-  );
+  const r = await client.query(`SELECT * FROM sales WHERE id = $1`, [id]);
   return r.rows[0];
 };
 
 exports.getSaleItems = async (client, saleId) => {
-  const r = await client.query(
-    `SELECT * FROM sale_items WHERE sale_id = $1`,
-    [saleId]
-  );
+  const r = await client.query(`SELECT * FROM sale_items WHERE sale_id = $1`, [
+    saleId,
+  ]);
   return r.rows;
 };
-
 
 // BASIC LIST
 exports.getAllSales = async (limit = 20) => {
@@ -159,11 +151,13 @@ exports.getAllSales = async (limit = 20) => {
       u.username AS salesperson_name,
       c.name AS customer_name,
       c.phone AS customer_phone
-    FROM sales s
-    LEFT JOIN users u ON u.id = s.salesperson_id
-    LEFT JOIN customers c ON c.id = s.customer_id
-    ORDER BY s.sale_date DESC
-    LIMIT $1
+   FROM sales s
+LEFT JOIN users u ON u.id = s.salesperson_id
+LEFT JOIN customers c ON c.id = s.customer_id
+WHERE s.sale_status != 'voided'
+ORDER BY s.sale_date DESC
+LIMIT $1
+
     `,
     [limit]
   );
@@ -198,4 +192,3 @@ exports.getSalesBySalesperson = async (salespersonId) => {
 
   return r.rows;
 };
-
