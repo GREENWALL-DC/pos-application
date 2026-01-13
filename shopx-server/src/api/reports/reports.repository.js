@@ -4,35 +4,35 @@ const db = require("../../config/db");
 exports.getSummary = async (start, end) => {
   const summary = await db.query(
     `
-    SELECT 
-      SUM(s.total_amount) AS revenue,
-      SUM(si.quantity) AS units,
-      AVG(s.total_amount) AS avg_value
-    FROM sales s
-    LEFT JOIN sale_items si ON si.sale_id = s.id
-   WHERE s.sale_date BETWEEN $1 AND $2
+   SELECT 
+  SUM(s.subtotal_amount - s.discount_amount) AS revenue,
+  SUM(si.quantity) AS units,
+  AVG(s.subtotal_amount - s.discount_amount) AS avg_value
+FROM sales s
+LEFT JOIN sale_items si ON si.sale_id = s.id
+WHERE s.sale_date BETWEEN $1 AND $2
   AND s.payment_status = 'paid'
   AND s.sale_status != 'voided';
 
   `,
     [start, end]
   );
+const chart = await db.query(
+  `
+  SELECT 
+    u.username AS name,
+    SUM(s.subtotal_amount - s.discount_amount) AS revenue
+  FROM sales s
+  LEFT JOIN users u ON u.id = s.salesperson_id
+  WHERE s.sale_date BETWEEN $1 AND $2
+    AND s.payment_status = 'paid'
+    AND s.sale_status != 'voided'
+  GROUP BY u.username
+  ORDER BY revenue DESC;
+`,
+[start, end]
+);
 
-  const chart = await db.query(
-    `
-    SELECT 
-      u.username AS name,
-      SUM(s.total_amount) AS revenue
-    FROM sales s
-    LEFT JOIN users u ON u.id = s.salesperson_id
-   WHERE s.sale_date BETWEEN $1 AND $2
-  AND s.payment_status = 'paid'
-  AND s.sale_status != 'voided'
-    GROUP BY u.username
-    ORDER BY revenue DESC;
-  `,
-    [start, end]
-  );
 
   return {
     summary: summary.rows[0],
@@ -44,18 +44,19 @@ exports.getSummary = async (start, end) => {
 exports.getSalesmanPerformance = async (start, end) => {
   const rows = await db.query(
     `
-    SELECT 
-      u.username AS name,
-      SUM(s.total_amount) AS revenue,
-      SUM(si.quantity) AS units
-    FROM sales s
-    LEFT JOIN users u ON u.id = s.salesperson_id
-    LEFT JOIN sale_items si ON si.sale_id = s.id
-   WHERE s.sale_date BETWEEN $1 AND $2
+   SELECT 
+  u.username AS name,
+  SUM(s.subtotal_amount - s.discount_amount) AS revenue,
+  SUM(si.quantity) AS units
+FROM sales s
+LEFT JOIN users u ON u.id = s.salesperson_id
+LEFT JOIN sale_items si ON si.sale_id = s.id
+WHERE s.sale_date BETWEEN $1 AND $2
   AND s.payment_status = 'paid'
   AND s.sale_status != 'voided'
-    GROUP BY u.username
-    ORDER BY revenue DESC;
+GROUP BY u.username
+ORDER BY revenue DESC;
+
   `,
     [start, end]
   );
@@ -122,19 +123,20 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
 exports.getCustomerPerformance = async (start, end) => {
   const rows = await db.query(
     `
-    SELECT 
-      c.name AS customer,
-      SUM(sa.total_amount) AS revenue,
-      COUNT(sa.id) AS orders,
-      SUM(si.quantity) AS units
-    FROM sales sa
-    LEFT JOIN sale_items si ON si.sale_id = sa.id
-    JOIN customers c ON sa.customer_id = c.id
-   WHERE sa.sale_date BETWEEN $1 AND $2
+  SELECT 
+  c.name AS customer,
+  SUM(sa.subtotal_amount - sa.discount_amount) AS revenue,
+  COUNT(sa.id) AS orders,
+  SUM(si.quantity) AS units
+FROM sales sa
+LEFT JOIN sale_items si ON si.sale_id = sa.id
+JOIN customers c ON sa.customer_id = c.id
+WHERE sa.sale_date BETWEEN $1 AND $2
   AND sa.payment_status = 'paid'
   AND sa.sale_status != 'voided'
-    GROUP BY c.name
-    ORDER BY revenue DESC;
+GROUP BY c.name
+ORDER BY revenue DESC;
+
   `,
     [start, end]
   );

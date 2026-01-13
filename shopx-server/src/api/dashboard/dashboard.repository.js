@@ -1,17 +1,19 @@
 const db = require("../../config/db");
 
 module.exports = {
-  getTotalSales: async () => {
-    return await db.query(`
+
+ getTotalSales: async () => {
+  return await db.query(`
     SELECT 
       COUNT(id) AS total_sales,
-      COALESCE(SUM(total_amount), 0) AS total_revenue,
-      COALESCE(AVG(total_amount), 0) AS avg_order_value
+      COALESCE(SUM(subtotal_amount - discount_amount), 0) AS total_revenue,
+      COALESCE(AVG(subtotal_amount - discount_amount), 0) AS avg_order_value
     FROM sales
     WHERE payment_status = 'paid'
       AND sale_status != 'voided'
   `);
-  },
+},
+
 
   getTotalPayments: async () => {
     return await db.query(
@@ -23,33 +25,35 @@ module.exports = {
     return await db.query(`SELECT COUNT(*) AS total_customers FROM customers`);
   },
 
-  getTodaySales: async () => {
-    return await db.query(`
-    SELECT COALESCE(SUM(total_amount), 0) AS today_sales
+ getTodaySales: async () => {
+  return await db.query(`
+    SELECT 
+      COALESCE(SUM(subtotal_amount - discount_amount), 0) AS today_sales
     FROM sales
     WHERE DATE(sale_date) = CURRENT_DATE
       AND payment_status = 'paid'
       AND sale_status != 'voided'
   `);
-  },
+},
+
 
   getWeeklySales: async () => {
     return await db.query(`
     WITH days AS (
       SELECT unnest(ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN']) AS day
     ),
-    sales_data AS (
-      SELECT 
-        TO_CHAR(sale_date, 'DY') AS day,
-        SUM(total_amount) AS revenue,
-        COUNT(*) AS transactions
-      FROM sales
-WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
-  AND payment_status = 'paid'
-  AND sale_status != 'voided'
-GROUP BY TO_CHAR(sale_date, 'DY')
+   sales_data AS (
+  SELECT 
+    TO_CHAR(sale_date, 'DY') AS day,
+    SUM(subtotal_amount - discount_amount) AS revenue,
+    COUNT(*) AS transactions
+  FROM sales
+  WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
+    AND payment_status = 'paid'
+    AND sale_status != 'voided'
+  GROUP BY TO_CHAR(sale_date, 'DY')
+)
 
-    )
     SELECT 
       d.day,
       COALESCE(s.revenue, 0) AS revenue,
@@ -73,19 +77,21 @@ GROUP BY TO_CHAR(sale_date, 'DY')
     `);
   },
 
-  getSalesBySalesperson: async () => {
-    return await db.query(`
-     SELECT sp.name, COALESCE(SUM(s.total_amount),0) AS total_sales
-FROM salespersons sp
-LEFT JOIN sales s 
-  ON s.salesperson_id = sp.id
-  AND s.payment_status = 'paid'
-  AND s.sale_status != 'voided'
-GROUP BY sp.name
-ORDER BY total_sales DESC
+ getSalesBySalesperson: async () => {
+  return await db.query(`
+    SELECT 
+      sp.name,
+      COALESCE(SUM(s.subtotal_amount - s.discount_amount), 0) AS total_sales
+    FROM salespersons sp
+    LEFT JOIN sales s 
+      ON s.salesperson_id = sp.id
+      AND s.payment_status = 'paid'
+      AND s.sale_status != 'voided'
+    GROUP BY sp.name
+    ORDER BY total_sales DESC
+  `);
+},
 
-    `);
-  },
   getRecentSales: async () => {
     return await db.query(`
     SELECT 
