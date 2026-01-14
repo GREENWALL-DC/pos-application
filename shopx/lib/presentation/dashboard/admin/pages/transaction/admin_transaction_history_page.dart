@@ -112,16 +112,26 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
       //       .where((s) => s.paymentStatus.toUpperCase() == filter.status)
       //       .toList();
       // }
+if (filter.status != 'ALL') {
+  filteredSales = filteredSales.where((s) {
+    if (filter.status == 'CANCELLED') {
+      return s.saleStatus == 'voided';
+    }
 
-      if (filter.status != 'ALL') {
-        filteredSales = filteredSales.where((s) {
-          if (filter.status == 'CANCELLED') {
-            return s.saleStatus == 'voided';
-          }
-          return s.saleStatus != 'voided' &&
-              s.paymentStatus.toUpperCase() == filter.status;
-        }).toList();
-      }
+    if (filter.status == 'PAID') {
+      return s.saleStatus != 'voided' &&
+          s.paymentStatus.toUpperCase() == 'PAID';
+    }
+
+    if (filter.status == 'PENDING') {
+      return s.saleStatus != 'voided' &&
+          s.paymentStatus.toUpperCase() == 'PENDING';
+    }
+
+    return true;
+  }).toList();
+}
+
 
       // From date
       if (filter.fromDate != null) {
@@ -154,11 +164,7 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
         final dateKey = groupedSales.keys.elementAt(index);
         final dailySales = groupedSales[dateKey]!;
 
-        // //old
-        //         final dailyTotal = dailySales.fold<double>(
-        //           0,
-        //           (sum, sale) => sum + sale.totalAmount,
-        //         );
+        
 
         final dailyTotal = dailySales
             .where(
@@ -264,33 +270,45 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
             sale: sale,
 
             // 🔒 FINAL SAFETY GUARD
-            onMarkAsPaid: sale.saleStatus == 'voided'
-                ? null
-                : sale.paymentStatus.toUpperCase() == 'PENDING'
-                ? () async {
-                    await ref
-                        .read(paymentsNotifierProvider.notifier)
-                        .markPaymentAsPaid(sale.id);
+         onMarkAsPaid: sale.saleStatus == 'voided'
+    ? null
+    : sale.paymentStatus.toUpperCase() == 'PENDING'
+        ? () async {
+            await ref
+                .read(paymentsNotifierProvider.notifier)
+                .markPaymentAsPaid(sale.id);
 
-                    Navigator.of(context).pop();
-                    await ref
-                        .read(salesNotifierProvider.notifier)
-                        .fetchAdminSales();
-                  }
-                : null,
+            Navigator.of(context).pop(); // parent closes dialog
+            await ref
+                .read(salesNotifierProvider.notifier)
+                .fetchAdminSales();
+          }
+        : null,
 
-            onCancelSale: sale.saleStatus == 'voided'
-                ? null
-                : () async {
-                    await ref
-                        .read(salesNotifierProvider.notifier)
-                        .voidSale(sale.id);
 
-                    Navigator.of(context).pop();
-                    await ref
-                        .read(salesNotifierProvider.notifier)
-                        .fetchAdminSales();
-                  },
+            // onCancelSale: sale.saleStatus == 'voided'
+            //     ? null
+            //     : () async {
+            //         await ref
+            //             .read(salesNotifierProvider.notifier)
+            //             .voidSale(sale.id);
+
+            //         Navigator.of(context).pop();
+            //         await ref
+            //             .read(salesNotifierProvider.notifier)
+            //             .fetchAdminSales();
+            //       },
+           onCancelSale: sale.saleStatus == 'voided'
+    ? null
+    : () async {
+        await ref
+            .read(salesNotifierProvider.notifier)
+            .voidSale(sale.id);
+
+        // ❌ NO Navigator.pop() HERE
+        // Dialog will close itself
+      },
+
           ),
         );
       },
