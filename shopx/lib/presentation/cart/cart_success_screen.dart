@@ -48,6 +48,10 @@ class SuccessScreen extends HookConsumerWidget {
 
     final Sale sale = saleSnapshot.data!;
 
+    final String paymentLabel = sale.payments.isNotEmpty
+        ? sale.payments.first.method.toUpperCase()
+        : 'PENDING';
+
     final futureCustomer = useMemoized(() {
       return ref
           .read(customerNotifierProvider.notifier)
@@ -167,10 +171,19 @@ class SuccessScreen extends HookConsumerWidget {
     // ---------------------------
     // 6. Next Order
     // ---------------------------
+
+    // void handleNextOrder() {
+    //   Navigator.push(
+    //     context,
+    //     MaterialPageRoute(builder: (context) => UserDashboard()),
+    //   );
+    // }
+
     void handleNextOrder() {
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => UserDashboard()),
+        MaterialPageRoute(builder: (_) => const UserDashboard()),
+        (route) => false,
       );
     }
 
@@ -257,7 +270,8 @@ class SuccessScreen extends HookConsumerWidget {
                                   vertical: 14,
                                 ),
                                 child: Text(
-                                  "Payment method: ${sale.payments.first.method.toUpperCase()}",
+                                  // "Payment method: ${sale.payments.first.method.toUpperCase()}",
+                                  "Payment method: $paymentLabel",
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

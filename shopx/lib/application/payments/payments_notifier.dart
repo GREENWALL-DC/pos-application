@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shopx/application/dashboard/admin_dashboard_notifier.dart';
 import 'package:shopx/application/payments/payments_state.dart';
+import 'package:shopx/application/sales/sales_notifier.dart';
 import 'package:shopx/infrastructure/payments/payment_repository.dart';
 
 
@@ -14,6 +16,11 @@ class PaymentsNotifier extends Notifier<PaymentsState> {
     try {
       final repo = ref.read(paymentsRepositoryProvider);
       await repo.markPaymentAsPaid(saleId);
+
+        // 🔥 FORCE DASHBOARD + TRANSACTIONS TO REFRESH
+    ref.invalidate(adminDashboardNotifierProvider);
+    ref.invalidate(salesNotifierProvider);
+    
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(

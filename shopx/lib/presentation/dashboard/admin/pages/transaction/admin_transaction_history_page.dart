@@ -263,45 +263,81 @@ class AdminTransactionHistoryPage extends HookConsumerWidget {
           builder: (_) => TransactionDetailsDialog(
             sale: sale,
 
-          onMarkAsPaid:
-    sale.paymentStatus.toUpperCase() == 'PENDING' &&
-            sale.saleStatus != 'voided'
-        ? () async {
-            await ref
-                .read(paymentsNotifierProvider.notifier)
-                .markPaymentAsPaid(sale.id);
+            // 🔒 FINAL SAFETY GUARD
+            onMarkAsPaid: sale.saleStatus == 'voided'
+                ? null
+                : sale.paymentStatus.toUpperCase() == 'PENDING'
+                ? () async {
+                    await ref
+                        .read(paymentsNotifierProvider.notifier)
+                        .markPaymentAsPaid(sale.id);
 
-            // ✅ CLOSE DIALOG FIRST
-            Navigator.of(context).pop();
+                    Navigator.of(context).pop();
+                    await ref
+                        .read(salesNotifierProvider.notifier)
+                        .fetchAdminSales();
+                  }
+                : null,
 
-            // ✅ REFRESH LIST AFTER
-            await ref
-                .read(salesNotifierProvider.notifier)
-                .fetchAdminSales();
-          }
-        : null,
+            onCancelSale: sale.saleStatus == 'voided'
+                ? null
+                : () async {
+                    await ref
+                        .read(salesNotifierProvider.notifier)
+                        .voidSale(sale.id);
 
-
-          onCancelSale: sale.saleStatus != 'voided'
-    ? () async {
-        await ref
-            .read(salesNotifierProvider.notifier)
-            .voidSale(sale.id);
-
-        // ✅ CLOSE DIALOG FIRST
-        Navigator.of(context).pop();
-
-        // ✅ REFRESH LIST AFTER
-        await ref
-            .read(salesNotifierProvider.notifier)
-            .fetchAdminSales();
-      }
-    : null,
-
+                    Navigator.of(context).pop();
+                    await ref
+                        .read(salesNotifierProvider.notifier)
+                        .fetchAdminSales();
+                  },
           ),
         );
       },
 
+      //   onTap: () {
+      //     showDialog(
+      //       context: context,
+      //       builder: (_) => TransactionDetailsDialog(
+      //         sale: sale,
+
+      //       onMarkAsPaid:
+      // sale.paymentStatus.toUpperCase() == 'PENDING' &&
+      //         sale.saleStatus != 'voided'
+      //     ? () async {
+      //         await ref
+      //             .read(paymentsNotifierProvider.notifier)
+      //             .markPaymentAsPaid(sale.id);
+
+      //         // ✅ CLOSE DIALOG FIRST
+      //         Navigator.of(context).pop();
+
+      //         // ✅ REFRESH LIST AFTER
+      //         await ref
+      //             .read(salesNotifierProvider.notifier)
+      //             .fetchAdminSales();
+      //       }
+      //     : null,
+
+      //       onCancelSale: sale.saleStatus != 'voided'
+      // ? () async {
+      //     await ref
+      //         .read(salesNotifierProvider.notifier)
+      //         .voidSale(sale.id);
+
+      //     // ✅ CLOSE DIALOG FIRST
+      //     Navigator.of(context).pop();
+
+      //     // ✅ REFRESH LIST AFTER
+      //     await ref
+      //         .read(salesNotifierProvider.notifier)
+      //         .fetchAdminSales();
+      //   }
+      // : null,
+
+      //       ),
+      //     );
+      //   },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),

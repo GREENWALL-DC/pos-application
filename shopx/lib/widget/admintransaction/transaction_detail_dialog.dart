@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart'; 
-import 'package:hooks_riverpod/hooks_riverpod.dart'; 
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/sales/sale.dart';
@@ -10,8 +10,7 @@ class TransactionDetailsDialog extends HookConsumerWidget {
   // final VoidCallback? onMarkAsPaid;
   // final VoidCallback? onCancelSale;
   final Future<void> Function()? onMarkAsPaid;
-final Future<void> Function()? onCancelSale;
-
+  final Future<void> Function()? onCancelSale;
 
   const TransactionDetailsDialog({
     super.key,
@@ -27,11 +26,10 @@ final Future<void> Function()? onCancelSale;
       sale.saleStatus != 'voided';
 
   bool get _isVoided => sale.saleStatus == 'voided';
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final isSubmitting = useState(false);
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSubmitting = useState(false);
 
-    
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.all(16),
@@ -127,14 +125,13 @@ Widget build(BuildContext context, WidgetRef ref) {
             const SizedBox(height: 24),
 
             // if (_isPending) _markAsPaidButton(context),
-           if (!_isVoided && _isPending)
-  _markAsPaidButton(context, isSubmitting),
+            if (!_isVoided && _isPending)
+              _markAsPaidButton(context, isSubmitting),
 
-  kHeight20,
+            kHeight20,
 
-if (!_isVoided && onCancelSale != null)
-  _cancelSaleButton(context, isSubmitting),
-
+            if (!_isVoided && onCancelSale != null)
+              _cancelSaleButton(context, isSubmitting),
 
             if (_isVoided)
               const Text(
@@ -289,78 +286,108 @@ if (!_isVoided && onCancelSale != null)
 
   // ================= MARK AS PAID =================
 
- Widget _markAsPaidButton(
-  BuildContext context,
-  ValueNotifier<bool> isSubmitting,
-) {
-  return SizedBox(
-    width: double.infinity,
-    child: ElevatedButton(
-      onPressed: isSubmitting.value || onMarkAsPaid == null
-          ? null
-          : () async {
-              isSubmitting.value = true;
-            await   onMarkAsPaid!();
-            },
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        backgroundColor: const Color(0xFF1D72D6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: isSubmitting.value
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-          : const Text(
-              "Mark as Paid",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,color: Colors.white),
-            ),
-    ),
-  );
-}
+  Widget _markAsPaidButton(
+    BuildContext context,
+    ValueNotifier<bool> isSubmitting,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        // onPressed: isSubmitting.value || onMarkAsPaid == null
+        //     ? null
+        //     : () async {
+        //         isSubmitting.value = true;
+        //         await onMarkAsPaid!();
+        //       },
+        onPressed: isSubmitting.value || onMarkAsPaid == null
+            ? null
+            : () async {
+                try {
+                  isSubmitting.value = true;
+                  await onMarkAsPaid!();
+                  Navigator.of(context).pop();
+                } finally {
+                  isSubmitting.value = false;
+                }
+              },
 
-Widget _cancelSaleButton(
-  BuildContext context,
-  ValueNotifier<bool> isSubmitting,
-) {
-  return SizedBox(
-    width: double.infinity,
-    child: ElevatedButton(
-      onPressed: isSubmitting.value || onCancelSale == null
-          ? null
-          : () async {
-              isSubmitting.value = true;
-           await    onCancelSale!();
-            },
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        backgroundColor: Colors.red,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          backgroundColor: const Color(0xFF1D72D6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-      ),
-      child: isSubmitting.value
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
+        child: isSubmitting.value
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                "Mark as Paid",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            )
-          : const Text(
-              "Cancel Sale",
-              style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),
-            ),
-    ),
-  );
-}
+      ),
+    );
+  }
 
+  Widget _cancelSaleButton(
+    BuildContext context,
+    ValueNotifier<bool> isSubmitting,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        // onPressed: isSubmitting.value || onCancelSale == null
+        //     ? null
+        //     : () async {
+        //         isSubmitting.value = true;
+        //         await onCancelSale!();
+        //       },
+        onPressed: isSubmitting.value || onCancelSale == null
+            ? null
+            : () async {
+                try {
+                  isSubmitting.value = true;
+                  await onCancelSale!();
+                  Navigator.of(context).pop(); // ✅ CLOSE DIALOG
+                } finally {
+                  isSubmitting.value = false; // ✅ STOP SPINNER
+                }
+              },
+
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: isSubmitting.value
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                "Cancel Sale",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
 }

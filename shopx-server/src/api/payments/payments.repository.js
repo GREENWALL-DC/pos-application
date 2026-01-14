@@ -44,10 +44,14 @@ module.exports = {
   },
 
   // ✅ Update sale payment status (paid / pending)
-  updateSalePaymentStatus: async (saleId, status) => {
-    return await db.query(
-      `UPDATE sales SET payment_status = $1 WHERE id = $2`,
-      [status, saleId]
-    );
-  },
+ // payments.repository.js
+updateSalePaymentStatus: async (client, saleId, status) => {
+  return await client.query(
+    `UPDATE sales SET payment_status = $1 WHERE id = $2`,
+    [status, saleId]
+  );
+},
+
+
+
 };

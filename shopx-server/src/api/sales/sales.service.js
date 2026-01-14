@@ -142,8 +142,7 @@ exports.createSale = async (data) => {
 
     // 7️⃣ HANDLE PAYMENT CORRECTLY (PRODUCTION LOGIC)
 
-const paymentStatus =
-  data.payment_status === "paid" ? "paid" : "pending";
+    const paymentStatus = data.payment_status === "paid" ? "paid" : "pending";
 
     // 🔁 Always update sale payment status
     await client.query(`UPDATE sales SET payment_status = $1 WHERE id = $2`, [
@@ -186,31 +185,40 @@ exports.voidSale = async (saleId, user) => {
   try {
     await client.query("BEGIN");
 
-    // 1️⃣ Fetch sale
-    const sale = await repo.getSaleById(client, saleId);
+    // 🔒 Lock row to prevent double void (CRITICAL)
+    const saleRes = await client.query(
+      `SELECT * FROM sales WHERE id = $1 FOR UPDATE`,
+      [saleId]
+    );
 
-    if (!sale) throw new Error("Sale not found");
+    const sale = saleRes.rows[0];
 
-    if (sale.sale_status === "voided") {
-      throw new Error("Sale already voided");
+    if (!sale) {
+      throw new Error("Sale not found");
     }
 
-    // 2️⃣ Reverse stock using sale_items
-    const items = await repo.getSaleItems(client, saleId);
+    // 🚫 HARD STOP: already voided
+    if (sale.sale_status === "voided") {
+      throw new Error("Sale already cancelled");
+    }
 
+    // 🔁 Reverse stock ONCE
+    const items = await repo.getSaleItems(client, saleId);
     for (const item of items) {
       await stockService.adjustStock(
         item.product_id,
-        item.quantity, // ADD BACK
+        item.quantity,
         "sale_void"
       );
     }
 
-    // 3️⃣ Update sale status
-    await repo.updateSaleStatus(client, saleId, "voided");
+    // 🔁 Reverse payment ONLY if PAID
+    if (sale.payment_status === "paid") {
+      await paymentsRepo.reversePaymentBySaleId(client, saleId);
+    }
 
-    // 4️⃣ Reverse payment
-    await paymentsRepo.reversePaymentBySaleId(client, saleId);
+    // ✅ Mark sale voided LAST
+    await repo.updateSaleStatus(client, saleId, "voided");
 
     await client.query("COMMIT");
 

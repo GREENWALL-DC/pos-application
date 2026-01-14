@@ -80,22 +80,35 @@ class SalesNotifier extends Notifier<SalesState> {
     }
   }
 
+  //   Future<void> voidSale(int saleId) async {
+  //   try {
+  //     await ref.read(salesRepositoryProvider).voidSale(saleId);
+  //     await fetchAdminSales(); // refresh list after cancel
+  //   } catch (e) {
+  //     state = state.copyWith(error: e.toString());
+  //     rethrow;
+  //   }
+  // }
 
   Future<void> voidSale(int saleId) async {
-  try {
-    await ref.read(salesRepositoryProvider).voidSale(saleId);
-    await fetchAdminSales(); // refresh list after cancel
-  } catch (e) {
-    state = state.copyWith(error: e.toString());
-    rethrow;
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      await ref.read(salesRepositoryProvider).voidSale(saleId);
+
+      // refresh list after cancel
+      await fetchAdminSales();
+
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
   }
-}
 
-Future<void> refreshAdminSales() async {
-  await fetchAdminSales();
-}
-
-
+  Future<void> refreshAdminSales() async {
+    await fetchAdminSales();
+  }
 }
 
 final salesNotifierProvider = NotifierProvider<SalesNotifier, SalesState>(

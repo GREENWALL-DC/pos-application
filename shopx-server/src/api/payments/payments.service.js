@@ -17,7 +17,7 @@ exports.addPayment = async ({ saleId, customerId, amount, method, status }) => {
       status: paymentStatus,
     });
 
-    await repo.updateSalePaymentStatus(saleId, paymentStatus);
+await repo.updateSalePaymentStatus(client, saleId, paymentStatus);
 
     await client.query("COMMIT");
 
@@ -35,18 +35,33 @@ exports.addPayment = async ({ saleId, customerId, amount, method, status }) => {
 
 
 // ✅ Mark pending → paid (used after 4–5 days)
-
 exports.markPaymentAsPaid = async (saleId) => {
   const client = await db.connect();
 
   try {
     await client.query("BEGIN");
 
-    // 1️⃣ Mark payments as PAID
+    // 🔒 Lock sale row
+    const saleRes = await client.query(
+      `SELECT sale_status FROM sales WHERE id = $1 FOR UPDATE`,
+      [saleId]
+    );
+
+    const sale = saleRes.rows[0];
+
+    if (!sale) {
+      throw new Error("Sale not found");
+    }
+
+    if (sale.sale_status === "voided") {
+      throw new Error("Cannot mark payment for cancelled sale");
+    }
+
+    // ✅ Mark payments
     await repo.markPaymentsAsPaid(client, saleId);
 
-    // 2️⃣ Update sale payment status
-    await repo.updateSalePaymentStatus(saleId, "paid");
+    // ✅ Update sale payment status
+    await repo.updateSalePaymentStatus(client, saleId, "paid");
 
     await client.query("COMMIT");
 
@@ -61,6 +76,7 @@ exports.markPaymentAsPaid = async (saleId) => {
     client.release();
   }
 };
+
 
 exports.getPaymentsOfSale = async (saleId) => {
   return await repo.getPaymentsBySale(saleId);
