@@ -599,13 +599,12 @@ class _LatestTransactionsSection extends StatelessWidget {
     );
   }
 
-  double _todayTotal() {
-    return recentSales.fold(0, (sum, item) {
-      if (item['sale_status'] == 'voided') return sum;
-      if (item['payment_status'] != 'PAID') return sum;
-      return sum + (item['total_amount'] as num);
-    });
-  }
+ double _todayTotal() {
+  return recentSales.fold(0, (sum, item) {
+    return sum + (item['total_amount'] as num);
+  });
+}
+
 
   String _formatDate(String date) {
     final d = DateTime.parse(date);

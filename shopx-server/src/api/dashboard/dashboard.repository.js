@@ -92,9 +92,10 @@ module.exports = {
   `);
 },
 
-  getRecentSales: async () => {
-    return await db.query(`
-    SELECT 
+
+getRecentSales: async () => {
+  return await db.query(`
+    SELECT DISTINCT ON (s.id)
       s.id,
       s.total_amount,
       c.name AS customer,
@@ -103,12 +104,14 @@ module.exports = {
       s.sale_status
     FROM sales s
     LEFT JOIN customers c ON c.id = s.customer_id
-    WHERE s.payment_status = 'paid'
-      AND s.sale_status != 'voided'
-    ORDER BY s.sale_date DESC
+    WHERE DATE(s.sale_date) = CURRENT_DATE
+    ORDER BY 
+      s.id,
+      s.updated_at DESC
     LIMIT 10
   `);
-  },
+},
+
 
   getLowStock: async () => {
     return await db.query(`

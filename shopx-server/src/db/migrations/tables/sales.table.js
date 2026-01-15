@@ -12,7 +12,7 @@ module.exports = async (client) => {
 
     // 2️⃣ Create table
     await client.query(`
-    CREATE TABLE sales (
+   CREATE TABLE sales (
   id SERIAL PRIMARY KEY,
   customer_id INTEGER REFERENCES customers(id),
   salesperson_id INTEGER REFERENCES users(id),
@@ -25,10 +25,13 @@ module.exports = async (client) => {
   total_amount NUMERIC(12,2) NOT NULL,
 
   sale_status VARCHAR(20) DEFAULT 'completed',
-   payment_method VARCHAR(20) NOT NULL,
-        payment_status VARCHAR(20) NOT NULL,
-  sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  payment_method VARCHAR(20) NOT NULL,
+  payment_status VARCHAR(20) NOT NULL,
+
+  sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
     `);
 
     console.log('✅ "sales" table created successfully.');
