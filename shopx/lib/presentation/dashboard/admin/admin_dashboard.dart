@@ -7,11 +7,15 @@ import 'package:shopx/application/dashboard/admin_dashboard_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/presentation/dashboard/admin/admin_side_nav.dart';
 
+enum RevenueScope { today, all }
+
 class AdminDashboard extends HookConsumerWidget {
   const AdminDashboard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final revenueScope = useState(RevenueScope.today);
+
     // Read notifier state
     final dashboard = ref.watch(adminDashboardNotifierProvider);
 
@@ -31,18 +35,27 @@ class AdminDashboard extends HookConsumerWidget {
 
     final weekly = dashboard.weeklySummary;
 
-    // final totalRevenue = dashboard.grossRevenue; // Total Revenue
-    final totalRevenue = dashboard.netSales;
-
-    final totalSales = dashboard.totalSales; // Total Sales (count)
-
+    // final totalRevenue = dashboard.netSales;
+    // final totalSales = dashboard.totalSales; // Total Sales (count)
     // final avgOrder = dashboard.totalSales == 0
     //     ? 0
-    //     : dashboard.grossRevenue / dashboard.totalSales; // Avg. Order Value
+    //     : dashboard.netSales / dashboard.totalSales;
 
-    final avgOrder = dashboard.totalSales == 0
+    final isToday = revenueScope.value == RevenueScope.today;
+
+    final revenue = isToday
+        ? dashboard.totals.today.revenue
+        : dashboard.totals.all.revenue;
+
+    final totalSales = isToday
+        ? dashboard.totals.today.totalSales
+        : dashboard.totals.all.totalSales;
+
+    final avgOrder = totalSales == 0
         ? 0
-        : dashboard.netSales / dashboard.totalSales;
+        : (isToday
+              ? dashboard.totals.today.avgOrderValue
+              : dashboard.totals.all.avgOrderValue);
 
     final totalCustomers = dashboard.totalCustomers;
 
@@ -98,19 +111,59 @@ class AdminDashboard extends HookConsumerWidget {
             children: [
               // --- METRICS SECTION ---
               _MetricCard(
-                title: "Total Revenue",
-                value: "\$${totalRevenue.toStringAsFixed(2)}",
+                title: "",
+                titleWidget: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Revenue",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF1D1D1D),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                      ),
+                      child: DropdownButton<RevenueScope>(
+                        value: revenueScope.value,
+                        underline: const SizedBox(),
+                        icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                        items: const [
+                          DropdownMenuItem(
+                            value: RevenueScope.today,
+                            child: Text("Today"),
+                          ),
+                          DropdownMenuItem(
+                            value: RevenueScope.all,
+                            child: Text("All Time"),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) revenueScope.value = value;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                value: "\$${revenue.toStringAsFixed(2)}",
                 icon: Icons.monetization_on_outlined,
               ),
+
               const SizedBox(height: 12),
               _MetricCard(
-                title: "Total Sales",
+                title: isToday ? "Today's Sales" : "Total Sales",
                 value: "$totalSales",
                 icon: Icons.shopping_cart_outlined,
               ),
               const SizedBox(height: 12),
               _MetricCard(
-                title: "Avg. Order value",
+                title: isToday ? "Today's Avg Order" : "Avg. Order Value",
                 value: "\$${avgOrder.toStringAsFixed(2)}",
                 icon: Icons.show_chart,
               ),
@@ -126,8 +179,8 @@ class AdminDashboard extends HookConsumerWidget {
               // --- WEEKLY SUMMARY CHART ---
               _WeeklySummarySection(
                 weekly: dashboard.weeklySummary,
-                grossRevenue: dashboard.netSales, // show NET as revenue
-                netSales: dashboard.netSales,
+                grossRevenue: dashboard.totals.all.revenue, // show NET as revenue
+                netSales: dashboard.totals.all.revenue,
                 totalDiscount: dashboard.totalDiscount,
               ),
 
@@ -151,6 +204,7 @@ class AdminDashboard extends HookConsumerWidget {
 // =============================================================================
 class _MetricCard extends StatelessWidget {
   final String title;
+  final Widget? titleWidget;
   final String value;
   final IconData icon;
 
@@ -158,6 +212,7 @@ class _MetricCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.icon,
+    this.titleWidget,
   });
 
   @override
@@ -181,14 +236,15 @@ class _MetricCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1D1D1D),
-                ),
-              ),
+              titleWidget ??
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF1D1D1D),
+                    ),
+                  ),
               const SizedBox(height: 8),
               Text(
                 value,

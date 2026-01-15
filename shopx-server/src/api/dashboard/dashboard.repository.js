@@ -127,4 +127,25 @@ module.exports = {
     FROM sale_items
   `);
   },
+
+
+  getTodayMetrics: async () => {
+  return await db.query(`
+    SELECT
+      COUNT(id) AS today_sales,
+      COALESCE(SUM(subtotal_amount - discount_amount), 0) AS today_revenue,
+      COALESCE(
+        CASE 
+          WHEN COUNT(id) = 0 THEN 0
+          ELSE SUM(subtotal_amount - discount_amount) / COUNT(id)
+        END,
+        0
+      ) AS today_avg_order_value
+    FROM sales
+    WHERE DATE(sale_date) = CURRENT_DATE
+      AND payment_status = 'paid'
+      AND sale_status != 'voided'
+  `);
+},
+
 };

@@ -2,8 +2,9 @@ const repo = require("./dashboard.repository");
 
 exports.getDashboardData = async () => {
   const totalSales = await repo.getTotalSales();
-  const totalPayments = await repo.getTotalPayments();  // optional
-  const todaySales = await repo.getTodaySales();
+  const todayMetrics = await repo.getTodayMetrics();
+  const totalPayments = await repo.getTotalPayments(); // optional
+  // const todaySales = await repo.getTodaySales();
   const topProducts = await repo.getTopProducts();
   const salesBySalesperson = await repo.getSalesBySalesperson();
   const recentSales = await repo.getRecentSales();
@@ -14,26 +15,34 @@ exports.getDashboardData = async () => {
 
   return {
     totals: {
-      gross_revenue: Number(totalSales.rows[0].total_revenue),   // correct
-      total_sales: Number(totalSales.rows[0].total_sales),       // correct
-      avg_order_value: Number(totalSales.rows[0].avg_order_value), // correct
-      total_payments: Number(totalPayments.rows[0].total_payments), // optional
+      all: {
+        revenue:
+          Number(totalSales.rows[0].total_revenue) -
+          Number(totalDiscount.rows[0].total_discount),
 
+        total_sales: Number(totalSales.rows[0].total_sales),
+
+        avg_order_value: Number(totalSales.rows[0].avg_order_value),
+      },
+
+      today: {
+        revenue: Number(todayMetrics.rows[0].today_revenue),
+
+        total_sales: Number(todayMetrics.rows[0].today_sales),
+
+        avg_order_value: Number(todayMetrics.rows[0].today_avg_order_value),
+      },
+
+      // unrelated global metrics (stay outside scope)
       total_customers: Number(customerCount.rows[0].total_customers),
       total_discount: Number(totalDiscount.rows[0].total_discount),
-
-      // Net Sales = Gross − Discount
-      net_sales:
-        Number(totalSales.rows[0].total_revenue) -
-        Number(totalDiscount.rows[0].total_discount),
-        today_revenue: Number(todaySales.rows[0].today_sales),
-
+      total_payments: Number(totalPayments.rows[0].total_payments),
     },
 
     charts: {
       top_products: topProducts.rows,
       sales_by_salesperson: salesBySalesperson.rows,
-      weekly_summary: weeklySales.rows
+      weekly_summary: weeklySales.rows,
     },
 
     tables: {
