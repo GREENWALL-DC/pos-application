@@ -25,7 +25,9 @@ exports.getDashboardData = async () => {
       // Net Sales = Gross − Discount
       net_sales:
         Number(totalSales.rows[0].total_revenue) -
-        Number(totalDiscount.rows[0].total_discount)
+        Number(totalDiscount.rows[0].total_discount),
+        today_revenue: Number(todaySales.rows[0].today_sales),
+
     },
 
     charts: {
