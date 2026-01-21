@@ -455,6 +455,10 @@ class SuccessScreen extends HookConsumerWidget {
   }
 }
 */
+
+
+
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -485,8 +489,22 @@ class SuccessScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settingsState = ref.watch(settingsNotifierProvider);
-    final companySettings = settingsState.settings!;
+
+final settingsState = ref.watch(settingsNotifierProvider);
+  final companySettings = settingsState.settings;
+
+  if (companySettings == null) {
+    return const Scaffold(
+      body: Center(
+        child: Text(
+          "Company settings not configured.\nPlease contact admin.",
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+
 
     print("🔥 SUCCESS SCREEN SALE ID = $saleId");
 

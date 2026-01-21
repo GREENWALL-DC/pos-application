@@ -30,8 +30,21 @@ class RecieptPreviewScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settingsState = ref.watch(settingsNotifierProvider);
-    final settings = settingsState.settings!;
+   final settingsState = ref.watch(settingsNotifierProvider);
+
+if (settingsState.settings == null) {
+  return const Scaffold(
+    body: Center(
+      child: Text(
+        "Company settings not configured.\nPlease contact admin.",
+        textAlign: TextAlign.center,
+      ),
+    ),
+  );
+}
+
+final settings = settingsState.settings!;
+
 
     final qrData = ZatcaQr.generate(
       sellerName: settings.companyNameEn,

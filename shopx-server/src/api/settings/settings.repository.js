@@ -49,7 +49,7 @@ async function updateCompanySettings(client, id, data) {
       company_address_ar=$4,
       vat_number=$5,
       cr_number=$6,
-      phone=$7,
+      phone=$7, 
       email=$8,
       account_number=$9,
       iban=$10,

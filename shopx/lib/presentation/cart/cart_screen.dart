@@ -143,11 +143,13 @@ class CartScreen extends HookConsumerWidget {
             ),
           );
         }
-
+       
         // 4. Clear cart
         ref.read(cartProvider.notifier).clearCart();
         print("🟢 SALE CREATED! Sale ID = $saleId");
 
+     
+      
         // 5. Navigate to success screen (CLEAR STACK – POS SAFE)
         Navigator.pushAndRemoveUntil(
           context,

@@ -35,7 +35,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
 
     useEffect(() {
       Future.microtask(() {
-        ref.read(settingsNotifierProvider.notifier).fetchSettings();
+        ref.read(settingsNotifierProvider.notifier).loadOnce();
       });
       return null;
     }, []);

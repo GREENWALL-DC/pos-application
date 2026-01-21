@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shopx/application/settings/settings_notifier.dart';
 import 'package:shopx/domain/auth/user_model.dart';
 import 'package:shopx/infrastructure/auth/auth_repositary.dart';
 import 'auth_state.dart';
@@ -72,8 +73,13 @@ class AuthNotifier extends Notifier<AuthState> {
               .getCurrentUser(_accessToken!)
               .timeout(const Duration(seconds: 4));
 
-          state = AuthState.authenticated(user);
-          return;
+         state = AuthState.authenticated(user);
+
+// 🔐 LOAD SETTINGS ONCE AFTER AUTH
+await ref.read(settingsNotifierProvider.notifier).loadOnce();
+
+return;
+
         } catch (_) {
           if (_refreshToken != null) {
             await _refreshTokenAndRecover();
@@ -137,6 +143,10 @@ class AuthNotifier extends Notifier<AuthState> {
       await _saveTokens(accessToken, refreshToken);
 
       state = AuthState.authenticated(user);
+
+// 🔐 LOAD SETTINGS ONCE
+await ref.read(settingsNotifierProvider.notifier).loadOnce();
+
     } catch (e) {
       state = AuthState.error(e.toString());
     }
@@ -161,7 +171,11 @@ class AuthNotifier extends Notifier<AuthState> {
 
       await _saveTokens(accessToken, refreshToken);
 
-      state = AuthState.authenticated(user);
+     state = AuthState.authenticated(user);
+
+// 🔐 LOAD SETTINGS ONCE
+await ref.read(settingsNotifierProvider.notifier).loadOnce();
+
     } catch (e) {
       state = AuthState.error(e.toString());
     }
