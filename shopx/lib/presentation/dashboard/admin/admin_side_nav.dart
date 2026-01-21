@@ -8,6 +8,7 @@ import 'package:shopx/presentation/dashboard/admin/pages/productPerformance/prod
 import 'package:shopx/presentation/dashboard/admin/pages/products/product_list_page.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/salesPerformance/sales_performance.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/salesperson/salesperson_list_page.dart';
+import 'package:shopx/presentation/dashboard/admin/pages/settings/admin_settings_page.dart';
 import 'package:shopx/presentation/dashboard/admin/pages/transaction/admin_transaction_history_page.dart';
 import 'package:shopx/presentation/dashboard/user/pages/customers/customer_list_page.dart';
 
@@ -68,6 +69,14 @@ final selectedIndex = adminNavIndex.value;
   'icon': Icons.receipt_long,
   'builder': (context) => const AdminTransactionHistoryPage(),
 },
+
+
+ // ✅ NEW — ADMIN SETTINGS
+  {
+    'title': 'Settings',
+    'icon': Icons.settings,
+    'builder': (context) => const AdminSettingsScreen(),
+  },
     ];
 
 

@@ -3,19 +3,23 @@ import 'package:shopx/domain/products/product.dart';
 class CartItem {
   final Product product;
   final double quantity;
+   final double sellingPrice; // 👈 NEW
 
   const CartItem({
     required this.product,
     required this.quantity,
+    required this.sellingPrice
   });
 
   CartItem copyWith({
     Product? product,
     double? quantity,
+    double? sellingPrice,
   }) {
     return CartItem(
       product: product ?? this.product,
       quantity: quantity ?? this.quantity,
+       sellingPrice: sellingPrice ?? this.sellingPrice,
     );
   }
 }
@@ -34,7 +38,7 @@ class CartState {
   double get totalPrice {
     double sum = 0;
     for (final item in items) {
-      sum += item.product.price * item.quantity;
+      sum += item.sellingPrice * item.quantity;
     }
     return sum;
   }

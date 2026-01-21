@@ -11,7 +11,9 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shopx/application/settings/settings_notifier.dart';
 import 'package:shopx/domain/reciept/receipt_data.dart';
+import 'package:shopx/domain/settings/company_settings.dart';
 import 'package:shopx/domain/utils/zatca_qr.dart';
 import 'package:shopx/infrastructure/printer/receipt_image_builder.dart';
 import 'package:shopx/infrastructure/printer/thermal_printer_service.dart'; // Ensure path matches your project structure
@@ -28,9 +30,12 @@ class RecieptPreviewScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settingsState = ref.watch(settingsNotifierProvider);
+    final settings = settingsState.settings!;
+
     final qrData = ZatcaQr.generate(
-      sellerName: receipt.companyNameEn,
-      vatNumber: receipt.vatNumber,
+      sellerName: settings.companyNameEn,
+      vatNumber: settings.vatNumber,
       invoiceDate: receipt.invoiceDate,
       totalWithVat: receipt.netTotal,
       vatAmount: receipt.vatAmount,
@@ -104,7 +109,7 @@ class RecieptPreviewScreen extends HookConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  _buildHeader(receipt),
+                                  _buildHeader(settings),
                                   _buildCustomerInfo(receipt),
                                   _buildItemsTable(receipt),
                                   _buildTotals(receipt),
@@ -205,36 +210,38 @@ class RecieptPreviewScreen extends HookConsumerWidget {
   }
 
   // --- HEADER SECTION ---
-  Widget _buildHeader(ReceiptData r) {
+  Widget _buildHeader(CompanySettings s) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 20, 15, 10),
       child: Column(
         children: [
-          const Text(
-            "SAQAF NAQAL TRADING Est.",
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+          Text(
+            s.companyNameEn,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             textAlign: TextAlign.center,
           ),
-          const Text(
-            "مؤسسة سقاف النقل التجارية",
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+          Text(
+            s.companyNameAr,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 5),
-          const Text(
-            "MAKKAH-KSA",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          Text(
+            s.companyAddressEn,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
           Text(
-            "CR: ${r.crNumber}",
+            "CR: ${s.crNumber}",
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
-          const Text(
-            "Mobile : 0571830599",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
+          if (s.phone != null)
+            Text(
+              "Mobile: ${s.phone}",
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
           Text(
-            "VAT : ${r.vatNumber}",
+            "VAT: ${s.vatNumber}",
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
@@ -251,13 +258,12 @@ class RecieptPreviewScreen extends HookConsumerWidget {
         children: [
           _bilingualRow("Customer", ": ${r.customerName}", "اسم العميل"),
 
-if (r.customerVat != null && r.customerVat!.isNotEmpty)
-  _bilingualRow(
-    "Customer VAT",
-    ": ${r.customerVat}",
-    "الرقم الضريبي للعميل",
-  ),
-
+          if (r.customerVat != null && r.customerVat!.isNotEmpty)
+            _bilingualRow(
+              "Customer VAT",
+              ": ${r.customerVat}",
+              "الرقم الضريبي للعميل",
+            ),
 
           // _bilingualRow("InvoiceDate", ": ${r.invoiceDate}", "تاريخ الفاتورة"),
           _bilingualRow(

@@ -14,6 +14,7 @@ const dashboardRoutes = require("./src/api/dashboard/dashboard.routes");
 const stockRoutes = require("./src/api/stock/stock.routes");
 const uploadProductImage = require("./src/middleware/uploadProductImage");
 const userRoutes = require("./src/api/users/user.routes");
+const settingsRoutes = require("./api/settings/settings.routes");
 
 //middleware
 app.use(
@@ -37,6 +38,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/company-settings", settingsRoutes);
 // Serve uploaded files
 app.use("/uploads", express.static("uploads"));
 

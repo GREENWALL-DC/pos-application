@@ -26,11 +26,11 @@ class ReceiptData {
   // --------------------
   final String companyNameEn;
   final String companyNameAr;
-  final String city;
-  final String country;
+  // final String city;
+  // final String country;
   final String crNumber;
   final String vatNumber;
-  final String mobile;
+  final String? mobile;
 
   //customer Information
   
@@ -68,11 +68,11 @@ class ReceiptData {
   const ReceiptData({
     required this.companyNameEn,
     required this.companyNameAr,
-    required this.city,
-    required this.country,
+    // required this.city,
+    // required this.country,
     required this.crNumber,
     required this.vatNumber,
-    required this.mobile,
+     this.mobile,
      this.customerAddress,
      this.customerPhone,
      this.customerVat,

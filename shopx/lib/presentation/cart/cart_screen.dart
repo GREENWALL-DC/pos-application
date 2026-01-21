@@ -21,33 +21,28 @@ class CartScreen extends HookConsumerWidget {
     final customerState = ref.watch(customerNotifierProvider);
     final customers = customerState.customers; // list from backend
 
-    final selectedCustomer = useState<Customer?>(
-      null,
-    ); 
-    
-    //storing selected 
-    
+    final selectedCustomer = useState<Customer?>(null);
 
+    //storing selected
 
-// useEffect(() {
-//   Future.microtask(() {
-//     // 🧾 Cart needs ALL customers
-//     ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
-//   });
-//   return null;
-// }, []);
+    // useEffect(() {
+    //   Future.microtask(() {
+    //     // 🧾 Cart needs ALL customers
+    //     ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
+    //   });
+    //   return null;
+    // }, []);
 
-useEffect(() {
-  Future.microtask(() {
-    final customerState = ref.read(customerNotifierProvider);
+    useEffect(() {
+      Future.microtask(() {
+        final customerState = ref.read(customerNotifierProvider);
 
-    if (customerState.customers.isEmpty) {
-      ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
-    }
-  });
-  return null;
-}, []);
-
+        if (customerState.customers.isEmpty) {
+          ref.read(customerNotifierProvider.notifier).fetchAllCustomers();
+        }
+      });
+      return null;
+    }, []);
 
     // Discount input controller
     final discountController = useTextEditingController();
@@ -68,17 +63,16 @@ useEffect(() {
 
     // 3. Payment Method State (Local Hook)
     // Value is 'cash' or 'card'
-final paymentMethod = useState<String>("cash");
-final paymentStatus = useState<String>("paid"); // 👈 NEW
-final hasCustomerError = useState<bool>(false);
-
+    final paymentMethod = useState<String>("cash");
+    final paymentStatus = useState<String>("paid"); // 👈 NEW
+    final hasCustomerError = useState<bool>(false);
 
     // ================= DISCOUNT + VAT LOGIC =================
 
     // Subtotal (gross)
     final double subTotal = cartItems.fold(
       0,
-      (sum, item) => sum + (item.product.price * item.quantity),
+      (sum, item) => sum + (item.sellingPrice * item.quantity),
     );
 
     // --- LOGIC: Place Order ---
@@ -99,19 +93,18 @@ final hasCustomerError = useState<bool>(false);
       // }
 
       if (nameCtrl.text.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Please enter customer name")),
-  );
-  return;
-}
-
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter customer name")),
+        );
+        return;
+      }
 
       // 2. Prepare sale items for backend
       final saleItems = cartItems.map((item) {
         return {
           "product_id": item.product.id,
           "quantity": item.quantity,
-          "unit_price": item.product.price,
+          "unit_price": item.sellingPrice,
         };
       }).toList();
 
@@ -137,7 +130,7 @@ final hasCustomerError = useState<bool>(false);
               customerId: selectedCustomer.value?.id ?? 0,
               items: saleItems,
               paymentMethod: paymentMethod.value,
-               paymentStatus: paymentStatus.value, // 👈 NEW
+              paymentStatus: paymentStatus.value, // 👈 NEW
               discountAmount: discountAmount.value,
             );
 
@@ -234,106 +227,115 @@ final hasCustomerError = useState<bool>(false);
                           final item = cartItems[index];
                           final product = item.product;
                           final double itemTotal =
-                              product.price * item.quantity;
+                              item.sellingPrice * item.quantity;
 
-                          return Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                // Product Image
-                                Container(
-                                  width: 70,
-                                  height: 70,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: Colors.grey[100],
-                                    image: product.images.isNotEmpty
-                                        ? DecorationImage(
-                                            image: NetworkImage(
-                                              "http://localhost:5000${product.images.first}",
-                                            ),
-                                            fit: BoxFit.cover,
+                          return GestureDetector(
+                            onLongPress: () {
+                              _showPriceEditSheet(
+                                context: context,
+                                ref: ref,
+                                item: item,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  // Product Image
+                                  Container(
+                                    width: 70,
+                                    height: 70,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.grey[100],
+                                      image: product.images.isNotEmpty
+                                          ? DecorationImage(
+                                              image: NetworkImage(
+                                                "http://localhost:5000${product.images.first}",
+                                              ),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : null,
+                                    ),
+                                    child: product.images.isEmpty
+                                        ? const Icon(
+                                            Icons.image,
+                                            color: Colors.grey,
                                           )
                                         : null,
                                   ),
-                                  child: product.images.isEmpty
-                                      ? const Icon(
-                                          Icons.image,
-                                          color: Colors.grey,
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 12),
-                                // Details
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        product.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: Color(0xFF1F2937),
+                                  const SizedBox(width: 12),
+                                  // Details
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product.name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: Color(0xFF1F2937),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "Qty: ${item.quantity.toInt()} x SAR ${product.price}",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[500],
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "Qty: ${item.quantity.toInt()} x SAR ${item.sellingPrice}",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[500],
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "SAR ${itemTotal.toStringAsFixed(2)}", // Item total logic if needed
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "SAR ${itemTotal.toStringAsFixed(2)}", // Item total logic if needed
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // Delete Button
-                                GestureDetector(
-                                  onTap: () {
-                                    ref
-                                        .read(cartProvider.notifier)
-                                        .removeFromCart(product.id ?? "");
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: blueColor.withOpacity(0.2),
-                                      ),
-                                      color: Colors.white,
-                                    ),
-                                    child: const Icon(
-                                      Icons.delete_outline,
-                                      size: 18,
-                                      color: blueColor,
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                  // Delete Button
+                                  GestureDetector(
+                                    onTap: () {
+                                      ref
+                                          .read(cartProvider.notifier)
+                                          .removeFromCart(product.id ?? "");
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: blueColor.withOpacity(0.2),
+                                        ),
+                                        color: Colors.white,
+                                      ),
+                                      child: const Icon(
+                                        Icons.delete_outline,
+                                        size: 18,
+                                        color: blueColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -401,14 +403,16 @@ final hasCustomerError = useState<bool>(false);
                                   });
 
                                   return Container(
-                                   decoration: BoxDecoration(
-  color: const Color(0xFFF3F4F6),
-  borderRadius: BorderRadius.circular(12),
-  border: Border.all(
-    color: hasCustomerError.value ? Colors.red : Colors.blue,
-    width: 1.5,
-  ),
-),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: hasCustomerError.value
+                                            ? Colors.red
+                                            : Colors.blue,
+                                        width: 1.5,
+                                      ),
+                                    ),
 
                                     child: TextField(
                                       controller: controller,
@@ -444,14 +448,15 @@ final hasCustomerError = useState<bool>(false);
                               phoneCtrl.text = selected.phone ?? "";
                               addressCtrl.text = selected.address;
 
-                               hasCustomerError.value = false; // ✅ clear red state
+                              hasCustomerError.value =
+                                  false; // ✅ clear red state
                             },
                           ),
 
                           const SizedBox(height: 12),
 
                           _buildTextField(
-                            controller: phoneCtrl, 
+                            controller: phoneCtrl,
 
                             hint: "Phone number",
                             icon: Icons.phone_outlined,
@@ -480,44 +485,45 @@ final hasCustomerError = useState<bool>(false);
                       child: Column(
                         children: [
                           // Cash Option
-                       _buildPaymentOption(
-  label: "Cash",
-  imageAsset: "assets/images/saudi-arabia-official-riyal-sign.png",
-  isSelected: paymentMethod.value == 'cash',
-  onTap: () {
-    paymentMethod.value = 'cash';
-    paymentStatus.value = 'paid'; // 👈 IMPORTANT
-  },
-  activeColor: blueColor,
-),
+                          _buildPaymentOption(
+                            label: "Cash",
+                            imageAsset:
+                                "assets/images/saudi-arabia-official-riyal-sign.png",
+                            isSelected: paymentMethod.value == 'cash',
+                            onTap: () {
+                              paymentMethod.value = 'cash';
+                              paymentStatus.value = 'paid'; // 👈 IMPORTANT
+                            },
+                            activeColor: blueColor,
+                          ),
 
-const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-_buildPaymentOption(
-  label: "Bank / Card",
-  icon: Icons.account_balance,
-  isSelected: paymentMethod.value == 'card',
-  onTap: () {
-    paymentMethod.value = 'card';
-    paymentStatus.value = 'paid'; // 👈 IMPORTANT
-  },
-  activeColor: blueColor,
-),
+                          _buildPaymentOption(
+                            label: "Bank / Card",
+                            icon: Icons.account_balance,
+                            isSelected: paymentMethod.value == 'card',
+                            onTap: () {
+                              paymentMethod.value = 'card';
+                              paymentStatus.value = 'paid'; // 👈 IMPORTANT
+                            },
+                            activeColor: blueColor,
+                          ),
 
-const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-// ✅ NEW: Pending option
-_buildPaymentOption(
-  label: "Pending",
-  icon: Icons.schedule,
-  isSelected: paymentStatus.value == 'pending',
-  onTap: () {
-    paymentMethod.value = 'pending'; // for record
-    paymentStatus.value = 'pending'; // 👈 THIS IS THE KEY
-  },
-  activeColor: Colors.orange,
-),
-
+                          // ✅ NEW: Pending option
+                          _buildPaymentOption(
+                            label: "Pending",
+                            icon: Icons.schedule,
+                            isSelected: paymentStatus.value == 'pending',
+                            onTap: () {
+                              paymentMethod.value = 'pending'; // for record
+                              paymentStatus.value =
+                                  'pending'; // 👈 THIS IS THE KEY
+                            },
+                            activeColor: Colors.orange,
+                          ),
                         ],
                       ),
                     ),
@@ -782,6 +788,95 @@ _buildPaymentOption(
           ),
         ],
       ),
+    );
+  }
+
+  void _showPriceEditSheet({
+    required BuildContext context,
+    required WidgetRef ref,
+    required dynamic item,
+  }) {
+    final controller = TextEditingController(
+      text: item.sellingPrice.toString(),
+    );
+
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            top: 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                item.product.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Base price (read-only)
+              Text(
+                "Base Price: SAR ${item.product.price}",
+                style: const TextStyle(color: Colors.grey),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: "Selling Price",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Cancel"),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final newPrice = double.tryParse(controller.text);
+
+                        if (newPrice == null || newPrice <= 0) return;
+
+                        ref
+                            .read(cartProvider.notifier)
+                            .updateSellingPrice(item.product.id!, newPrice);
+
+                        Navigator.pop(context);
+                      },
+                      child: const Text("Apply"),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

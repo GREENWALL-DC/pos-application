@@ -4,7 +4,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shopx/application/payments/payments_notifier.dart';
 import 'package:shopx/application/sales/sales_notifier.dart';
+import 'package:shopx/application/settings/settings_notifier.dart';
+import 'package:shopx/core/constants.dart';
+import 'package:shopx/domain/reciept/reciept_from_sale.dart';
 import 'package:shopx/domain/sales/sale.dart';
+import 'package:shopx/presentation/printpreview/reciept_preview_screen.dart';
 
 class TransactionDetailSheet extends HookConsumerWidget {
   final Sale sale;
@@ -18,14 +22,17 @@ class TransactionDetailSheet extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settingsState = ref.watch(settingsNotifierProvider);
+final companySettings = settingsState.settings!;
+
+    
     // ✅ FETCH FULL INVOICE WHEN SHEET OPENS
-   useEffect(() {
+    useEffect(() {
       Future.microtask(() {
         ref.read(salesNotifierProvider.notifier).fetchSaleById(sale.id);
       });
       return null;
     }, []);
-
 
     final salesState = ref.watch(salesNotifierProvider);
     final invoice = salesState.sale; // FULL invoice
@@ -88,60 +95,70 @@ class TransactionDetailSheet extends HookConsumerWidget {
               style: TextStyle(color: Colors.grey),
             )
           else
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             // ================= ITEMS LIST =================
-...items.map((item) {
-  final unitPrice = item.totalPrice / item.quantity;
+            ...items.map((item) {
+              final unitPrice = item.totalPrice / item.quantity;
 
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          item.productName,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.productName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "${item.quantity} × SAR ${unitPrice.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          "SAR ${item.totalPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+          kHeight30,
+
+          // ================= PREVIEW RECEIPT =================
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.receipt_long),
+              label: const Text("Preview Receipt"),
+              onPressed: invoice == null
+                  ? null
+                  : () {
+                      final receipt = receiptFromSale(invoice,companySettings);
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              RecieptPreviewScreen(receipt: receipt),
+                        ),
+                      );
+                    },
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "${item.quantity} × SAR ${unitPrice.toStringAsFixed(2)}",
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
-            ),
-            Text(
-              "SAR ${item.totalPrice.toStringAsFixed(2)}",
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}),
-
-          const SizedBox(height: 30),
 
           // ✅ Only show button if pending
           if (isPending)

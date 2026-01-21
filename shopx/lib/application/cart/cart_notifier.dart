@@ -22,8 +22,22 @@ class CartNotifier extends Notifier<CartState> {
       list[index] = updated;
     } else {
       // Add new item
-      list.add(CartItem(product: product, quantity: qty));
+      list.add(
+        CartItem(product: product, quantity: qty, sellingPrice: product.price),
+      );
     }
+
+    state = state.copyWith(items: list);
+  }
+
+  //New
+  void updateSellingPrice(String productId, double newPrice) {
+    final list = [...state.items];
+
+    final index = list.indexWhere((i) => i.product.id == productId);
+    if (index == -1) return;
+
+    list[index] = list[index].copyWith(sellingPrice: newPrice);
 
     state = state.copyWith(items: list);
   }
@@ -40,5 +54,6 @@ class CartNotifier extends Notifier<CartState> {
   }
 }
 
-final cartProvider =
-    NotifierProvider<CartNotifier, CartState>(CartNotifier.new);
+final cartProvider = NotifierProvider<CartNotifier, CartState>(
+  CartNotifier.new,
+);

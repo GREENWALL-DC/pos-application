@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shopx/application/settings/settings_notifier.dart';
 import 'package:shopx/core/constants.dart';
+import 'package:shopx/domain/reciept/reciept_from_sale.dart';
 import 'package:shopx/domain/sales/sale.dart';
+import 'package:shopx/presentation/printpreview/reciept_preview_screen.dart';
 
 class TransactionDetailsDialog extends HookConsumerWidget {
   final Sale sale;
@@ -28,6 +31,9 @@ class TransactionDetailsDialog extends HookConsumerWidget {
   bool get _isVoided => sale.saleStatus == 'voided';
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settingsState = ref.watch(settingsNotifierProvider);
+final companySettings = settingsState.settings!;
+
     final isSubmitting = useState(false);
 
     return Dialog(
@@ -125,6 +131,28 @@ class TransactionDetailsDialog extends HookConsumerWidget {
                 _statusChip(),
 
                 const SizedBox(height: 24),
+
+                // ================= PREVIEW RECEIPT =================
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.receipt_long),
+                    label: const Text("Preview Receipt"),
+                    onPressed: () {
+                      final receipt = receiptFromSale(sale,companySettings);
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              RecieptPreviewScreen(receipt: receipt),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                kHeight16,
 
                 // if (_isPending) _markAsPaidButton(context),
                 if (!_isVoided && _isPending)
