@@ -14,7 +14,7 @@ const dashboardRoutes = require("./src/api/dashboard/dashboard.routes");
 const stockRoutes = require("./src/api/stock/stock.routes");
 const uploadProductImage = require("./src/middleware/uploadProductImage");
 const userRoutes = require("./src/api/users/user.routes");
-const settingsRoutes = require("./api/settings/settings.routes");
+const settingsRoutes = require("./src/api/settings/settings.routes");
 
 //middleware
 app.use(
