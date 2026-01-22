@@ -19,6 +19,11 @@ class AdminSettingsScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsState = ref.watch(settingsNotifierProvider);
 
+    useEffect(() {
+      ref.read(settingsNotifierProvider.notifier).loadOnce();
+      return null;
+    }, []);
+
     // Text Controllers
     final nameEnController = useTextEditingController();
     final nameArController = useTextEditingController();
@@ -55,6 +60,8 @@ class AdminSettingsScreen extends HookConsumerWidget {
       return null;
     }, [settingsState.settings]);
 
+    final isEditing = useState(false);
+
     // Form Key for validation
     final formKey = useMemoized(() => GlobalKey<FormState>());
 
@@ -70,14 +77,45 @@ class AdminSettingsScreen extends HookConsumerWidget {
       }
     }
 
+    bool _isFormValid({
+      required TextEditingController nameEn,
+      required TextEditingController nameAr,
+      required TextEditingController addressEn,
+      required TextEditingController addressAr,
+      required TextEditingController mobile,
+      required TextEditingController vat,
+      required TextEditingController cr,
+    }) {
+      return nameEn.text.trim().isNotEmpty &&
+          nameAr.text.trim().isNotEmpty &&
+          addressEn.text.trim().isNotEmpty &&
+          addressAr.text.trim().isNotEmpty &&
+          mobile.text.trim().isNotEmpty &&
+          vat.text.trim().isNotEmpty &&
+          cr.text.trim().isNotEmpty;
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Settings", style: TextStyle(color: Colors.white)),
+        title: Text(
+          isEditing.value ? "Edit Settings" : "Settings",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.blue,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        actions: [
+          if (!isEditing.value)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                isEditing.value = true;
+              },
+            ),
+        ],
       ),
+
       body: settingsState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -128,7 +166,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
                             bottom: 0,
                             right: 0,
                             child: GestureDetector(
-                              onTap: pickImage,
+                              onTap: isEditing.value ? pickImage : null,
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: const BoxDecoration(
@@ -153,17 +191,20 @@ class AdminSettingsScreen extends HookConsumerWidget {
                     // 4. Form Fields
 
                     // Company Name (English)
-                    _buildTextField(
-                      label: "Company Name (English)",
-                      controller: nameEnController,
-                      isRequired: true,
-                    ),
+                   _buildTextField(
+  label: "Company Name (English)*",
+  controller: nameEnController,
+  isEditing: isEditing.value, // ✅ ADD THIS
+  isRequired: true,
+),
+
                     const SizedBox(height: 10),
 
                     // Company Name (Arabic)
                     _buildTextField(
-                      label: "Company Name (Arabic)",
+                      label: "Company Name (Arabic)*",
                       controller: nameArController,
+                      isEditing: isEditing.value,
                       isRequired: true,
                       isRtl: true,
                     ),
@@ -171,21 +212,24 @@ class AdminSettingsScreen extends HookConsumerWidget {
 
                     // Address(English )
                     _buildTextField(
-                      label: "Company Address(English)",
+                      label: "Company Address(English)*",
+                      isEditing: isEditing.value,
                       controller: addressEnController,
                     ),
                     const SizedBox(height: 10),
 
                     _buildTextField(
-                      label: "Company Address(Arabic)",
+                      label: "Company Address(Arabic)*",
+                      isEditing: isEditing.value,
                       controller: addressArController,
                     ),
                     const SizedBox(height: 10),
 
                     // Mobile
                     _buildTextField(
-                      label: "Mobile",
+                      label: "Mobile*",
                       controller: mobileController,
+                      isEditing: isEditing.value,
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 10),
@@ -194,6 +238,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
                     _buildTextField(
                       label: "Email",
                       controller: emailController,
+                      isEditing: isEditing.value,
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 10),
@@ -201,6 +246,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
                     // Account Number
                     _buildTextField(
                       label: "Account Number",
+                      isEditing: isEditing.value,
                       controller: accountController,
                     ),
                     const SizedBox(height: 10),
@@ -208,13 +254,15 @@ class AdminSettingsScreen extends HookConsumerWidget {
                     // IBAN
                     _buildTextField(
                       label: "International Bank Account Number (IBAN)",
+                      isEditing: isEditing.value,
                       controller: ibanController,
                     ),
                     const SizedBox(height: 10),
 
                     // VAT Number
                     _buildTextField(
-                      label: "VAT Number",
+                      label: "VAT Number*",
+                      isEditing: isEditing.value,
                       controller: vatController,
                       isRequired: true,
                       keyboardType: TextInputType.number,
@@ -223,86 +271,130 @@ class AdminSettingsScreen extends HookConsumerWidget {
 
                     // CR Number
                     _buildTextField(
-                      label: "CR Number",
+                      label: "CR Number*",
                       controller: crController,
+                      isEditing: isEditing.value,
                       isRequired: true,
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 30),
 
                     // 6. Save Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
+                    if (isEditing.value)
+                      AnimatedBuilder(
+                        animation: Listenable.merge([
+                          nameEnController,
+                          nameArController,
+                          addressEnController,
+                          addressArController,
+                          mobileController,
+                          vatController,
+                          crController,
+                        ]),
+                        builder: (context, _) {
+                          final isValid = _isFormValid(
+                            nameEn: nameEnController,
+                            nameAr: nameArController,
+                            addressEn: addressEnController,
+                            addressAr: addressArController,
+                            mobile: mobileController,
+                            vat: vatController,
+                            cr: crController,
+                          );
 
+                          return SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: isValid
+                                  ? () async {
+                                      if (!formKey.currentState!.validate())
+                                        return;
 
+                                      final notifier = ref.read(
+                                        settingsNotifierProvider.notifier,
+                                      );
 
-                       onPressed: () async {
-  if (!formKey.currentState!.validate()) return;
+                                      String? finalLogoUrl = imagePath.value;
 
-  final notifier = ref.read(settingsNotifierProvider.notifier);
+                                      if (imageBytes.value != null) {
+                                        finalLogoUrl = await notifier
+                                            .uploadCompanyLogo(
+                                              imageBytes.value!,
+                                            );
+                                      }
 
-  String? finalLogoUrl = imagePath.value;
+                                      final settings = CompanySettings(
+                                        id: settingsState.settings?.id ?? 0,
+                                        companyNameEn: nameEnController.text
+                                            .trim(),
+                                        companyNameAr: nameArController.text
+                                            .trim(),
+                                        companyAddressEn: addressEnController
+                                            .text
+                                            .trim(),
+                                        companyAddressAr: addressArController
+                                            .text
+                                            .trim(),
+                                        vatNumber: vatController.text.trim(),
+                                        crNumber: crController.text.trim(),
+                                        phone: mobileController.text.trim(),
+                                        email:
+                                            emailController.text.trim().isEmpty
+                                            ? null
+                                            : emailController.text.trim(),
+                                        accountNumber:
+                                            accountController.text
+                                                .trim()
+                                                .isEmpty
+                                            ? null
+                                            : accountController.text.trim(),
+                                        iban: ibanController.text.trim().isEmpty
+                                            ? null
+                                            : ibanController.text.trim(),
+                                        logoUrl: finalLogoUrl,
+                                        createdAt: DateTime.now(),
+                                      );
 
-  // 🔥 STEP 1: upload logo if a new image was selected
-  if (imageBytes.value != null) {
-    finalLogoUrl = await notifier.uploadCompanyLogo(
-      imageBytes.value!,
-    );
-  }
+                                      await notifier.saveSettings(settings);
 
-  // 🔥 STEP 2: save settings with REAL backend logoUrl
-  final settings = CompanySettings(
-    id: settingsState.settings?.id ?? 0,
-    companyNameEn: nameEnController.text.trim(),
-    companyNameAr: nameArController.text.trim(),
-    companyAddressEn: addressEnController.text.trim(),
-    companyAddressAr: addressArController.text.trim(),
-    vatNumber: vatController.text.trim(),
-    crNumber: crController.text.trim(),
-    phone: mobileController.text.trim().isEmpty
-        ? null
-        : mobileController.text.trim(),
-    email: emailController.text.trim().isEmpty
-        ? null
-        : emailController.text.trim(),
-    accountNumber: accountController.text.trim().isEmpty
-        ? null
-        : accountController.text.trim(),
-    iban: ibanController.text.trim().isEmpty
-        ? null
-        : ibanController.text.trim(),
-    logoUrl: finalLogoUrl, // ✅ BACKEND URL
-    createdAt: DateTime.now(),
-  );
+                                      // 🔁 BACK TO VIEW MODE
+                                      isEditing.value = false;
 
-  await notifier.saveSettings(settings);
-
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Settings saved successfully")),
-    );
-  }
-}
-,
-
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          "Save",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Settings saved successfully",
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isValid
+                                    ? Colors.blue
+                                    : Colors.grey.shade400,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                "Save",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ),
+
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -313,19 +405,24 @@ class AdminSettingsScreen extends HookConsumerWidget {
 
   // Helper widget to build standard text fields
   Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    bool isRequired = false,
-    bool isRtl = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
+  required String label,
+  required TextEditingController controller,
+  required bool isEditing, // ✅ ADD THIS
+  bool isRequired = false,
+  bool isRtl = false,
+  TextInputType keyboardType = TextInputType.text,
+}) {
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      enabled: isEditing,
+      readOnly: !isEditing,
       textAlign: isRtl ? TextAlign.right : TextAlign.left,
       textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
       decoration: InputDecoration(
         labelText: label,
+
         labelStyle: const TextStyle(color: Colors.grey),
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(

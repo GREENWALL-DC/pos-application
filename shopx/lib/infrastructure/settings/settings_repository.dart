@@ -13,11 +13,18 @@ class SettingsRepository {
     return CompanySettings.fromJson(json);
   }
 
-  /// 🔥 UPLOAD COMPANY LOGO (MULTIPART)
-  Future<String> uploadCompanyLogo(Uint8List bytes) async {
-    final res = await api.uploadCompanyLogo(bytes);
-    return res['logoUrl'] as String;
-  }
+ /// 🔥 UPLOAD COMPANY LOGO (MULTIPART)
+Future<String> uploadCompanyLogo(Uint8List bytes) async {
+  final res = await api.uploadCompanyLogo(bytes);
+
+  final relativePath = res['logoUrl'] as String;
+
+  // 🔑 Convert to FULL URL (same idea as product images)
+  final baseUrl = api.dio.options.baseUrl.replaceAll('/api/', '');
+
+  return '$baseUrl$relativePath';
+}
+
 
   /// 💾 SAVE SETTINGS
   Future<CompanySettings> saveSettings(CompanySettings settings) async {

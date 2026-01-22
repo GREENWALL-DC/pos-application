@@ -802,7 +802,11 @@ class PdfReceiptService {
                     ),
                     pw.Expanded(
                       child: _headerBlock(bold, settings.companyNameAr, settings.companyAddressAr, 
-                      'رقم الضريبية : ${settings.vatNumber}\nرقم السجل التجاري : ${settings.crNumber}', pw.TextAlign.right),
+                      // 'رقم الضريبية : ${settings.vatNumber}\nرقم السجل التجاري : ${settings.crNumber}'
+                      'رقم الضريبة : ${settings.vatNumber}\nرقم السجل التجاري : ${settings.crNumber}'
+
+                      , 
+                      pw.TextAlign.right),
                     ),
                   ],
                 ),
@@ -839,7 +843,7 @@ class PdfReceiptService {
                 },
                 children: [
                   _infoRow(regular, 'Inv No.', 'INV/${receipt.invoiceDate.year}/${receipt.invoiceNumber}', 'رقم الفاتورة', 'Address', receipt.customerAddress ?? '', 'عنوان المورد'),
-                  _infoRow(regular, 'Inv. Date', invoiceDateFormatted, 'تاريخ الإصدار', 'VAT. No', settings.vatNumber, 'الرقم الضريبي'),
+                  _infoRow(regular, 'Inv. Date', invoiceDateFormatted, 'تاريخ الإصدار', 'VAT. No', settings.vatNumber, 'رقم الضريبة'),
                   _infoRow(regular, 'Delivery', deliveryDateFormatted, 'تاريخ التوريد', 'Due Date', deliveryDateFormatted, 'تاريخ الاستحقاق'),
                   _infoRow(regular, 'Inv. Type', 'Tax Invoice', 'نوع الفاتورة', 'Ref', 'Office Jed1/0238', 'المرجع'),
                 ],
@@ -861,8 +865,8 @@ class PdfReceiptService {
                 children: [
                   _infoRow(regular, 'Customer', receipt.customerName, 'اسم العميل', 'Customer', receipt.customerName, 'اسم العميل'),
                   _infoRow(regular, 'Address', receipt.customerAddress ?? '', 'عنوان العميل', 'Address', receipt.customerAddress ?? '', 'عنوان العميل'),
-                  _infoRow(regular, 'PhoneNo.', receipt.customerPhone ?? '', 'الهاتف', 'CR', settings.crNumber, 'السجل التجاري'),
-                  _infoRow(regular, 'Code', 'Sameer', 'رقم العميل', 'VAT. No', settings.vatNumber, 'الرقم الضريبي'),
+                  _infoRow(regular, 'PhoneNo.', receipt.customerPhone ?? '', 'الهاتف', 'CR', settings.crNumber, 'رقم السجل التجاري'),
+                  _infoRow(regular, 'Code', 'Sameer', 'رقم العميل', 'VAT. No', settings.vatNumber, 'رقم الضريبة'),
                 ],
               ),
 

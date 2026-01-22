@@ -12,6 +12,9 @@ class SettingsApi {
 
   SettingsApi(this._dio);
 
+    // ✅ expose dio safely (read-only)
+  Dio get dio => _dio;
+
   // GET settings
   Future<Map<String, dynamic>> getSettings() async {
     final res = await _dio.get('/company-settings');
@@ -25,24 +28,21 @@ class SettingsApi {
   }
 
   // 🔥 UPLOAD COMPANY LOGO
-  Future<Map<String, dynamic>> uploadCompanyLogo(Uint8List bytes) async {
-    final formData = FormData.fromMap({
-      'logo': MultipartFile.fromBytes(
-        bytes,
-        filename: 'company_logo.png',
-      ),
-    });
+ Future<Map<String, dynamic>> uploadCompanyLogo(Uint8List bytes) async {
+  final formData = FormData.fromMap({
+    'logo': MultipartFile.fromBytes(
+      bytes,
+      filename: 'company_logo.png',
+    ),
+  });
 
-    final res = await _dio.post(
-      '/company-settings/logo',
-      data: formData,
-      options: Options(
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
-    );
+  final res = await _dio.post(
+    '/company-settings/logo',
+    data: formData,
+    // ✅ NO manual headers
+  );
 
-    return res.data;
-  }
+  return res.data;
+}
+
 }
