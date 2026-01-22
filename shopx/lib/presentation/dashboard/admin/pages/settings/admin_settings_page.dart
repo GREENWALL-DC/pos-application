@@ -33,12 +33,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
     final imagePath = useState<String?>(null);
     final picker = useMemoized(() => ImagePicker());
 
-    useEffect(() {
-      Future.microtask(() {
-        ref.read(settingsNotifierProvider.notifier).loadOnce();
-      });
-      return null;
-    }, []);
+  
 
     useEffect(() {
       final settings = settingsState.settings;

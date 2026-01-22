@@ -706,7 +706,18 @@ class PdfReceiptService {
   required ReceiptData receipt,
   required CompanySettings settings,
 }) async {
+   
 
+    // 🔴 LEGAL SAFETY GUARD (MANDATORY)
+  if (settings.companyNameEn.isEmpty ||
+      settings.vatNumber.isEmpty ||
+      settings.crNumber.isEmpty) {
+    throw Exception(
+      "Illegal receipt generation: company settings incomplete",
+    );
+  }
+
+   
     final pdf = pw.Document();
 
     final regular = pw.Font.ttf(

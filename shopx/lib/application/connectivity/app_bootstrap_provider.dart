@@ -1,13 +1,9 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/auth/auth_notifier.dart';
 import 'package:shopx/application/connectivity/connectivity_provider.dart';
+import 'package:shopx/application/settings/settings_notifier.dart';
 
-enum AppBootstrapState {
-  offline,
-  ready,
-}
-
-
+enum AppBootstrapState { offline, ready }
 
 final appBootstrapProvider = Provider<AppBootstrapState>((ref) {
   final connectivity = ref.watch(connectivityProvider);
@@ -16,9 +12,7 @@ final appBootstrapProvider = Provider<AppBootstrapState>((ref) {
     loading: () => AppBootstrapState.ready, // ⛔ NEVER splash here
     error: (_, __) => AppBootstrapState.offline,
     data: (isOnline) {
-      return isOnline
-          ? AppBootstrapState.ready
-          : AppBootstrapState.offline;
+      return isOnline ? AppBootstrapState.ready : AppBootstrapState.offline;
     },
   );
 });
@@ -31,7 +25,7 @@ final authRetryOnConnectivityProvider = Provider((ref) {
         // Only when internet comes BACK online (was offline)
         final authNotifier = ref.read(authNotifierProvider.notifier);
         final authState = ref.read(authNotifierProvider);
-        
+
         // Check if we have tokens but aren't authenticated
         if (authNotifier.hasLocalSession && !authState.isAuthenticated) {
           // Give a small delay for network stabilization
@@ -43,3 +37,16 @@ final authRetryOnConnectivityProvider = Provider((ref) {
     });
   });
 });
+
+
+
+// newely added leave 
+// 🔥 LOAD COMPANY SETTINGS WHEN APP IS READY
+final settingsBootstrapProvider = Provider<void>((ref) {
+  ref.listen<AppBootstrapState>(appBootstrapProvider, (previous, next) {
+    if (next == AppBootstrapState.ready) {
+      ref.read(settingsNotifierProvider.notifier).loadOnce();
+    }
+  });
+});
+

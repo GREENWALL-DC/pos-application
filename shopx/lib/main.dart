@@ -5,7 +5,6 @@ import 'package:shopx/application/auth/auth_state.dart';
 import 'package:shopx/application/connectivity/app_bootstrap_provider.dart';
 import 'package:shopx/application/connectivity/connectivity_provider.dart';
 import 'package:shopx/application/dashboard/admin_dashboard_notifier.dart';
-import 'package:shopx/application/settings/settings_notifier.dart';
 import 'package:shopx/presentation/auth/selection/selection_screen.dart';
 import 'package:shopx/presentation/dashboard/admin/admin_dashboard.dart';
 import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
@@ -23,14 +22,6 @@ class MyApp extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
      // 🔥 ADD THIS LINE: Initialize the auth retry listener
     ref.read(authRetryOnConnectivityProvider);
-  
-
-   // ✅ ADD THIS (SAFE ONE-TIME LOAD)
-  Future.microtask(() {
-    ref.read(settingsNotifierProvider.notifier).loadOnce();
-  });
-
-
     final authState = ref.watch(authNotifierProvider);
     // final connectivity = ref.watch(connectivityProvider);
     final bootstrap = ref.watch(appBootstrapProvider);

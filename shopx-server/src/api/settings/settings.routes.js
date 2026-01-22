@@ -3,9 +3,18 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("./settings.controller");
+// const { validateCompanySettings } = require("./settings.validator");
+// const isAdmin = require("../middlewares/isAdmin");
 
-// Admin only (add auth middleware if you already use it)
+// POS + Admin
 router.get("/", controller.getCompanySettings);
-router.post("/", controller.saveCompanySettings);
+
+// Admin only (recommended)
+router.post(
+  "/",
+  // isAdmin,
+  // validateCompanySettings,
+  controller.saveCompanySettings
+);
 
 module.exports = router;

@@ -19,30 +19,29 @@ class SettingsNotifier extends Notifier<SettingsState> {
   }
 
   /// 🔐 LOAD SETTINGS ONLY ONCE PER APP SESSION
-  Future<void> loadOnce() async {
-    if (state.settings != null) return;
+ Future<void> loadOnce() async {
+  if (state.isLoading) return;
+  if (state.settings != null) return;
 
-    state = state.copyWith(isLoading: true, error: null);
+  state = state.copyWith(isLoading: true, error: null);
 
-    try {
-      final data =
-          await ref.read(settingsRepositoryProvider).getSettings();
+  try {
+    final data = await ref.read(settingsRepositoryProvider).getSettings();
 
-      if (data == null) {
-        throw Exception("Company settings not found");
-      }
-
-      state = state.copyWith(
-        isLoading: false,
-        settings: data,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
+    // ✅ NULL IS OK
+    state = state.copyWith(
+      isLoading: false,
+      settings: data, // may be null
+      error: null,
+    );
+  } catch (e) {
+    state = state.copyWith(
+      isLoading: false,
+      error: e.toString(),
+    );
   }
+}
+
 
   Future<void> saveSettings(CompanySettings settings) async {
     state = state.copyWith(isLoading: true, error: null);

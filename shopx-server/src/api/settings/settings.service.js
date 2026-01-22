@@ -1,44 +1,19 @@
-// src/api/settings/settings.service.js
-
 const repo = require("./settings.repository");
 
-async function getSettings(client) {
-  const settings = await repo.getCompanySettings(client);
-
-  // Ensure company settings always exist for POS flow
-  if (!settings) {
-    const defaultSettings = {
-      companyNameEn: "",
-      companyNameAr: "",
-      companyAddressEn: "",
-      companyAddressAr: "",
-      vatNumber: "",
-      crNumber: "",
-      phone: null,
-      email: null,
-      accountNumber: null,
-      iban: null,
-      logoUrl: null,
-    };
-
-    await repo.insertCompanySettings(client, defaultSettings);
-    return await repo.getCompanySettings(client);
-  }
-
-  return settings;
+async function getSettings() {
+  return await repo.getCompanySettings();
 }
 
-
-async function saveSettings(client, data) {
-  const existing = await repo.getCompanySettings(client);
+async function saveSettings(data) {
+  const existing = await repo.getCompanySettings();
 
   if (!existing) {
-    await repo.insertCompanySettings(client, data);
+    await repo.insertCompanySettings(data);
   } else {
-    await repo.updateCompanySettings(client, existing.id, data);
+    await repo.updateCompanySettings(existing.id, data);
   }
 
-  return await repo.getCompanySettings(client);
+  return await repo.getCompanySettings();
 }
 
 module.exports = {

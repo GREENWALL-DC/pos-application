@@ -1,12 +1,14 @@
-// src/api/settings/settings.repository.js
+const db = require("../../config/db");
 
-async function getCompanySettings(client) {
-  const result = await client.query(`SELECT * FROM company_settings LIMIT 1`);
+async function getCompanySettings() {
+  const result = await db.query(
+    `SELECT * FROM company_settings LIMIT 1`
+  );
   return result.rows[0] || null;
 }
 
-async function insertCompanySettings(client, data) {
-  await client.query(
+async function insertCompanySettings(data) {
+  await db.query(
     `
     INSERT INTO company_settings (
       company_name_en,
@@ -35,12 +37,12 @@ async function insertCompanySettings(client, data) {
       data.accountNumber,
       data.iban,
       data.logoUrl,
-    ],
+    ]
   );
 }
 
-async function updateCompanySettings(client, id, data) {
-  await client.query(
+async function updateCompanySettings(id, data) {
+  await db.query(
     `
     UPDATE company_settings SET
       company_name_en=$1,
@@ -49,7 +51,7 @@ async function updateCompanySettings(client, id, data) {
       company_address_ar=$4,
       vat_number=$5,
       cr_number=$6,
-      phone=$7, 
+      phone=$7,
       email=$8,
       account_number=$9,
       iban=$10,
@@ -70,7 +72,7 @@ async function updateCompanySettings(client, id, data) {
       data.iban,
       data.logoUrl,
       id,
-    ],
+    ]
   );
 }
 

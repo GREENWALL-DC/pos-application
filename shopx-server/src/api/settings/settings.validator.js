@@ -1,31 +1,23 @@
 // src/api/settings/settings.validator.js
 
 function validateCompanySettings(req, res, next) {
-  const {
-    companyNameEn,
-    companyNameAr,
-    companyAddressEn,
-    companyAddressAr,
-    vatNumber,
-    crNumber,
-  } = req.body;
+  // Optional: basic sanity checks only
+  const { vatNumber, email } = req.body;
 
-  if (
-    !companyNameEn ||
-    !companyNameAr ||
-    !companyAddressEn ||
-    !companyAddressAr ||
-    !vatNumber ||
-    !crNumber
-  ) {
+  if (vatNumber && vatNumber.length < 5) {
     return res.status(400).json({
-      message: "Missing required company fields",
+      message: "Invalid VAT number",
+    });
+  }
+
+  if (email && !email.includes("@")) {
+    return res.status(400).json({
+      message: "Invalid email format",
     });
   }
 
   next();
 }
-
 
 module.exports = {
   validateCompanySettings,

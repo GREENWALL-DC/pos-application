@@ -4,7 +4,7 @@ const service = require("./settings.service");
 
 async function getCompanySettings(req, res, next) {
   try {
-    const settings = await service.getSettings(req.db);
+   const settings = await service.getSettings();
     res.json(settings);
   } catch (err) {
     next(err);
@@ -13,7 +13,8 @@ async function getCompanySettings(req, res, next) {
 
 async function saveCompanySettings(req, res, next) {
   try {
-    const saved = await service.saveSettings(req.db, req.body);
+   const saved = await service.saveSettings(req.body);
+
     res.json({
       message: "Company settings saved successfully",
       data: saved
