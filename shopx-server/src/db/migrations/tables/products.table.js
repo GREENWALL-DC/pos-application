@@ -18,15 +18,16 @@ return;
               console.log("⏳ Creating 'products' table...");
 
                await client.query(`
-      CREATE TABLE products (
+     CREATE TABLE products (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
-        name_ar VARCHAR(100) NOT NULL,       -- Arabic name (NEW)
+        name_ar VARCHAR(100) NOT NULL,
         price NUMERIC(10, 2) NOT NULL,
-        quantity NUMERIC(10,2) DEFAULT 0,       
-        code TEXT,    
-        category TEXT, 
-        vat NUMERIC(5,2) DEFAULT 0,  
+        quantity NUMERIC(10,2) DEFAULT 0,
+        code TEXT,
+        category TEXT,
+        vat NUMERIC(5,2) DEFAULT 0,
+        is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

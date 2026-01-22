@@ -12,43 +12,44 @@ exports.createCustomer = async ({
     `INSERT INTO customers (name, phone, address, tin, area, salesperson_id)
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [
-      name,
-      phone || null,
-      address,
-      tin || null,
-      area || null,
-      salesperson_id,
-    ]
+    [name, phone || null, address, tin || null, area || null, salesperson_id],
   );
 
   return result.rows[0];
 };
 
 exports.getAllCustomers = async () => {
-  const result = await db.query(`SELECT * FROM customers ORDER BY id ASC`);
+  const result = await db.query(
+    `SELECT *
+     FROM customers
+     WHERE is_active = true
+     ORDER BY id ASC`,
+  );
   return result.rows;
 };
 
 exports.getCustomersBySalesperson = async (salespersonId) => {
   const result = await db.query(
     `SELECT * FROM customers 
-     WHERE salesperson_id = $1 
+    WHERE salesperson_id = $1
+  AND is_active = true
      ORDER BY id ASC`,
-    [salespersonId]
+    [salespersonId],
   );
   return result.rows;
 };
 
-
 exports.getCustomerById = async (id) => {
-  const result = await db.query(`SELECT * FROM customers WHERE id = $1`, [id]);
+  const result = await db.query(
+    `SELECT *
+FROM customers
+WHERE id = $1 AND is_active = true
+`,
+    [id],
+  );
   return result.rows[0];
 };
-exports.updateCustomer = async (
-  id,
-  { name, phone, address, tin, area }
-) => {
+exports.updateCustomer = async (id, { name, phone, address, tin, area }) => {
   const result = await db.query(
     `UPDATE customers
      SET name = COALESCE($1, name),
@@ -58,17 +59,21 @@ exports.updateCustomer = async (
          area = COALESCE($5, area)
      WHERE id = $6
      RETURNING *`,
-    [name, phone, address, tin, area, id]
+    [name, phone, address, tin, area, id],
   );
 
   return result.rows[0];
 };
 
-
 exports.deleteCustomer = async (id) => {
   const result = await db.query(
-    `DELETE FROM customers WHERE id = $1 RETURNING *`,
-    [id]
+    `UPDATE customers
+     SET is_active = false,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING *`,
+    [id],
   );
+
   return result.rows[0];
 };

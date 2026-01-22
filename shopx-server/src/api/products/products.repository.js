@@ -1,10 +1,13 @@
 //Only SQL. No business rules.
 
 const db = require("../../config/db");
+
+
 exports.getAllProducts = async () => {
   return await db.query(`
-    SELECT * 
+    SELECT *
     FROM products
+    WHERE is_active = true
     ORDER BY id ASC
   `);
 };
@@ -12,10 +15,10 @@ exports.getAllProducts = async () => {
 exports.getProductById = async (id) => {
   return await db.query(
     `
-    SELECT * 
+    SELECT *
     FROM products
-    WHERE id = $1
-  `,
+    WHERE id = $1 AND is_active = true
+    `,
     [id]
   );
 };
@@ -62,7 +65,12 @@ exports.updateProduct = async (
 exports.deleteProduct = async (id) => {
   return await db.query(
     `
-      DELETE FROM products WHERE id = $1 RETURNING*`,
+    UPDATE products
+    SET is_active = false,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = $1
+    RETURNING *
+    `,
     [id]
   );
 };

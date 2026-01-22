@@ -12,19 +12,22 @@ module.exports = async (client) => {
 
     // 2️⃣ Create table
     await client.query(`
-     CREATE TABLE customers (
+    CREATE TABLE customers (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
 
-  phone VARCHAR(20),          -- optional
-  tin VARCHAR(50),            -- optional
+  phone VARCHAR(20),
+  tin VARCHAR(50),
   address TEXT,
 
-  area VARCHAR(100),          -- ✅ NEW
-  salesperson_id INTEGER,     -- ✅ NEW
+  area VARCHAR(100),
+  salesperson_id INTEGER,
 
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
     `);
 

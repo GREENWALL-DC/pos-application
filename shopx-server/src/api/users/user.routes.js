@@ -10,6 +10,7 @@ router.get("/salespersons", validateToken, checkAdmin, async (req, res) => {
     `SELECT id, username, email, phone 
      FROM users 
      WHERE user_type = 'user'
+       AND is_active = true
      ORDER BY id ASC`
   );
   res.json(result.rows);
@@ -20,7 +21,7 @@ router.get("/salespersons/:id", validateToken, checkAdmin, async (req, res) => {
   const result = await db.query(
     `SELECT id, username, email, phone 
      FROM users 
-     WHERE id = $1 AND user_type = 'user'`,
+   WHERE id = $1 AND user_type = 'user' AND is_active = true`,
     [req.params.id]
   );
 
@@ -55,9 +56,10 @@ router.put("/salespersons/:id", validateToken, checkAdmin, async (req, res) => {
 // ⭐ DELETE SALESPERSON
 router.delete("/salespersons/:id", validateToken, checkAdmin, async (req, res) => {
   const result = await db.query(
-    `DELETE FROM users 
+    `UPDATE users 
+     SET is_active = false, updated_at = CURRENT_TIMESTAMP
      WHERE id = $1 AND user_type = 'user'
-     RETURNING *`,
+     RETURNING id, username`,
     [req.params.id]
   );
 
@@ -65,7 +67,8 @@ router.delete("/salespersons/:id", validateToken, checkAdmin, async (req, res) =
     return res.status(404).json({ message: "Salesperson not found" });
   }
 
-  res.json({ message: "Salesperson deleted" });
+  res.json({ message: "Salesperson deactivated successfully" });
 });
+
 
 module.exports = router;

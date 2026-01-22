@@ -11,16 +11,18 @@ module.exports = async (client) => {
     } else {
       // 2️⃣ If table does NOT exist → create it
       await client.query(`
-        CREATE TABLE "users" (
-          id SERIAL PRIMARY KEY,
-          username VARCHAR(50) UNIQUE NOT NULL,
-          email VARCHAR(150) UNIQUE NOT NULL,
-          password VARCHAR(255) NOT NULL,
-          phone VARCHAR(10) NOT NULL,
-          user_type VARCHAR(10) CHECK (user_type IN ('user', 'admin')) DEFAULT 'user' NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+       CREATE TABLE "users" (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  phone VARCHAR(10) NOT NULL,
+  user_type VARCHAR(10) CHECK (user_type IN ('user', 'admin')) DEFAULT 'user' NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
       `);
       console.log('✅ "users" table has been created.');
     }

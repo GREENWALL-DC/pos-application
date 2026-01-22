@@ -15,24 +15,26 @@ WHERE s.sale_date BETWEEN $1 AND $2
   AND s.sale_status != 'voided';
 
   `,
-    [start, end]
+    [start, end],
   );
-const chart = await db.query(
-  `
+  const chart = await db.query(
+    `
   SELECT 
     u.username AS name,
     SUM(s.subtotal_amount - s.discount_amount) AS revenue
   FROM sales s
-  LEFT JOIN users u ON u.id = s.salesperson_id
+ LEFT JOIN users u 
+  ON u.id = s.salesperson_id 
+ AND u.is_active = true
   WHERE s.sale_date BETWEEN $1 AND $2
     AND s.payment_status = 'paid'
     AND s.sale_status != 'voided'
-  GROUP BY u.username
-  ORDER BY revenue DESC;
-`,
-[start, end]
-);
+ GROUP BY u.id, u.username
+ORDER BY revenue DESC;
 
+`,
+    [start, end],
+  );
 
   return {
     summary: summary.rows[0],
@@ -49,16 +51,19 @@ exports.getSalesmanPerformance = async (start, end) => {
   SUM(s.subtotal_amount - s.discount_amount) AS revenue,
   SUM(si.quantity) AS units
 FROM sales s
-LEFT JOIN users u ON u.id = s.salesperson_id
+LEFT JOIN users u 
+  ON u.id = s.salesperson_id
+ AND u.is_active = true
 LEFT JOIN sale_items si ON si.sale_id = s.id
 WHERE s.sale_date BETWEEN $1 AND $2
   AND s.payment_status = 'paid'
   AND s.sale_status != 'voided'
-GROUP BY u.username
+GROUP BY u.id, u.username
 ORDER BY revenue DESC;
 
+
   `,
-    [start, end]
+    [start, end],
   );
 
   return rows.rows;
@@ -72,7 +77,9 @@ exports.getProductSales = async (start, end) => {
       p.name,
       SUM(si.total_price) AS revenue
     FROM sale_items si
-    JOIN products p ON p.id = si.product_id
+   JOIN products p 
+  ON p.id = si.product_id
+ AND p.is_active = true
     JOIN sales s ON s.id = si.sale_id
   WHERE s.sale_date BETWEEN $1 AND $2
   AND s.payment_status = 'paid'
@@ -80,7 +87,7 @@ exports.getProductSales = async (start, end) => {
     GROUP BY p.name
     ORDER BY revenue DESC;
   `,
-    [start, end]
+    [start, end],
   );
 
   return rows.rows;
@@ -104,7 +111,9 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
       SUM(si.quantity) AS units_sold,
       SUM(si.total_price) AS revenue
     FROM sale_items si
-    JOIN products p ON p.id = si.product_id
+   JOIN products p 
+  ON p.id = si.product_id
+ AND p.is_active = true
     JOIN sales s ON s.id = si.sale_id
   WHERE s.sale_date >= $1
   AND s.sale_date < ($2::date + INTERVAL '1 day')
@@ -114,7 +123,7 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
     GROUP BY p.id, p.name
     ORDER BY units_sold DESC;
   `,
-    params
+    params,
   );
 
   return rows.rows;
@@ -130,7 +139,9 @@ exports.getCustomerPerformance = async (start, end) => {
   SUM(si.quantity) AS units
 FROM sales sa
 LEFT JOIN sale_items si ON si.sale_id = sa.id
-JOIN customers c ON sa.customer_id = c.id
+JOIN customers c 
+  ON sa.customer_id = c.id
+ AND c.is_active = true
 WHERE sa.sale_date BETWEEN $1 AND $2
   AND sa.payment_status = 'paid'
   AND sa.sale_status != 'voided'
@@ -138,7 +149,7 @@ GROUP BY c.name
 ORDER BY revenue DESC;
 
   `,
-    [start, end]
+    [start, end],
   );
 
   return rows.rows;
