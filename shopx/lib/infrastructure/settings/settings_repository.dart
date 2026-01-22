@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:shopx/domain/settings/company_settings.dart';
 import 'package:shopx/infrastructure/settings/settings_api.dart';
 
@@ -12,8 +13,29 @@ class SettingsRepository {
     return CompanySettings.fromJson(json);
   }
 
+  /// 🔥 UPLOAD COMPANY LOGO (MULTIPART)
+  Future<String> uploadCompanyLogo(Uint8List bytes) async {
+    final res = await api.uploadCompanyLogo(bytes);
+    return res['logoUrl'] as String;
+  }
+
+  /// 💾 SAVE SETTINGS
   Future<CompanySettings> saveSettings(CompanySettings settings) async {
-    final res = await api.saveSettings(settings.toJson());
+    final payload = {
+      "companyNameEn": settings.companyNameEn,
+      "companyNameAr": settings.companyNameAr,
+      "companyAddressEn": settings.companyAddressEn,
+      "companyAddressAr": settings.companyAddressAr,
+      "vatNumber": settings.vatNumber,
+      "crNumber": settings.crNumber,
+      "phone": settings.phone,
+      "email": settings.email,
+      "accountNumber": settings.accountNumber,
+      "iban": settings.iban,
+      "logoUrl": settings.logoUrl,
+    };
+
+    final res = await api.saveSettings(payload);
     return CompanySettings.fromJson(res);
   }
 }

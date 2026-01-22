@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shopx/application/settings/settings_notifier.dart';
+import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/settings/company_settings.dart';
 
 void main() {
@@ -31,9 +33,9 @@ class AdminSettingsScreen extends HookConsumerWidget {
 
     // Logo State
     final imagePath = useState<String?>(null);
-    final picker = useMemoized(() => ImagePicker());
+    final imageBytes = useState<Uint8List?>(null);
 
-  
+    final picker = useMemoized(() => ImagePicker());
 
     useEffect(() {
       final settings = settingsState.settings;
@@ -41,7 +43,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
         nameEnController.text = settings.companyNameEn;
         nameArController.text = settings.companyNameAr;
         addressEnController.text = settings.companyAddressEn;
-        addressArController.text =settings.companyAddressAr ;
+        addressArController.text = settings.companyAddressAr;
         mobileController.text = settings.phone ?? '';
         emailController.text = settings.email ?? '';
         accountController.text = settings.accountNumber ?? '';
@@ -61,8 +63,10 @@ class AdminSettingsScreen extends HookConsumerWidget {
       final XFile? pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
       );
+
       if (pickedFile != null) {
-        imagePath.value = pickedFile.path;
+        imageBytes.value = await pickedFile.readAsBytes();
+        imagePath.value = null; // clear old URL
       }
     }
 
@@ -97,14 +101,22 @@ class AdminSettingsScreen extends HookConsumerWidget {
                                 color: Colors.blue.withOpacity(0.5),
                                 width: 2,
                               ),
-                              image: imagePath.value != null
+
+                              image: imageBytes.value != null
                                   ? DecorationImage(
-                                      image: FileImage(File(imagePath.value!)),
+                                      image: MemoryImage(imageBytes.value!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : imagePath.value != null
+                                  ? DecorationImage(
+                                      image: NetworkImage(imagePath.value!),
                                       fit: BoxFit.cover,
                                     )
                                   : null,
                             ),
-                            child: imagePath.value == null
+                            child:
+                                (imageBytes.value == null &&
+                                    imagePath.value == null)
                                 ? const Icon(
                                     Icons.business,
                                     size: 50,
@@ -136,7 +148,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    kHeight30,
 
                     // 4. Form Fields
 
@@ -164,7 +176,7 @@ class AdminSettingsScreen extends HookConsumerWidget {
                     ),
                     const SizedBox(height: 10),
 
-                     _buildTextField(
+                    _buildTextField(
                       label: "Company Address(Arabic)",
                       controller: addressArController,
                     ),
@@ -223,45 +235,57 @@ class AdminSettingsScreen extends HookConsumerWidget {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          if (!formKey.currentState!.validate()) return;
 
-                          final settings = CompanySettings(
-                            id: settingsState.settings?.id ?? 0,
-                            companyNameEn: nameEnController.text.trim(),
-                            companyNameAr: nameArController.text.trim(),
-                            companyAddressEn: addressEnController.text.trim(),
-                            companyAddressAr: addressArController.text.trim(),
-                            vatNumber: vatController.text.trim(),
-                            crNumber: crController.text.trim(),
-                            phone: mobileController.text.trim().isEmpty
-                                ? null
-                                : mobileController.text.trim(),
-                            email: emailController.text.trim().isEmpty
-                                ? null
-                                : emailController.text.trim(),
-                            accountNumber: accountController.text.trim().isEmpty
-                                ? null
-                                : accountController.text.trim(),
-                            iban: ibanController.text.trim().isEmpty
-                                ? null
-                                : ibanController.text.trim(),
-                            logoUrl: imagePath.value,
-                            createdAt: DateTime.now(),
-                          );
 
-                          await ref
-                              .read(settingsNotifierProvider.notifier)
-                              .saveSettings(settings);
 
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Settings saved successfully"),
-                              ),
-                            );
-                          }
-                        },
+                       onPressed: () async {
+  if (!formKey.currentState!.validate()) return;
+
+  final notifier = ref.read(settingsNotifierProvider.notifier);
+
+  String? finalLogoUrl = imagePath.value;
+
+  // 🔥 STEP 1: upload logo if a new image was selected
+  if (imageBytes.value != null) {
+    finalLogoUrl = await notifier.uploadCompanyLogo(
+      imageBytes.value!,
+    );
+  }
+
+  // 🔥 STEP 2: save settings with REAL backend logoUrl
+  final settings = CompanySettings(
+    id: settingsState.settings?.id ?? 0,
+    companyNameEn: nameEnController.text.trim(),
+    companyNameAr: nameArController.text.trim(),
+    companyAddressEn: addressEnController.text.trim(),
+    companyAddressAr: addressArController.text.trim(),
+    vatNumber: vatController.text.trim(),
+    crNumber: crController.text.trim(),
+    phone: mobileController.text.trim().isEmpty
+        ? null
+        : mobileController.text.trim(),
+    email: emailController.text.trim().isEmpty
+        ? null
+        : emailController.text.trim(),
+    accountNumber: accountController.text.trim().isEmpty
+        ? null
+        : accountController.text.trim(),
+    iban: ibanController.text.trim().isEmpty
+        ? null
+        : ibanController.text.trim(),
+    logoUrl: finalLogoUrl, // ✅ BACKEND URL
+    createdAt: DateTime.now(),
+  );
+
+  await notifier.saveSettings(settings);
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Settings saved successfully")),
+    );
+  }
+}
+,
 
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
