@@ -31,8 +31,22 @@ class TransactionDetailsDialog extends HookConsumerWidget {
   bool get _isVoided => sale.saleStatus == 'voided';
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settingsState = ref.watch(settingsNotifierProvider);
+//     final settingsState = ref.watch(settingsNotifierProvider);
+// final companySettings = settingsState.settings!;
+
+final settingsState = ref.watch(settingsNotifierProvider);
+
+if (settingsState.isLoading || settingsState.settings == null) {
+  return const Dialog(
+    child: Padding(
+      padding: EdgeInsets.all(24),
+      child: Center(child: CircularProgressIndicator()),
+    ),
+  );
+}
+
 final companySettings = settingsState.settings!;
+
 
     final isSubmitting = useState(false);
 
