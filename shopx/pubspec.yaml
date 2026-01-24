@@ -89,6 +89,8 @@ flutter:
     - assets/images/
     - assets/fonts/Cairo-Regular.ttf
     - assets/fonts/Cairo-Bold.ttf
+    - assets/fonts/NotoNaskhArabic-Regular.ttf
+   
 
 
 flutter_launcher_icons:
