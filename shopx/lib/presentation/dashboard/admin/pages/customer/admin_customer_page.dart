@@ -49,6 +49,27 @@ class AdminCustomerPage extends HookConsumerWidget {
 final salesmen = salesmenState.salesmen;
 
 
+useEffect(() {
+  if (!isEditMode) return null;
+  if (customer?.salespersonId == null) return null;
+  if (salesmen.isEmpty) return null; // wait for data
+
+  final match = salesmen.firstWhere(
+    (s) => s.id == customer!.salespersonId,
+    orElse: () {
+      throw StateError(
+        "DATA INTEGRITY ERROR: "
+        "Customer ${customer!.id} references missing salesperson "
+        "${customer!.salespersonId}",
+      );
+    },
+  );
+
+  selectedSalesperson.value = match;
+  return null;
+}, [salesmen]);
+
+
 
     // -----------------------------
     // LISTENERS (correct placement!)

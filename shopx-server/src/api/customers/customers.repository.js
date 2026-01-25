@@ -49,21 +49,47 @@ WHERE id = $1 AND is_active = true
   );
   return result.rows[0];
 };
-exports.updateCustomer = async (id, { name, phone, address, tin, area }) => {
+
+
+
+// exports.updateCustomer = async (id, { name, phone, address, tin, area }) => {
+//   const result = await db.query(
+//     `UPDATE customers
+//      SET name = COALESCE($1, name),
+//          phone = COALESCE($2, phone),
+//          address = COALESCE($3, address),
+//          tin = COALESCE($4, tin),
+//          area = COALESCE($5, area)
+//      WHERE id = $6
+//      RETURNING *`,
+//     [name, phone, address, tin, area, id],
+//   );
+
+//   return result.rows[0];
+// };
+
+
+exports.updateCustomer = async (
+  id,
+  { name, phone, address, tin, area, salesperson_id }
+) => {
   const result = await db.query(
     `UPDATE customers
      SET name = COALESCE($1, name),
          phone = COALESCE($2, phone),
          address = COALESCE($3, address),
          tin = COALESCE($4, tin),
-         area = COALESCE($5, area)
-     WHERE id = $6
+         area = COALESCE($5, area),
+         salesperson_id = COALESCE($6, salesperson_id),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $7
      RETURNING *`,
-    [name, phone, address, tin, area, id],
+    [name, phone, address, tin, area, salesperson_id, id]
   );
 
   return result.rows[0];
 };
+
 
 exports.deleteCustomer = async (id) => {
   const result = await db.query(

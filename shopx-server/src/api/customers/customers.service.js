@@ -31,12 +31,30 @@ exports.getCustomerById = async (id) => {
   return customer;
 };
 
+// exports.updateCustomer = async (id, data) => {
+//   const updated = await repo.updateCustomer(id, data);
+//   if (!updated) throw new Error("Customer not found");
+
+//   return updated;
+// };
+
 exports.updateCustomer = async (id, data) => {
-  const updated = await repo.updateCustomer(id, data);
-  if (!updated) throw new Error("Customer not found");
+  const updated = await repo.updateCustomer(id, {
+    name: data.name,
+    phone: data.phone,
+    address: data.address,
+    tin: data.tin,
+    area: data.area,
+    salesperson_id: data.salesperson_id, // ✅ IMPORTANT
+  });
+
+  if (!updated) {
+    throw new Error("Customer not found");
+  }
 
   return updated;
 };
+
 
 exports.deleteCustomer = async (id) => {
   const deleted = await repo.deleteCustomer(id);
