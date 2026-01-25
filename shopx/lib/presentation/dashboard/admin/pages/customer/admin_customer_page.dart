@@ -48,24 +48,22 @@ class AdminCustomerPage extends HookConsumerWidget {
     final salesmenState = ref.watch(salesmanNotifierProvider);
 final salesmen = salesmenState.salesmen;
 
-
 useEffect(() {
   if (!isEditMode) return null;
   if (customer?.salespersonId == null) return null;
   if (salesmen.isEmpty) return null; // wait for data
 
-  final match = salesmen.firstWhere(
-    (s) => s.id == customer!.salespersonId,
-    orElse: () {
-      throw StateError(
-        "DATA INTEGRITY ERROR: "
-        "Customer ${customer!.id} references missing salesperson "
-        "${customer!.salespersonId}",
-      );
-    },
-  );
+  final matches =
+      salesmen.where((s) => s.id == customer!.salespersonId).toList();
 
-  selectedSalesperson.value = match;
+  if (matches.isEmpty) {
+    // IMPORTANT:
+    // This means the salesperson was deleted or inactive.
+    // We DO NOTHING. No auto-selection. No forging.
+    return null;
+  }
+
+  selectedSalesperson.value = matches.first;
   return null;
 }, [salesmen]);
 

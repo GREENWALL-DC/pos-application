@@ -18,37 +18,102 @@ exports.createCustomer = async ({
   return result.rows[0];
 };
 
+// exports.getAllCustomers = async () => {
+//   const result = await db.query(
+//     `SELECT *
+//      FROM customers
+//      WHERE is_active = true
+//      ORDER BY id ASC`,
+//   );
+//   return result.rows;
+// };
+
 exports.getAllCustomers = async () => {
   const result = await db.query(
-    `SELECT *
-     FROM customers
-     WHERE is_active = true
-     ORDER BY id ASC`,
+    `
+    SELECT
+      c.id,
+      c.name,
+      c.phone,
+      c.address,
+      c.tin,
+      c.area,
+      c.salesperson_id,
+      c.created_at,
+      u.username AS salesperson_name
+    FROM customers c
+    LEFT JOIN users u
+      ON u.id = c.salesperson_id
+    WHERE c.is_active = true
+    ORDER BY c.id ASC
+    `
   );
+
   return result.rows;
 };
+
+
+// exports.getCustomersBySalesperson = async (salespersonId) => {
+//   const result = await db.query(
+//     `SELECT * FROM customers 
+//     WHERE salesperson_id = $1
+//   AND is_active = true
+//      ORDER BY id ASC`,
+//     [salespersonId],
+//   );
+//   return result.rows;
+// };
 
 exports.getCustomersBySalesperson = async (salespersonId) => {
   const result = await db.query(
-    `SELECT * FROM customers 
-    WHERE salesperson_id = $1
-  AND is_active = true
-     ORDER BY id ASC`,
-    [salespersonId],
+    `
+    SELECT
+      c.*,
+      u.username AS salesperson_name
+    FROM customers c
+    LEFT JOIN users u
+      ON u.id = c.salesperson_id
+    WHERE c.salesperson_id = $1
+      AND c.is_active = true
+    ORDER BY c.id ASC
+    `,
+    [salespersonId]
   );
+
   return result.rows;
 };
 
+
+
+// exports.getCustomerById = async (id) => {
+//   const result = await db.query(
+//     `SELECT *
+// FROM customers
+// WHERE id = $1 AND is_active = true
+// `,
+//     [id],
+//   );
+//   return result.rows[0];
+// };
+
 exports.getCustomerById = async (id) => {
   const result = await db.query(
-    `SELECT *
-FROM customers
-WHERE id = $1 AND is_active = true
-`,
-    [id],
+    `
+    SELECT
+      c.*,
+      u.username AS salesperson_name
+    FROM customers c
+    LEFT JOIN users u
+      ON u.id = c.salesperson_id
+    WHERE c.id = $1
+        AND c.is_active = true
+    `,
+    [id]
   );
+
   return result.rows[0];
 };
+
 
 
 

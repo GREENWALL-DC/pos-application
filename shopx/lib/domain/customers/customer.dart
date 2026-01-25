@@ -51,6 +51,7 @@ class Customer {
   final String? area;
   final String address;
   final int? salespersonId;  
+  final String? salespersonName; // ✅ ADD THIS
 
   final DateTime createdAt;
 
@@ -62,6 +63,7 @@ class Customer {
     this.area,
     required this.address,
     this.salespersonId,
+     this.salespersonName, // ✅ ADD THIS
     required this.createdAt,
   });
 
@@ -74,6 +76,7 @@ class Customer {
       area: json["area"],          // nullable
       salespersonId: json["salesperson_id"],    // ✅
       address: json["address"] ?? "",
+       salespersonName: json["salesperson_name"], // ✅ ADD THIS
       createdAt: DateTime.parse(json["created_at"]),
     );
   }
