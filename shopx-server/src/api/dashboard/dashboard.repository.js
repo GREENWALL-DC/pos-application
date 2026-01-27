@@ -101,30 +101,34 @@ getSalesBySalesperson: async () => {
       -- Weekly revenue (last 7 days)
       COALESCE(
         SUM(
-          CASE 
+          CASE
             WHEN s.sale_date >= CURRENT_DATE - INTERVAL '6 days'
+             AND s.sale_status != 'voided'
+             AND s.payment_status IN ('paid', 'pending')
             THEN (s.subtotal_amount - s.discount_amount)
             ELSE 0
           END
-        ), 0
+        ),
+        0
       ) AS weekly_revenue,
 
       -- Monthly revenue (current month)
       COALESCE(
         SUM(
-          CASE 
+          CASE
             WHEN DATE_TRUNC('month', s.sale_date) = DATE_TRUNC('month', CURRENT_DATE)
+             AND s.sale_status != 'voided'
+             AND s.payment_status IN ('paid', 'pending')
             THEN (s.subtotal_amount - s.discount_amount)
             ELSE 0
           END
-        ), 0
+        ),
+        0
       ) AS monthly_revenue
 
     FROM salespersons sp
     LEFT JOIN sales s
       ON s.salesperson_id = sp.id
-      AND s.payment_status = 'paid'
-      AND s.sale_status != 'voided'
 
     GROUP BY sp.id, sp.name
     ORDER BY monthly_revenue DESC;
