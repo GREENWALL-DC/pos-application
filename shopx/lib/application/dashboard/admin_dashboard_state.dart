@@ -1,3 +1,6 @@
+enum SalesChartPeriod { weekly, monthly }
+
+
 class RevenueMetrics {
   final num revenue;
   final int totalSales;
@@ -32,22 +35,34 @@ class Totals {
   }
 }
 
+// class AdminDashboardState {
+//   final bool loading;
+//   final String? error;
+
+//   final Totals totals;
+
+//   final num totalCustomers;
+//   final num totalDiscount; // NEW
+
+//   // charts
+//   final List<Map<String, dynamic>> weeklySummary;
+//   final List<Map<String, dynamic>> topProducts;
+//   final List<Map<String, dynamic>> salesBySalesperson;
+
+//   // tables
+//   final List<Map<String, dynamic>> recentSales;
+//   final List<Map<String, dynamic>> lowStock;
 class AdminDashboardState {
   final bool loading;
   final String? error;
 
-  // // totals
-  // final num grossRevenue;     // NEW
-  // final num totalSales;       // KEEP (order count)
-  // final num totalPayments;
-  // final num pendingAmount;
-  // final num todaySales;
-  // final num netSales;         // NEW
-
   final Totals totals;
 
   final num totalCustomers;
-  final num totalDiscount; // NEW
+  final num totalDiscount;
+
+  // 🔥 NEW: Sales chart period selector (Weekly / Monthly)
+  final SalesChartPeriod chartPeriod;
 
   // charts
   final List<Map<String, dynamic>> weeklySummary;
@@ -62,15 +77,10 @@ class AdminDashboardState {
     this.loading = false,
     this.error,
 
-    //    this.grossRevenue = 0,      // NEW
-    // this.totalSales = 0,        // KEEP
-    // this.totalPayments = 0,
-    // this.pendingAmount = 0,
-    // this.todaySales = 0,
-    // this.netSales = 0,          // NEW
     required this.totals,
     this.totalCustomers = 0,
     this.totalDiscount = 0, // NEW
+     this.chartPeriod = SalesChartPeriod.weekly, // ✅ DEFAULT
 
     this.weeklySummary = const [],
     this.topProducts = const [],
@@ -83,16 +93,10 @@ class AdminDashboardState {
   AdminDashboardState copyWith({
     bool? loading,
     String? error,
-
-    //   num? grossRevenue,       // NEW
-    // num? totalSales,         // KEEP
-    // num? totalPayments,
-    // num? pendingAmount,
-    // num? todaySales,
-    // num? netSales,           // NEW
     Totals? totals,
     num? totalCustomers,
     num? totalDiscount, // NEW
+     SalesChartPeriod? chartPeriod,
 
     List<Map<String, dynamic>>? weeklySummary,
     List<Map<String, dynamic>>? topProducts,
@@ -105,16 +109,11 @@ class AdminDashboardState {
       loading: loading ?? this.loading,
       error: error,
 
-      // grossRevenue: grossRevenue ?? this.grossRevenue,
-      // totalSales: totalSales ?? this.totalSales,
-      // totalPayments: totalPayments ?? this.totalPayments,
-      // pendingAmount: pendingAmount ?? this.pendingAmount,
-      // todaySales: todaySales ?? this.todaySales,
-      // netSales: netSales ?? this.netSales,
       totals: totals ?? this.totals,
 
       totalCustomers: totalCustomers ?? this.totalCustomers,
       totalDiscount: totalDiscount ?? this.totalDiscount,
+       chartPeriod: chartPeriod ?? this.chartPeriod,
 
       weeklySummary: weeklySummary ?? this.weeklySummary,
       topProducts: topProducts ?? this.topProducts,
@@ -125,12 +124,23 @@ class AdminDashboardState {
     );
   }
 
-  factory AdminDashboardState.initial() {
-    return AdminDashboardState(
-      totals: Totals(
-        all: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
-        today: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
-      ),
-    );
-  }
+  // factory AdminDashboardState.initial() {
+  //   return AdminDashboardState(
+  //     totals: Totals(
+  //       all: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
+  //       today: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
+  //     ),
+  //   );
+  // }
+factory AdminDashboardState.initial() {
+  return AdminDashboardState(
+    chartPeriod: SalesChartPeriod.weekly,
+    totals: Totals(
+      all: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
+      today: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
+    ),
+  );
+}
+
+
 }

@@ -41,7 +41,13 @@ exports.getDashboardData = async () => {
 
     charts: {
       top_products: topProducts.rows,
-      sales_by_salesperson: salesBySalesperson.rows,
+      // sales_by_salesperson: salesBySalesperson.rows,
+       sales_by_salesperson: salesBySalesperson.rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    weekly_revenue: Number(row.weekly_revenue),
+    monthly_revenue: Number(row.monthly_revenue),
+  })),
       weekly_summary: weeklySales.rows,
     },
 

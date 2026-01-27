@@ -118,6 +118,11 @@ class AdminDashboardNotifier extends Notifier<AdminDashboardState> {
     }
   }
 
+  void changeSalesChartPeriod(SalesChartPeriod period) {
+  state = state.copyWith(chartPeriod: period);
+}
+
+
   Future<void> fetchDashboard() async {
     await loadDashboard();
   }

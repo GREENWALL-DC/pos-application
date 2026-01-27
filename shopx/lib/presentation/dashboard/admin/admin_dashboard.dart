@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shopx/application/dashboard/admin_dashboard_notifier.dart';
+import 'package:shopx/application/dashboard/admin_dashboard_state.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/presentation/dashboard/admin/admin_side_nav.dart';
 
@@ -178,14 +179,26 @@ class AdminDashboard extends HookConsumerWidget {
 
               const SizedBox(height: 24),
 
-              // --- WEEKLY SUMMARY CHART ---
-              _WeeklySummarySection(
-                weekly: dashboard.weeklySummary,
-                grossRevenue:
-                    dashboard.totals.all.revenue, // show NET as revenue
-                netSales: dashboard.totals.all.revenue,
-                totalDiscount: dashboard.totalDiscount,
-              ),
+              // // --- WEEKLY SUMMARY CHART ---
+              // _WeeklySummarySection(
+              //   weekly: dashboard.weeklySummary,
+              //   grossRevenue:
+              //       dashboard.totals.all.revenue, // show NET as revenue
+              //   netSales: dashboard.totals.all.revenue,
+              //   totalDiscount: dashboard.totalDiscount,
+              // ),
+
+              // --- SALESPERSON PERFORMANCE CHART ---
+_SalespersonPerformanceChart(
+  data: dashboard.salesBySalesperson,
+  period: dashboard.chartPeriod,
+  onPeriodChange: (p) {
+    ref
+        .read(adminDashboardNotifierProvider.notifier)
+        .changeSalesChartPeriod(p);
+  },
+),
+
 
               const SizedBox(height: 24),
 
@@ -676,6 +689,147 @@ class _TransactionItem extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF1D1D1D),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  //new
+  
+}
+
+class _SalespersonPerformanceChart extends StatelessWidget {
+  final List<Map<String, dynamic>> data;
+  final SalesChartPeriod period;
+  final ValueChanged<SalesChartPeriod> onPeriodChange;
+
+  const _SalespersonPerformanceChart({
+    required this.data,
+    required this.period,
+    required this.onPeriodChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return const SizedBox();
+    }
+
+    final barWidth = 50.0;
+    final chartWidth = data.length * barWidth;
+
+    final maxValue = data
+        .map((e) =>
+            (period == SalesChartPeriod.weekly
+                ? e['weekly_revenue']
+                : e['monthly_revenue']) as num)
+        .fold<num>(0, (a, b) => a > b ? a : b);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header + Toggle
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Salesperson Performance",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              ToggleButtons(
+                isSelected: [
+                  period == SalesChartPeriod.weekly,
+                  period == SalesChartPeriod.monthly,
+                ],
+                onPressed: (index) {
+                  onPeriodChange(
+                    index == 0
+                        ? SalesChartPeriod.weekly
+                        : SalesChartPeriod.monthly,
+                  );
+                },
+                children: const [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text("Weekly"),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text("Monthly"),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Scrollable Chart
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: chartWidth < MediaQuery.of(context).size.width
+                  ? MediaQuery.of(context).size.width
+                  : chartWidth,
+              height: 260,
+              child: BarChart(
+                BarChartData(
+                  maxY: maxValue == 0 ? 100 : (maxValue * 1.2),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < data.length) {
+                            return Text(
+                              data[index]['name'],
+                              style: const TextStyle(fontSize: 10),
+                            );
+                          }
+                          return const SizedBox();
+                        },
+                      ),
+                    ),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  barGroups: data.asMap().entries.map((e) {
+                    final value = period == SalesChartPeriod.weekly
+                        ? e.value['weekly_revenue']
+                        : e.value['monthly_revenue'];
+
+                    return BarChartGroupData(
+                      x: e.key,
+                      barRods: [
+                        BarChartRodData(
+                          toY: (value as num).toDouble(),
+                          width: barWidth - 10,
+                          color: const Color(0xFF1E75D5),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           ),

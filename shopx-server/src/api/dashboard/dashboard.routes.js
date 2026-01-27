@@ -9,3 +9,4 @@ const checkAdmin = require("../../middleware/checkAdmin");
 router.get("/", validateToken, checkAdmin, controller.getDashboard);
 
 module.exports = router;
+    

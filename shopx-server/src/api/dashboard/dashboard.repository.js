@@ -77,20 +77,60 @@ module.exports = {
     `);
   },
 
- getSalesBySalesperson: async () => {
+//  getSalesBySalesperson: async () => {
+//   return await db.query(`
+//     SELECT 
+//       sp.name,
+//       COALESCE(SUM(s.subtotal_amount - s.discount_amount), 0) AS total_sales
+//     FROM salespersons sp
+//     LEFT JOIN sales s 
+//       ON s.salesperson_id = sp.id
+//       AND s.payment_status = 'paid'
+//       AND s.sale_status != 'voided'
+//     GROUP BY sp.name
+//     ORDER BY total_sales DESC
+//   `);
+// },
+
+getSalesBySalesperson: async () => {
   return await db.query(`
-    SELECT 
+    SELECT
+      sp.id,
       sp.name,
-      COALESCE(SUM(s.subtotal_amount - s.discount_amount), 0) AS total_sales
+
+      -- Weekly revenue (last 7 days)
+      COALESCE(
+        SUM(
+          CASE 
+            WHEN s.sale_date >= CURRENT_DATE - INTERVAL '6 days'
+            THEN (s.subtotal_amount - s.discount_amount)
+            ELSE 0
+          END
+        ), 0
+      ) AS weekly_revenue,
+
+      -- Monthly revenue (current month)
+      COALESCE(
+        SUM(
+          CASE 
+            WHEN DATE_TRUNC('month', s.sale_date) = DATE_TRUNC('month', CURRENT_DATE)
+            THEN (s.subtotal_amount - s.discount_amount)
+            ELSE 0
+          END
+        ), 0
+      ) AS monthly_revenue
+
     FROM salespersons sp
-    LEFT JOIN sales s 
+    LEFT JOIN sales s
       ON s.salesperson_id = sp.id
       AND s.payment_status = 'paid'
       AND s.sale_status != 'voided'
-    GROUP BY sp.name
-    ORDER BY total_sales DESC
+
+    GROUP BY sp.id, sp.name
+    ORDER BY monthly_revenue DESC;
   `);
 },
+
 
 
 getRecentSales: async () => {
