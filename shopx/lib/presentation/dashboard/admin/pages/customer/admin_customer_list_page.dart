@@ -27,11 +27,14 @@ class AdminCustomerListPage extends HookConsumerWidget {
     final customers = customerState.customers;
     final salesmanState = ref.watch(salesmanNotifierProvider);
 
-    // 🔥 ID → NAME mapping
-    final Map<int, String> salespersonMap = {
-      for (final s in salesmanState.salesmen)
-        if (s.id != null) s.id!: s.username,
-    };
+    // // 🔥 ID → NAME mapping
+    // final Map<int, String> salespersonMap = {
+    //   for (final s in salesmanState.salesmen)
+    //     if (s.id != null) s.id!: s.username,
+    // };
+
+
+
     final salespersons = salesmanState.salesmen;
 
     final areas = [
@@ -218,7 +221,7 @@ if (result.filterType == CustomerFilterType.area) {
                         customer,
                         isExpanded,
                         expandedCustomerId,
-                        salespersonMap,
+                        // salespersonMap,
                       );
                     },
                   ),
@@ -268,7 +271,7 @@ if (result.filterType == CustomerFilterType.area) {
     Customer customer,
     bool isExpanded,
     ValueNotifier<int?> expandedState,
-    Map<int, String> salespersonMap, // ✅ ADD THIS
+    // Map<int, String> salespersonMap, // ✅ ADD THIS
   ) {
     return GestureDetector(
       onTap: () {
@@ -425,11 +428,24 @@ if (result.filterType == CustomerFilterType.area) {
               ),
             ],
 
-            if (customer.salespersonId != null)
-              Text(
-                "Salesperson: ${salespersonMap[customer.salespersonId!] ?? "-"}",
-                style: const TextStyle(color: Colors.grey),
-              ),
+            // if (customer.salespersonId != null)
+            //   Text(
+            //     "Salesperson: ${salespersonMap[customer.salespersonId!] ?? "-"}",
+            //     style: const TextStyle(color: Colors.grey),
+            //   ),
+
+            if (customer.salespersonName != null &&
+    customer.salespersonName!.isNotEmpty)
+  Text(
+    "Salesperson: ${customer.salespersonName}",
+    style: const TextStyle(color: Colors.grey),
+  )
+else
+  const Text(
+    "Salesperson: -",
+    style: TextStyle(color: Colors.grey),
+  ),
+
           ],
         ),
       ),

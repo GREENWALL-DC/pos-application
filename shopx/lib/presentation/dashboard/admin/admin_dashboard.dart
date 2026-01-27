@@ -151,7 +151,8 @@ class AdminDashboard extends HookConsumerWidget {
                     ),
                   ],
                 ),
-                value: "\$${revenue.toStringAsFixed(2)}",
+                // value: "\$${revenue.toStringAsFixed(2)}",
+                value: "SAR ${revenue.toStringAsFixed(2)}",
                 icon: Icons.monetization_on_outlined,
               ),
 
@@ -164,7 +165,8 @@ class AdminDashboard extends HookConsumerWidget {
               const SizedBox(height: 12),
               _MetricCard(
                 title: isToday ? "Today's Avg Order" : "Avg. Order Value",
-                value: "\$${avgOrder.toStringAsFixed(2)}",
+                // value: "\$${avgOrder.toStringAsFixed(2)}",
+                value: "SAR ${avgOrder.toStringAsFixed(2)}",
                 icon: Icons.show_chart,
               ),
               const SizedBox(height: 12),
@@ -179,7 +181,8 @@ class AdminDashboard extends HookConsumerWidget {
               // --- WEEKLY SUMMARY CHART ---
               _WeeklySummarySection(
                 weekly: dashboard.weeklySummary,
-                grossRevenue: dashboard.totals.all.revenue, // show NET as revenue
+                grossRevenue:
+                    dashboard.totals.all.revenue, // show NET as revenue
                 netSales: dashboard.totals.all.revenue,
                 totalDiscount: dashboard.totalDiscount,
               ),
@@ -453,14 +456,28 @@ class _WeeklySummarySection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // _buildSummaryStat(
+              //   "Gross Revenue",
+              //   "\$${grossRevenue.toStringAsFixed(2)}",
+              // ),
               _buildSummaryStat(
                 "Gross Revenue",
-                "\$${grossRevenue.toStringAsFixed(2)}",
+                "SAR ${grossRevenue.toStringAsFixed(2)}",
               ),
-              _buildSummaryStat("Net sales", "$netSales"),
+
+              // _buildSummaryStat("Net sales", "$netSales"),
+              _buildSummaryStat(
+                "Net sales",
+                "SAR ${netSales.toStringAsFixed(2)}",
+              ),
+
+              // _buildSummaryStat(
+              //   "Discount",
+              //   "\$${totalDiscount.toStringAsFixed(2)}",
+              // ),
               _buildSummaryStat(
                 "Discount",
-                "\$${totalDiscount.toStringAsFixed(2)}",
+                "SAR ${totalDiscount.toStringAsFixed(2)}",
               ),
             ],
           ),
@@ -599,12 +616,11 @@ class _LatestTransactionsSection extends StatelessWidget {
     );
   }
 
- double _todayTotal() {
-  return recentSales.fold(0, (sum, item) {
-    return sum + (item['total_amount'] as num);
-  });
-}
-
+  double _todayTotal() {
+    return recentSales.fold(0, (sum, item) {
+      return sum + (item['total_amount'] as num);
+    });
+  }
 
   String _formatDate(String date) {
     final d = DateTime.parse(date);

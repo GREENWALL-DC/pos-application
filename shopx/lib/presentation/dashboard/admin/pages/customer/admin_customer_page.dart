@@ -44,7 +44,10 @@ class AdminCustomerPage extends HookConsumerWidget {
     final area = useState(customer?.area ?? "");
 
     //new
-    final selectedSalesperson = useState<Salesman?>(null);
+final selectedSalesperson = useState<Salesman?>(null);
+final salespersonController = useTextEditingController();
+
+
     final salesmenState = ref.watch(salesmanNotifierProvider);
 final salesmen = salesmenState.salesmen;
 
@@ -63,7 +66,11 @@ useEffect(() {
     return null;
   }
 
-  selectedSalesperson.value = matches.first;
+  // selectedSalesperson.value = matches.first;
+  final salesperson = matches.first;
+selectedSalesperson.value = salesperson;
+salespersonController.text = salesperson.username;
+
   return null;
 }, [salesmen]);
 
@@ -255,7 +262,7 @@ Container(
       onFieldSubmitted,
     ) {
       return TextField(
-        controller: controller,
+        controller: salespersonController,
         focusNode: focusNode,
         decoration: const InputDecoration(
           hintText: "Search salesperson",

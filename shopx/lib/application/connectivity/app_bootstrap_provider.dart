@@ -40,13 +40,26 @@ final authRetryOnConnectivityProvider = Provider((ref) {
 
 
 
-// newely added leave 
-// 🔥 LOAD COMPANY SETTINGS WHEN APP IS READY
+// // newely added leave 
+// // 🔥 LOAD COMPANY SETTINGS WHEN APP IS READY
+// final settingsBootstrapProvider = Provider<void>((ref) {
+//   ref.listen<AppBootstrapState>(appBootstrapProvider, (previous, next) {
+//     if (next == AppBootstrapState.ready) {
+//       ref.read(settingsNotifierProvider.notifier).loadOnce();
+//     }
+//   });
+// });
+
+
 final settingsBootstrapProvider = Provider<void>((ref) {
   ref.listen<AppBootstrapState>(appBootstrapProvider, (previous, next) {
     if (next == AppBootstrapState.ready) {
-      ref.read(settingsNotifierProvider.notifier).loadOnce();
+      // 🔒 Delay state mutation until build is complete
+      Future.microtask(() {
+        ref.read(settingsNotifierProvider.notifier).loadOnce();
+      });
     }
   });
 });
+
 
