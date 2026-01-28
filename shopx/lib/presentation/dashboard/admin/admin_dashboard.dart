@@ -362,21 +362,17 @@ class AdminDashboard extends HookConsumerWidget {
                                 barWidth: 2,
                                 color: kPrimaryBlue,
 
-
-
-
-                          spots: chartData.asMap().entries
-    .where((e) => e.value["revenue"] != null)
-    .map((e) {
-      return FlSpot(
-        e.key.toDouble(),
-        (e.value["revenue"] as num).toDouble(),
-      );
-    })
-    .toList(),
-
-
-
+                                spots: chartData
+                                    .asMap()
+                                    .entries
+                                    .where((e) => e.value["revenue"] != null)
+                                    .map((e) {
+                                      return FlSpot(
+                                        e.key.toDouble(),
+                                        (e.value["revenue"] as num).toDouble(),
+                                      );
+                                    })
+                                    .toList(),
 
                                 dotData: FlDotData(show: false),
                                 belowBarData: BarAreaData(

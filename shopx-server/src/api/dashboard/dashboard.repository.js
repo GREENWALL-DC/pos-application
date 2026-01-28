@@ -202,7 +202,8 @@ module.exports = {
 
   // 📊 SALES CHART DATA
   getSalesChartData: async (range) => {
-   if (range === "week") {
+    
+  if (range === "week") {
   return db.query(`
     WITH days AS (
       SELECT 
@@ -220,13 +221,13 @@ module.exports = {
       WHERE sale_status != 'voided'
         AND payment_status IN ('paid', 'pending')
         AND sale_date >= date_trunc('week', CURRENT_DATE)
-        AND sale_date <= CURRENT_DATE
+        AND sale_date < CURRENT_DATE + INTERVAL '1 day' -- ⭐ FIX
       GROUP BY DATE(sale_date)
     )
     SELECT
       TO_CHAR(d.day, 'DY') AS label,
       CASE
-       WHEN d.day <= CURRENT_DATE THEN COALESCE(s.revenue, 0)
+        WHEN d.day <= CURRENT_DATE THEN COALESCE(s.revenue, 0)
         ELSE NULL
       END AS revenue
     FROM days d
@@ -234,6 +235,7 @@ module.exports = {
     ORDER BY d.day;
   `);
 }
+
 
 
     if (range === "month") {
