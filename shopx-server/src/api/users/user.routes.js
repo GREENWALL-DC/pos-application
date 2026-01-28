@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../../config/db");
 const validateToken = require("../../middleware/validateTokenHandler");
 const checkAdmin = require("../../middleware/checkAdmin");
+const bcrypt = require("bcrypt");
 
 // ⭐ GET ALL SALESPERSONS
 router.get("/salespersons", validateToken, checkAdmin, async (req, res) => {
@@ -32,26 +33,73 @@ router.get("/salespersons/:id", validateToken, checkAdmin, async (req, res) => {
   res.json(result.rows[0]);
 });
 
+
+
 // ⭐ UPDATE SALESPERSON
+// router.put("/salespersons/:id", validateToken, checkAdmin, async (req, res) => {
+//   const { username, email, phone } = req.body;
+
+//   const result = await db.query(
+//     `UPDATE users SET 
+//        username = COALESCE($1, username),
+//        email = COALESCE($2, email),
+//        phone = COALESCE($3, phone)
+//      WHERE id = $4 AND user_type = 'user'
+//      RETURNING id, username, email, phone`,
+//     [username, email, phone, req.params.id]
+//   );
+
+//   if (result.rows.length === 0) {
+//     return res.status(404).json({ message: "Salesperson not found" });
+//   }
+
+//   res.json({ message: "Salesperson updated", user: result.rows[0] });
+// });
+
+
+
+
 router.put("/salespersons/:id", validateToken, checkAdmin, async (req, res) => {
-  const { username, email, phone } = req.body;
+  const { username, email, phone, password } = req.body;
+
+  let passwordClause = "";
+  let values = [username, email, phone];
+  let index = 4;
+
+  // 🔐 Only update password if admin provided one
+  if (password && password.trim() !== "") {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    passwordClause = `, password = $${index}`;
+    values.push(hashedPassword);
+    index++;
+  }
+
+  values.push(req.params.id);
 
   const result = await db.query(
-    `UPDATE users SET 
-       username = COALESCE($1, username),
-       email = COALESCE($2, email),
-       phone = COALESCE($3, phone)
-     WHERE id = $4 AND user_type = 'user'
-     RETURNING id, username, email, phone`,
-    [username, email, phone, req.params.id]
+    `
+    UPDATE users SET 
+      username = COALESCE($1, username),
+      email = COALESCE($2, email),
+      phone = COALESCE($3, phone)
+      ${passwordClause}
+    WHERE id = $${index} AND user_type = 'user'
+    RETURNING id, username, email, phone
+    `,
+    values
   );
 
   if (result.rows.length === 0) {
     return res.status(404).json({ message: "Salesperson not found" });
   }
 
-  res.json({ message: "Salesperson updated", user: result.rows[0] });
+  res.json({
+    message: "Salesperson updated successfully",
+    user: result.rows[0],
+  });
 });
+
+
 
 // ⭐ DELETE SALESPERSON
 router.delete("/salespersons/:id", validateToken, checkAdmin, async (req, res) => {
