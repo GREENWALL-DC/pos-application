@@ -54,6 +54,23 @@ class AdminDashboardNotifier extends Notifier<AdminDashboardState> {
         // ✅ CORRECT TOTALS PARSING
         totals: Totals.fromJson(totalsJson),
 
+        yesterdayRevenue: parseRequired(
+          totalsJson['yesterday']?['revenue'],
+          'yesterday.revenue',
+        ),
+
+        todayChange: DailyChange(
+          revenueDiff: parseRequired(
+            totalsJson['today_change']?['revenue_diff'],
+            'today_change.revenue_diff',
+          ),
+          revenuePercent: parseRequired(
+            totalsJson['today_change']?['revenue_percent'],
+            'today_change.revenue_percent',
+          ),
+          direction: totalsJson['today_change']?['direction'] ?? 'same',
+        ),
+
         // ✅ GLOBAL METRICS
         totalCustomers: parseRequired(
           totalsJson['total_customers'],
@@ -90,7 +107,6 @@ class AdminDashboardNotifier extends Notifier<AdminDashboardState> {
             )
             .toList(),
 
-
         // ✅ TABLES
         recentSales: (tables['recent_sales'] ?? [])
             .map<Map<String, dynamic>>(
@@ -115,38 +131,33 @@ class AdminDashboardNotifier extends Notifier<AdminDashboardState> {
     }
 
     await changeSalesChartPeriod(state.chartPeriod);
-
   }
 
+  Future<void> changeSalesChartPeriod(SalesChartPeriod period) async {
+    state = state.copyWith(chartPeriod: period, loading: true);
 
-Future<void> changeSalesChartPeriod(SalesChartPeriod period) async {
-  state = state.copyWith(chartPeriod: period, loading: true);
+    final repo = ref.read(adminDashboardRepositoryProvider);
 
-  final repo = ref.read(adminDashboardRepositoryProvider);
+    final range = switch (period) {
+      SalesChartPeriod.daily => "day",
+      SalesChartPeriod.weekly => "week",
+      SalesChartPeriod.monthly => "month",
+    };
 
- final range = switch (period) {
-  SalesChartPeriod.daily => "day",
-  SalesChartPeriod.weekly => "week",
-  SalesChartPeriod.monthly => "month",
-};
+    final chart = await repo.getSalesChart(range);
 
-
-  final chart = await repo.getSalesChart(range);
-
-  state = state.copyWith(
-    loading: false,
-    salesChart: chart
-        .map<Map<String, dynamic>>(
-          (e) => {
-            "label": e["label"],
-            "revenue": parseRequired(e["revenue"], "chart.revenue"),
-          },
-        )
-        .toList(),
-  );
-}
-
-
+    state = state.copyWith(
+      loading: false,
+      salesChart: chart
+          .map<Map<String, dynamic>>(
+            (e) => {
+              "label": e["label"],
+              "revenue": parseRequired(e["revenue"], "chart.revenue"),
+            },
+          )
+          .toList(),
+    );
+  }
 
   Future<void> fetchDashboard() async {
     await loadDashboard();

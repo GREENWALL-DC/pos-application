@@ -3,6 +3,7 @@ const repo = require("./dashboard.repository");
 exports.getDashboardData = async () => {
   const totalSales = await repo.getTotalSales();
   const todayMetrics = await repo.getTodayMetrics();
+  const yesterdayMetrics = await repo.getYesterdayMetrics();
   const totalPayments = await repo.getTotalPayments(); // optional
   // const todaySales = await repo.getTodaySales();
   const topProducts = await repo.getTopProducts();
@@ -12,6 +13,25 @@ exports.getDashboardData = async () => {
   const customerCount = await repo.getCustomerCount();
   const weeklySales = await repo.getWeeklySales();
   const totalDiscount = await repo.getTotalDiscount();
+
+  //new
+  
+const todayRevenue = Number(todayMetrics.rows[0].today_revenue);
+const yesterdayRevenue = Number(
+  yesterdayMetrics.rows[0].yesterday_revenue
+);
+
+// comparison calculation
+let revenueDiff = todayRevenue - yesterdayRevenue;
+let revenuePercent = 0;
+
+if (yesterdayRevenue > 0) {
+  revenuePercent = (revenueDiff / yesterdayRevenue) * 100;
+}
+
+const revenueDirection =
+  revenueDiff > 0 ? "up" : revenueDiff < 0 ? "down" : "same";
+
 
   return {
     totals: {
@@ -32,6 +52,17 @@ exports.getDashboardData = async () => {
 
         avg_order_value: Number(todayMetrics.rows[0].today_avg_order_value),
       },
+
+      
+yesterday: {
+  revenue: yesterdayRevenue,
+},
+
+today_change: {
+  revenue_diff: revenueDiff,
+  revenue_percent: Number(revenuePercent.toFixed(2)),
+  direction: revenueDirection,
+},
 
       // unrelated global metrics (stay outside scope)
       total_customers: Number(customerCount.rows[0].total_customers),

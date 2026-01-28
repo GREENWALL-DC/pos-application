@@ -35,6 +35,7 @@ class AdminDashboard extends HookConsumerWidget {
     }
 
     final chartData = dashboard.salesChart;
+    final isDailyChart = dashboard.chartPeriod == SalesChartPeriod.daily;
 
     double maxY = chartData.isEmpty
         ? 100
@@ -227,80 +228,155 @@ class AdminDashboard extends HookConsumerWidget {
               const SizedBox(height: 12),
 
               // 📊 SALES CHART
-              SizedBox(
-                height: 220,
-                child: LineChart(
-                  LineChartData(
-                    minY: 0,
-                    maxY: maxY,
-                    gridData: FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 36,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              value.toInt().toString(),
-                              style: const TextStyle(fontSize: 10),
-                            );
-                          },
-                        ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            final index = value.toInt();
-                            if (index < 0 || index >= chartData.length) {
-                              return const SizedBox();
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                chartData[index]["label"].toString(),
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    lineBarsData: [
-                      LineChartBarData(
-                        isCurved: true,
-                        barWidth: 2,
-                        color: const Color(0xFF1E75D5),
-                        spots: chartData.asMap().entries.map((e) {
-                          return FlSpot(
-                            e.key.toDouble(),
-                            (e.value["revenue"] as num).toDouble(),
-                          );
-                        }).toList(),
-                        dotData: FlDotData(show: false),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFF1E75D5).withOpacity(0.3),
-                              Colors.transparent,
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
+              // ================= DAILY SCOREBOARD =================
+              if (isDailyChart)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Today's Revenue",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            "SAR ${dashboard.totals.today.revenue.toStringAsFixed(2)}",
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Row(
+                        children: [
+                          Icon(
+                            dashboard.todayChange.direction == "up"
+                                ? Icons.arrow_upward
+                                : dashboard.todayChange.direction == "down"
+                                ? Icons.arrow_downward
+                                : Icons.remove,
+                            color: dashboard.todayChange.direction == "up"
+                                ? Colors.green
+                                : dashboard.todayChange.direction == "down"
+                                ? Colors.red
+                                : Colors.grey,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${dashboard.todayChange.revenuePercent}%",
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: dashboard.todayChange.direction == "up"
+                                  ? Colors.green
+                                  : dashboard.todayChange.direction == "down"
+                                  ? Colors.red
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              // ================= WEEKLY / MONTHLY CHART =================
+              else
+                SizedBox(
+                  height: 240,
+                  child: dashboard.loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : LineChart(
+                          LineChartData(
+                            minY: 0,
+                            maxY: maxY,
+                            gridData: FlGridData(show: false),
+                            borderData: FlBorderData(show: false),
+                            titlesData: FlTitlesData(
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 36,
+                                  getTitlesWidget: (value, _) => Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, _) {
+                                    final index = value.toInt();
+                                    if (index < 0 ||
+                                        index >= chartData.length) {
+                                      return const SizedBox();
+                                    }
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(
+                                        chartData[index]["label"],
+                                        style: const TextStyle(fontSize: 10),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            lineBarsData: [
+                              LineChartBarData(
+                                isCurved: true,
+                                barWidth: 2,
+                                color: kPrimaryBlue,
+                                spots: chartData.asMap().entries.map((e) {
+                                  return FlSpot(
+                                    e.key.toDouble(),
+                                    (e.value["revenue"] as num).toDouble(),
+                                  );
+                                }).toList(),
+                                dotData: FlDotData(show: false),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      kPrimaryBlue.withOpacity(0.3),
+                                      Colors.transparent,
+                                    ],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                 ),
-              ),
 
               const SizedBox(height: 24),
 

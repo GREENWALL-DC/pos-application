@@ -1,9 +1,4 @@
-enum SalesChartPeriod {
-  daily,
-  weekly,
-  monthly,
-}
-
+enum SalesChartPeriod { daily, weekly, monthly }
 
 class RevenueMetrics {
   final num revenue;
@@ -39,6 +34,27 @@ class Totals {
   }
 }
 
+//new
+class DailyChange {
+  final num revenueDiff;
+  final num revenuePercent;
+  final String direction; // "up" | "down" | "same"
+
+  const DailyChange({
+    required this.revenueDiff,
+    required this.revenuePercent,
+    required this.direction,
+  });
+
+  factory DailyChange.empty() {
+    return const DailyChange(
+      revenueDiff: 0,
+      revenuePercent: 0,
+      direction: "same",
+    );
+  }
+}
+
 // class AdminDashboardState {
 //   final bool loading;
 //   final String? error;
@@ -68,6 +84,10 @@ class AdminDashboardState {
   // 🔥 NEW: Sales chart period selector (Weekly / Monthly)
   final SalesChartPeriod chartPeriod;
 
+  //new
+  final num yesterdayRevenue;
+  final DailyChange todayChange;
+
   // charts
   final List<Map<String, dynamic>> weeklySummary;
   final List<Map<String, dynamic>> topProducts;
@@ -77,9 +97,8 @@ class AdminDashboardState {
   final List<Map<String, dynamic>> recentSales;
   final List<Map<String, dynamic>> lowStock;
 
-//new
+  //new
   final List<Map<String, dynamic>> salesChart;
-
 
   const AdminDashboardState({
     this.loading = false,
@@ -88,7 +107,7 @@ class AdminDashboardState {
     required this.totals,
     this.totalCustomers = 0,
     this.totalDiscount = 0, // NEW
-     this.chartPeriod = SalesChartPeriod.weekly, // ✅ DEFAULT
+    this.chartPeriod = SalesChartPeriod.weekly, // ✅ DEFAULT
 
     this.weeklySummary = const [],
     this.topProducts = const [],
@@ -98,6 +117,12 @@ class AdminDashboardState {
     this.lowStock = const [],
     this.salesChart = const [],
 
+    this.yesterdayRevenue = 0,
+    this.todayChange = const DailyChange(
+      revenueDiff: 0,
+      revenuePercent: 0,
+      direction: "same",
+    ),
   });
 
   AdminDashboardState copyWith({
@@ -106,7 +131,7 @@ class AdminDashboardState {
     Totals? totals,
     num? totalCustomers,
     num? totalDiscount, // NEW
-     SalesChartPeriod? chartPeriod,
+    SalesChartPeriod? chartPeriod,
 
     List<Map<String, dynamic>>? weeklySummary,
     List<Map<String, dynamic>>? topProducts,
@@ -116,6 +141,8 @@ class AdminDashboardState {
     List<Map<String, dynamic>>? lowStock,
     List<Map<String, dynamic>>? salesChart,
 
+    num? yesterdayRevenue,
+    DailyChange? todayChange,
   }) {
     return AdminDashboardState(
       loading: loading ?? this.loading,
@@ -125,7 +152,7 @@ class AdminDashboardState {
 
       totalCustomers: totalCustomers ?? this.totalCustomers,
       totalDiscount: totalDiscount ?? this.totalDiscount,
-       chartPeriod: chartPeriod ?? this.chartPeriod,
+      chartPeriod: chartPeriod ?? this.chartPeriod,
 
       weeklySummary: weeklySummary ?? this.weeklySummary,
       topProducts: topProducts ?? this.topProducts,
@@ -135,6 +162,8 @@ class AdminDashboardState {
       lowStock: lowStock ?? this.lowStock,
       salesChart: salesChart ?? this.salesChart,
 
+      yesterdayRevenue: yesterdayRevenue ?? this.yesterdayRevenue,
+      todayChange: todayChange ?? this.todayChange,
     );
   }
 
@@ -146,16 +175,15 @@ class AdminDashboardState {
   //     ),
   //   );
   // }
-factory AdminDashboardState.initial() {
-  return AdminDashboardState(
-     salesChart: const [],
-    chartPeriod: SalesChartPeriod.weekly,
-    totals: Totals(
-      all: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
-      today: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
-    ),
-  );
-}
-
-
+  factory AdminDashboardState.initial() {
+    return AdminDashboardState(
+      chartPeriod: SalesChartPeriod.weekly,
+      yesterdayRevenue: 0,
+      todayChange: DailyChange.empty(),
+      totals: Totals(
+        all: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
+        today: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),
+      ),
+    );
+  }
 }

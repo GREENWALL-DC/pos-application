@@ -1,9 +1,8 @@
 const db = require("../../config/db");
 
 module.exports = {
-
- getTotalSales: async () => {
-  return await db.query(`
+  getTotalSales: async () => {
+    return await db.query(`
     SELECT 
       COUNT(id) AS total_sales,
       COALESCE(SUM(subtotal_amount - discount_amount), 0) AS total_revenue,
@@ -12,12 +11,11 @@ module.exports = {
     WHERE payment_status = 'paid'
       AND sale_status != 'voided'
   `);
-},
-
+  },
 
   getTotalPayments: async () => {
     return await db.query(
-      `SELECT COALESCE(SUM(amount), 0) AS total_payments FROM payments`
+      `SELECT COALESCE(SUM(amount), 0) AS total_payments FROM payments`,
     );
   },
 
@@ -25,8 +23,8 @@ module.exports = {
     return await db.query(`SELECT COUNT(*) AS total_customers FROM customers`);
   },
 
- getTodaySales: async () => {
-  return await db.query(`
+  getTodaySales: async () => {
+    return await db.query(`
     SELECT 
       COALESCE(SUM(subtotal_amount - discount_amount), 0) AS today_sales
     FROM sales
@@ -34,8 +32,7 @@ module.exports = {
       AND payment_status = 'paid'
       AND sale_status != 'voided'
   `);
-},
-
+  },
 
   getWeeklySales: async () => {
     return await db.query(`
@@ -77,23 +74,23 @@ module.exports = {
     `);
   },
 
-//  getSalesBySalesperson: async () => {
-//   return await db.query(`
-//     SELECT 
-//       sp.name,
-//       COALESCE(SUM(s.subtotal_amount - s.discount_amount), 0) AS total_sales
-//     FROM salespersons sp
-//     LEFT JOIN sales s 
-//       ON s.salesperson_id = sp.id
-//       AND s.payment_status = 'paid'
-//       AND s.sale_status != 'voided'
-//     GROUP BY sp.name
-//     ORDER BY total_sales DESC
-//   `);
-// },
+  //  getSalesBySalesperson: async () => {
+  //   return await db.query(`
+  //     SELECT
+  //       sp.name,
+  //       COALESCE(SUM(s.subtotal_amount - s.discount_amount), 0) AS total_sales
+  //     FROM salespersons sp
+  //     LEFT JOIN sales s
+  //       ON s.salesperson_id = sp.id
+  //       AND s.payment_status = 'paid'
+  //       AND s.sale_status != 'voided'
+  //     GROUP BY sp.name
+  //     ORDER BY total_sales DESC
+  //   `);
+  // },
 
-getSalesBySalesperson: async () => {
-  return await db.query(`
+  getSalesBySalesperson: async () => {
+    return await db.query(`
     SELECT
       sp.id,
       sp.name,
@@ -133,12 +130,10 @@ getSalesBySalesperson: async () => {
     GROUP BY sp.id, sp.name
     ORDER BY monthly_revenue DESC;
   `);
-},
+  },
 
-
-
-getRecentSales: async () => {
-  return await db.query(`
+  getRecentSales: async () => {
+    return await db.query(`
     SELECT DISTINCT ON (s.id)
       s.id,
       s.total_amount,
@@ -154,8 +149,7 @@ getRecentSales: async () => {
       s.updated_at DESC
     LIMIT 10
   `);
-},
-
+  },
 
   getLowStock: async () => {
     return await db.query(`
@@ -175,9 +169,8 @@ getRecentSales: async () => {
   `);
   },
 
-
   getTodayMetrics: async () => {
-  return await db.query(`
+    return await db.query(`
     SELECT
       COUNT(id) AS today_sales,
       COALESCE(SUM(subtotal_amount - discount_amount), 0) AS today_revenue,
@@ -193,57 +186,83 @@ getRecentSales: async () => {
       AND payment_status = 'paid'
       AND sale_status != 'voided'
   `);
-},
+  },
 
+  getYesterdayMetrics: async () => {
+    return await db.query(`
+    SELECT
+      COUNT(id) AS yesterday_sales,
+      COALESCE(SUM(subtotal_amount - discount_amount), 0) AS yesterday_revenue
+    FROM sales
+    WHERE DATE(sale_date) = CURRENT_DATE - INTERVAL '1 day'
+      AND payment_status = 'paid'
+      AND sale_status != 'voided'
+  `);
+  },
 
-
-// 📊 SALES CHART DATA
-getSalesChartData: async (range) => {
-  if (range === "day") {
-    // Today only (single point)
-    return db.query(`
+  // 📊 SALES CHART DATA
+  getSalesChartData: async (range) => {
+    if (range === "week") {
+      return db.query(`
+    WITH days AS (
       SELECT 
-        CURRENT_DATE AS label,
-        COALESCE(SUM(subtotal_amount - discount_amount), 0) AS revenue
-      FROM sales
-      WHERE DATE(sale_date) = CURRENT_DATE
-        AND sale_status != 'voided'
-        AND payment_status IN ('paid', 'pending')
-    `);
-  }
-
-  if (range === "week") {
-    // Last 7 days
-    return db.query(`
+        generate_series(
+          date_trunc('week', CURRENT_DATE),
+          date_trunc('week', CURRENT_DATE) + interval '6 days',
+          interval '1 day'
+        )::date AS day
+    ),
+    sales_data AS (
       SELECT
-        TO_CHAR(sale_date, 'DY') AS label,
-        COALESCE(SUM(subtotal_amount - discount_amount), 0) AS revenue
+        DATE(sale_date) AS day,
+        SUM(subtotal_amount - discount_amount) AS revenue
       FROM sales
-      WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
+      WHERE sale_date >= date_trunc('week', CURRENT_DATE)
+        AND sale_date <= CURRENT_DATE
         AND sale_status != 'voided'
         AND payment_status IN ('paid', 'pending')
-      GROUP BY TO_CHAR(sale_date, 'DY')
-      ORDER BY MIN(sale_date)
-    `);
-  }
+      GROUP BY DATE(sale_date)
+    )
+    SELECT
+      TO_CHAR(d.day, 'DY') AS label,
+      s.revenue
+    FROM days d
+    LEFT JOIN sales_data s ON s.day = d.day
+    ORDER BY d.day;
+  `);
+    }
 
-  if (range === "month") {
-    // Last 30 days grouped by week
-    return db.query(`
+    if (range === "month") {
+      return db.query(`
+    WITH ticks AS (
+      SELECT unnest(ARRAY[
+        1, 5, 10, 15, 20, 25,
+        EXTRACT(day FROM CURRENT_DATE)::int
+      ]) AS day
+    ),
+    sales_data AS (
       SELECT
-        CONCAT('Week ', EXTRACT(WEEK FROM sale_date)) AS label,
-        COALESCE(SUM(subtotal_amount - discount_amount), 0) AS revenue
+        DATE(sale_date) AS day,
+        SUM(subtotal_amount - discount_amount) AS revenue
       FROM sales
-      WHERE sale_date >= CURRENT_DATE - INTERVAL '30 days'
+      WHERE DATE_TRUNC('month', sale_date) = DATE_TRUNC('month', CURRENT_DATE)
+        AND sale_date <= CURRENT_DATE
         AND sale_status != 'voided'
         AND payment_status IN ('paid', 'pending')
-      GROUP BY EXTRACT(WEEK FROM sale_date)
-      ORDER BY EXTRACT(WEEK FROM sale_date)
-    `);
-  }
+      GROUP BY DATE(sale_date)
+    )
+    SELECT
+      t.day::text AS label,
+      (
+        SELECT SUM(revenue)
+        FROM sales_data s
+        WHERE EXTRACT(day FROM s.day) <= t.day
+      ) AS revenue
+    FROM ticks t
+    ORDER BY t.day;
+  `);
+    }
 
-  throw new Error("Invalid range");
-},
-
-
+    throw new Error("Invalid range");
+  },
 };
