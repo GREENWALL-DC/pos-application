@@ -34,7 +34,17 @@ class AdminDashboard extends HookConsumerWidget {
       );
     }
 
-    final weekly = dashboard.weeklySummary;
+    final chartData = dashboard.salesChart;
+
+    double maxY = chartData.isEmpty
+        ? 100
+        : chartData
+                  .map((e) => e["revenue"] as num)
+                  .reduce((a, b) => a > b ? a : b)
+                  .toDouble() *
+              1.2;
+
+    // final weekly = dashboard.weeklySummary;
 
     // final totalRevenue = dashboard.netSales;
     // final totalSales = dashboard.totalSales; // Total Sales (count)
@@ -188,17 +198,109 @@ class AdminDashboard extends HookConsumerWidget {
               //   totalDiscount: dashboard.totalDiscount,
               // ),
 
-              // --- SALESPERSON PERFORMANCE CHART ---
-_SalespersonPerformanceChart(
-  data: dashboard.salesBySalesperson,
-  period: dashboard.chartPeriod,
-  onPeriodChange: (p) {
-    ref
-        .read(adminDashboardNotifierProvider.notifier)
-        .changeSalesChartPeriod(p);
-  },
-),
+              // 🔽 SALES CHART FILTER
+              DropdownButton<SalesChartPeriod>(
+                value: dashboard.chartPeriod,
+                items: const [
+                  DropdownMenuItem(
+                    value: SalesChartPeriod.daily,
+                    child: Text("Daily"),
+                  ),
+                  DropdownMenuItem(
+                    value: SalesChartPeriod.weekly,
+                    child: Text("Weekly"),
+                  ),
+                  DropdownMenuItem(
+                    value: SalesChartPeriod.monthly,
+                    child: Text("Monthly"),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    ref
+                        .read(adminDashboardNotifierProvider.notifier)
+                        .changeSalesChartPeriod(value);
+                  }
+                },
+              ),
 
+              const SizedBox(height: 12),
+
+              // 📊 SALES CHART
+              SizedBox(
+                height: 220,
+                child: LineChart(
+                  LineChartData(
+                    minY: 0,
+                    maxY: maxY,
+                    gridData: FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    titlesData: FlTitlesData(
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 36,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              value.toInt().toString(),
+                              style: const TextStyle(fontSize: 10),
+                            );
+                          },
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            final index = value.toInt();
+                            if (index < 0 || index >= chartData.length) {
+                              return const SizedBox();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                chartData[index]["label"].toString(),
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    lineBarsData: [
+                      LineChartBarData(
+                        isCurved: true,
+                        barWidth: 2,
+                        color: const Color(0xFF1E75D5),
+                        spots: chartData.asMap().entries.map((e) {
+                          return FlSpot(
+                            e.key.toDouble(),
+                            (e.value["revenue"] as num).toDouble(),
+                          );
+                        }).toList(),
+                        dotData: FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF1E75D5).withOpacity(0.3),
+                              Colors.transparent,
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
               const SizedBox(height: 24),
 
@@ -291,234 +393,230 @@ class _MetricCard extends StatelessWidget {
 // 🧩 SUB-WIDGET: WEEKLY SUMMARY CHART
 // =============================================================================
 
-class _WeeklySummarySection extends StatelessWidget {
-  final List<dynamic> weekly;
-  final num grossRevenue;
-  final num netSales;
-  final num totalDiscount;
+// class _WeeklySummarySection extends StatelessWidget {
+//   final List<dynamic> weekly;
+//   final num grossRevenue;
+//   final num netSales;
+//   final num totalDiscount;
 
-  const _WeeklySummarySection({
-    required this.weekly,
-    required this.grossRevenue,
-    required this.netSales,
-    required this.totalDiscount,
-  });
+//   const _WeeklySummarySection({
+//     required this.weekly,
+//     required this.grossRevenue,
+//     required this.netSales,
+//     required this.totalDiscount,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    // 1️⃣ Compute maximum revenue dynamically
-    double maxRevenue = 0;
+//   @override
+//   Widget build(BuildContext context) {
+//     // 1️⃣ Compute maximum revenue dynamically
+//     double maxRevenue = 0;
 
-    for (final row in weekly) {
-      final value = double.tryParse(row["revenue"].toString()) ?? 0;
-      if (value > maxRevenue) maxRevenue = value;
-    }
+//     for (final row in weekly) {
+//       final value = double.tryParse(row["revenue"].toString()) ?? 0;
+//       if (value > maxRevenue) maxRevenue = value;
+//     }
 
-    // 2️⃣ Add padding so chart never touches the box border
-    double maxYValue = maxRevenue == 0 ? 100 : maxRevenue * 1.2;
+//     // 2️⃣ Add padding so chart never touches the box border
+//     double maxYValue = maxRevenue == 0 ? 100 : maxRevenue * 1.2;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Weekly Summary",
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1D1D1D),
-                ),
-              ),
-              const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
-            ],
-          ),
-          kHeight20,
+//     return Container(
+//       padding: const EdgeInsets.all(16),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(12),
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.05),
+//             blurRadius: 10,
+//             offset: const Offset(0, 4),
+//           ),
+//         ],
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           // Header
+//           Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               Text(
+//                 "Weekly Summary",
+//                 style: GoogleFonts.poppins(
+//                   fontSize: 14,
+//                   fontWeight: FontWeight.bold,
+//                   color: const Color(0xFF1D1D1D),
+//                 ),
+//               ),
+//               const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+//             ],
+//           ),
+//           kHeight20,
 
-          // Chart
-          SizedBox(
-            height: 180,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: maxYValue / 4, // ⭐ FIXED
-                      getTitlesWidget: (val, meta) {
-                        return Text(
-                          val.toInt().toString(),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+//           // Chart
+//           SizedBox(
+//             height: 180,
+//             child: LineChart(
+//               LineChartData(
+//                 gridData: FlGridData(show: false),
+//                 titlesData: FlTitlesData(
+//                   show: true,
+//                   topTitles: AxisTitles(
+//                     sideTitles: SideTitles(showTitles: false),
+//                   ),
+//                   rightTitles: AxisTitles(
+//                     sideTitles: SideTitles(showTitles: false),
+//                   ),
+//                   leftTitles: AxisTitles(
+//                     sideTitles: SideTitles(
+//                       showTitles: true,
+//                       reservedSize: 30,
+//                       interval: maxYValue / 4, // ⭐ FIXED
+//                       getTitlesWidget: (val, meta) {
+//                         return Text(
+//                           val.toInt().toString(),
+//                           style: const TextStyle(
+//                             fontSize: 10,
+//                             color: Colors.grey,
+//                           ),
+//                         );
+//                       },
+//                     ),
+//                   ),
 
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                        if (value.toInt() >= 0 && value.toInt() < days.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              days[value.toInt()],
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 6,
-                minY: 0,
-                maxY: maxYValue,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: weekly.asMap().entries.map((e) {
-                      final index = e.key;
-                      final row = e.value;
+//                   bottomTitles: AxisTitles(
+//                     sideTitles: SideTitles(
+//                       showTitles: true,
+//                       getTitlesWidget: (value, meta) {
+//                         const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+//                         if (value.toInt() >= 0 && value.toInt() < days.length) {
+//                           return Padding(
+//                             padding: const EdgeInsets.only(top: 8.0),
+//                             child: Text(
+//                               days[value.toInt()],
+//                               style: GoogleFonts.poppins(
+//                                 fontSize: 12,
+//                                 color: Colors.grey,
+//                               ),
+//                             ),
+//                           );
+//                         }
+//                         return const SizedBox();
+//                       },
+//                     ),
+//                   ),
+//                 ),
+//                 borderData: FlBorderData(show: false),
+//                 minX: 0,
+//                 maxX: 6,
+//                 minY: 0,
+//                 maxY: maxYValue,
+//                 lineBarsData: [
+//                   LineChartBarData(
+//                     spots: weekly.asMap().entries.map((e) {
+//                       final index = e.key;
+//                       final row = e.value;
 
-                      final revenue =
-                          double.tryParse(row["revenue"].toString()) ?? 0.7;
+//                       final revenue =
+//                           double.tryParse(row["revenue"].toString()) ?? 0.7;
 
-                      return FlSpot(index.toDouble(), revenue);
-                    }).toList(),
+//                       return FlSpot(index.toDouble(), revenue);
+//                     }).toList(),
 
-                    isCurved: true,
-                    color: const Color(0xFF1E75D5),
-                    barWidth: 2,
-                    dotData: FlDotData(
-                      show: true,
-                      checkToShowDot: (spot, barData) =>
-                          spot.x == 2, // Only show dot on peak
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF1E75D5).withOpacity(0.3),
-                          Colors.white.withOpacity(0.0),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                ],
-                // Tooltip setup to match image (Simplified static look)
-                lineTouchData: LineTouchData(
-                  enabled: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (spot) => const Color(0xFFE3F2FD),
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((LineBarSpot touchedSpot) {
-                        return LineTooltipItem(
-                          '112 Transaction',
-                          GoogleFonts.poppins(
-                            color: const Color(0xFF1E75D5),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
+//                     isCurved: true,
+//                     color: const Color(0xFF1E75D5),
+//                     barWidth: 2,
+//                     dotData: FlDotData(
+//                       show: true,
+//                       checkToShowDot: (spot, barData) =>
+//                           spot.x == 2, // Only show dot on peak
+//                     ),
+//                     belowBarData: BarAreaData(
+//                       show: true,
+//                       gradient: LinearGradient(
+//                         colors: [
+//                           const Color(0xFF1E75D5).withOpacity(0.3),
+//                           Colors.white.withOpacity(0.0),
+//                         ],
+//                         begin: Alignment.topCenter,
+//                         end: Alignment.bottomCenter,
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//                 // Tooltip setup to match image (Simplified static look)
+//                 lineTouchData: LineTouchData(
+//                   enabled: true,
+//                   touchTooltipData: LineTouchTooltipData(
+//                     getTooltipColor: (spot) => const Color(0xFFE3F2FD),
+//                     getTooltipItems: (touchedSpots) {
+//                       return touchedSpots.map((LineBarSpot touchedSpot) {
+//                         return LineTooltipItem(
+//                           '112 Transaction',
+//                           GoogleFonts.poppins(
+//                             color: const Color(0xFF1E75D5),
+//                             fontSize: 12,
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         );
+//                       }).toList();
+//                     },
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//           const SizedBox(height: 20),
 
-          // Stats Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // _buildSummaryStat(
-              //   "Gross Revenue",
-              //   "\$${grossRevenue.toStringAsFixed(2)}",
-              // ),
-              _buildSummaryStat(
-                "Gross Revenue",
-                "SAR ${grossRevenue.toStringAsFixed(2)}",
-              ),
+//           // Stats Row
+//           Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               // _buildSummaryStat(
+//               //   "Gross Revenue",
+//               //   "\$${grossRevenue.toStringAsFixed(2)}",
+//               // ),
+//               _buildSummaryStat(
+//                 "Gross Revenue",
+//                 "SAR ${grossRevenue.toStringAsFixed(2)}",
+//               ),
 
-              // _buildSummaryStat("Net sales", "$netSales"),
-              _buildSummaryStat(
-                "Net sales",
-                "SAR ${netSales.toStringAsFixed(2)}",
-              ),
+//               // _buildSummaryStat("Net sales", "$netSales"),
+//               _buildSummaryStat(
+//                 "Net sales",
+//                 "SAR ${netSales.toStringAsFixed(2)}",
+//               ),
 
-              // _buildSummaryStat(
-              //   "Discount",
-              //   "\$${totalDiscount.toStringAsFixed(2)}",
-              // ),
-              _buildSummaryStat(
-                "Discount",
-                "SAR ${totalDiscount.toStringAsFixed(2)}",
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+//               // _buildSummaryStat(
+//               //   "Discount",
+//               //   "\$${totalDiscount.toStringAsFixed(2)}",
+//               // ),
+//               _buildSummaryStat(
+//                 "Discount",
+//                 "SAR ${totalDiscount.toStringAsFixed(2)}",
+//               ),
+//             ],
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 
-  Widget _buildSummaryStat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
+Widget _buildSummaryStat(String label, String value) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey)),
+      const SizedBox(height: 4),
+      Text(
+        value,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF1D1D1D),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF1D1D1D),
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 // =============================================================================
@@ -698,143 +796,4 @@ class _TransactionItem extends StatelessWidget {
   }
 
   //new
-  
-}
-
-class _SalespersonPerformanceChart extends StatelessWidget {
-  final List<Map<String, dynamic>> data;
-  final SalesChartPeriod period;
-  final ValueChanged<SalesChartPeriod> onPeriodChange;
-
-  const _SalespersonPerformanceChart({
-    required this.data,
-    required this.period,
-    required this.onPeriodChange,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (data.isEmpty) {
-      return const SizedBox();
-    }
-
-    final barWidth = 50.0;
-    final chartWidth = data.length * barWidth;
-
-    final maxValue = data
-        .map((e) =>
-            (period == SalesChartPeriod.weekly
-                ? e['weekly_revenue']
-                : e['monthly_revenue']) as num)
-        .fold<num>(0, (a, b) => a > b ? a : b);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header + Toggle
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Salesperson Performance",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              ToggleButtons(
-                isSelected: [
-                  period == SalesChartPeriod.weekly,
-                  period == SalesChartPeriod.monthly,
-                ],
-                onPressed: (index) {
-                  onPeriodChange(
-                    index == 0
-                        ? SalesChartPeriod.weekly
-                        : SalesChartPeriod.monthly,
-                  );
-                },
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text("Weekly"),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text("Monthly"),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Scrollable Chart
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: chartWidth < MediaQuery.of(context).size.width
-                  ? MediaQuery.of(context).size.width
-                  : chartWidth,
-              height: 260,
-              child: BarChart(
-                BarChartData(
-                  maxY: maxValue == 0 ? 100 : (maxValue * 1.2),
-                  gridData: FlGridData(show: true),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < data.length) {
-                            return Text(
-                              data[index]['name'],
-                              style: const TextStyle(fontSize: 10),
-                            );
-                          }
-                          return const SizedBox();
-                        },
-                      ),
-                    ),
-                    rightTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  barGroups: data.asMap().entries.map((e) {
-                    final value = period == SalesChartPeriod.weekly
-                        ? e.value['weekly_revenue']
-                        : e.value['monthly_revenue'];
-
-                    return BarChartGroupData(
-                      x: e.key,
-                      barRods: [
-                        BarChartRodData(
-                          toY: (value as num).toDouble(),
-                          width: barWidth - 10,
-                          color: const Color(0xFF1E75D5),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

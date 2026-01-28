@@ -213,22 +213,54 @@ class AddSalespersonPage extends HookConsumerWidget {
             ),
 
             const SizedBox(height: 16),
-            _buildLabel("Password"),
-            _buildTextField(
-              passwordController,
-              isEditMode ? "Leave empty to keep current" : "Password",
-              isPassword: true,
-              errorMessage: passwordError.value,
-            ),
+            // _buildLabel("Password"),
+            // _buildTextField(
+            //   passwordController,
+            //   isEditMode ? "Leave empty to keep current" : "Password",
+            //   isPassword: true,
+            //   errorMessage: passwordError.value,
+            // ),
 
-            const SizedBox(height: 16),
-            _buildLabel("Confirm Password"),
-            _buildTextField(
-              confirmPasswordController,
-              "Confirm Password",
-              isPassword: true,
-              errorMessage: confirmError.value,
-            ),
+            // const SizedBox(height: 16),
+            // _buildLabel("Confirm Password"),
+            // _buildTextField(
+            //   confirmPasswordController,
+            //   "Confirm Password",
+            //   isPassword: true,
+            //   errorMessage: confirmError.value,
+            // ),
+
+            _buildLabel(isEditMode ? "Reset Password (Optional)" : "Password"),
+_buildTextField(
+  passwordController,
+  isEditMode ? "Enter new password to reset" : "Password",
+  isPassword: true,
+  errorMessage: passwordError.value,
+),
+
+// ✅ ADD THIS HELPER TEXT HERE
+if (isEditMode)
+  const Padding(
+    padding: EdgeInsets.only(top: 6),
+    child: Text(
+      "Salesman already has a password. Enter a new one only if you want to reset it.",
+      style: TextStyle(
+        fontSize: 12,
+        color: Colors.grey,
+      ),
+    ),
+  ),
+
+const SizedBox(height: 16),
+
+_buildLabel("Confirm Password"),
+_buildTextField(
+  confirmPasswordController,
+  "Confirm Password",
+  isPassword: true,
+  errorMessage: confirmError.value,
+),
+
 
             kHeight40,
 

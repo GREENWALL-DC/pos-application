@@ -1,4 +1,8 @@
-enum SalesChartPeriod { weekly, monthly }
+enum SalesChartPeriod {
+  daily,
+  weekly,
+  monthly,
+}
 
 
 class RevenueMetrics {
@@ -73,6 +77,10 @@ class AdminDashboardState {
   final List<Map<String, dynamic>> recentSales;
   final List<Map<String, dynamic>> lowStock;
 
+//new
+  final List<Map<String, dynamic>> salesChart;
+
+
   const AdminDashboardState({
     this.loading = false,
     this.error,
@@ -88,6 +96,8 @@ class AdminDashboardState {
 
     this.recentSales = const [],
     this.lowStock = const [],
+    this.salesChart = const [],
+
   });
 
   AdminDashboardState copyWith({
@@ -104,6 +114,8 @@ class AdminDashboardState {
 
     List<Map<String, dynamic>>? recentSales,
     List<Map<String, dynamic>>? lowStock,
+    List<Map<String, dynamic>>? salesChart,
+
   }) {
     return AdminDashboardState(
       loading: loading ?? this.loading,
@@ -121,6 +133,8 @@ class AdminDashboardState {
 
       recentSales: recentSales ?? this.recentSales,
       lowStock: lowStock ?? this.lowStock,
+      salesChart: salesChart ?? this.salesChart,
+
     );
   }
 
@@ -134,6 +148,7 @@ class AdminDashboardState {
   // }
 factory AdminDashboardState.initial() {
   return AdminDashboardState(
+     salesChart: const [],
     chartPeriod: SalesChartPeriod.weekly,
     totals: Totals(
       all: RevenueMetrics(revenue: 0, totalSales: 0, avgOrderValue: 0),

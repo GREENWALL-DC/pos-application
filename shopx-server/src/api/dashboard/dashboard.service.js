@@ -57,3 +57,14 @@ exports.getDashboardData = async () => {
     },
   };
 };
+
+// 📊 Sales chart data for dashboard (Day / Week / Month)
+exports.getSalesChart = async (range) => {
+  const result = await repo.getSalesChartData(range);
+
+  return result.rows.map((row) => ({
+    label: row.label,
+    revenue: Number(row.revenue),
+  }));
+};
+

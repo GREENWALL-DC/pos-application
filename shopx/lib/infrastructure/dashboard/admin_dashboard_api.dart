@@ -15,4 +15,13 @@ class AdminDashboardApi {
     final res = await _dio.get("/dashboard");
     return res.data;
   }
+
+  Future<List<dynamic>> fetchSalesChart(String range) async {
+  final res = await _dio.get(
+    "/dashboard/sales-chart",
+    queryParameters: {"range": range},
+  );
+  return res.data;
+}
+
 }

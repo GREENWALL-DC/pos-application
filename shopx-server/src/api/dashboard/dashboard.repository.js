@@ -195,4 +195,55 @@ getRecentSales: async () => {
   `);
 },
 
+
+
+// 📊 SALES CHART DATA
+getSalesChartData: async (range) => {
+  if (range === "day") {
+    // Today only (single point)
+    return db.query(`
+      SELECT 
+        CURRENT_DATE AS label,
+        COALESCE(SUM(subtotal_amount - discount_amount), 0) AS revenue
+      FROM sales
+      WHERE DATE(sale_date) = CURRENT_DATE
+        AND sale_status != 'voided'
+        AND payment_status IN ('paid', 'pending')
+    `);
+  }
+
+  if (range === "week") {
+    // Last 7 days
+    return db.query(`
+      SELECT
+        TO_CHAR(sale_date, 'DY') AS label,
+        COALESCE(SUM(subtotal_amount - discount_amount), 0) AS revenue
+      FROM sales
+      WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
+        AND sale_status != 'voided'
+        AND payment_status IN ('paid', 'pending')
+      GROUP BY TO_CHAR(sale_date, 'DY')
+      ORDER BY MIN(sale_date)
+    `);
+  }
+
+  if (range === "month") {
+    // Last 30 days grouped by week
+    return db.query(`
+      SELECT
+        CONCAT('Week ', EXTRACT(WEEK FROM sale_date)) AS label,
+        COALESCE(SUM(subtotal_amount - discount_amount), 0) AS revenue
+      FROM sales
+      WHERE sale_date >= CURRENT_DATE - INTERVAL '30 days'
+        AND sale_status != 'voided'
+        AND payment_status IN ('paid', 'pending')
+      GROUP BY EXTRACT(WEEK FROM sale_date)
+      ORDER BY EXTRACT(WEEK FROM sale_date)
+    `);
+  }
+
+  throw new Error("Invalid range");
+},
+
+
 };

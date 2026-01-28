@@ -90,9 +90,6 @@ class AdminDashboardNotifier extends Notifier<AdminDashboardState> {
             )
             .toList(),
 
-        salesBySalesperson: List<Map<String, dynamic>>.from(
-          charts['sales_by_salesperson'] ?? [],
-        ),
 
         // ✅ TABLES
         recentSales: (tables['recent_sales'] ?? [])
@@ -116,11 +113,39 @@ class AdminDashboardNotifier extends Notifier<AdminDashboardState> {
     } catch (e) {
       state = state.copyWith(loading: false, error: e.toString());
     }
+
+    await changeSalesChartPeriod(state.chartPeriod);
+
   }
 
-  void changeSalesChartPeriod(SalesChartPeriod period) {
-  state = state.copyWith(chartPeriod: period);
+
+Future<void> changeSalesChartPeriod(SalesChartPeriod period) async {
+  state = state.copyWith(chartPeriod: period, loading: true);
+
+  final repo = ref.read(adminDashboardRepositoryProvider);
+
+ final range = switch (period) {
+  SalesChartPeriod.daily => "day",
+  SalesChartPeriod.weekly => "week",
+  SalesChartPeriod.monthly => "month",
+};
+
+
+  final chart = await repo.getSalesChart(range);
+
+  state = state.copyWith(
+    loading: false,
+    salesChart: chart
+        .map<Map<String, dynamic>>(
+          (e) => {
+            "label": e["label"],
+            "revenue": parseRequired(e["revenue"], "chart.revenue"),
+          },
+        )
+        .toList(),
+  );
 }
+
 
 
   Future<void> fetchDashboard() async {

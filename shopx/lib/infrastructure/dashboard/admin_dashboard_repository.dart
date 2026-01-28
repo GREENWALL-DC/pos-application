@@ -8,4 +8,9 @@ class AdminDashboardRepository {
   Future<Map<String, dynamic>> getDashboardData() async {
     return await api.fetchDashboard();
   }
+
+  Future<List<dynamic>> getSalesChart(String range) async {
+  return await api.fetchSalesChart(range);
+}
+
 }
