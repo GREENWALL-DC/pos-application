@@ -329,15 +329,22 @@ class AdminDashboard extends HookConsumerWidget {
                                   ),
                                 ),
                               ),
+
                               bottomTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
+                                  interval: 1,
+
                                   getTitlesWidget: (value, _) {
+                                    // ⭐ BLOCK FRACTIONAL TICKS
+                                    if (value % 1 != 0) return const SizedBox();
+
                                     final index = value.toInt();
                                     if (index < 0 ||
                                         index >= chartData.length) {
                                       return const SizedBox();
                                     }
+
                                     return Padding(
                                       padding: const EdgeInsets.only(top: 8),
                                       child: Text(
@@ -354,12 +361,23 @@ class AdminDashboard extends HookConsumerWidget {
                                 isCurved: true,
                                 barWidth: 2,
                                 color: kPrimaryBlue,
-                                spots: chartData.asMap().entries.map((e) {
-                                  return FlSpot(
-                                    e.key.toDouble(),
-                                    (e.value["revenue"] as num).toDouble(),
-                                  );
-                                }).toList(),
+
+
+
+
+                          spots: chartData.asMap().entries
+    .where((e) => e.value["revenue"] != null)
+    .map((e) {
+      return FlSpot(
+        e.key.toDouble(),
+        (e.value["revenue"] as num).toDouble(),
+      );
+    })
+    .toList(),
+
+
+
+
                                 dotData: FlDotData(show: false),
                                 belowBarData: BarAreaData(
                                   show: true,

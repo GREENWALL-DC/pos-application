@@ -202,8 +202,8 @@ module.exports = {
 
   // 📊 SALES CHART DATA
   getSalesChartData: async (range) => {
-    if (range === "week") {
-      return db.query(`
+   if (range === "week") {
+  return db.query(`
     WITH days AS (
       SELECT 
         generate_series(
@@ -217,20 +217,24 @@ module.exports = {
         DATE(sale_date) AS day,
         SUM(subtotal_amount - discount_amount) AS revenue
       FROM sales
-      WHERE sale_date >= date_trunc('week', CURRENT_DATE)
-        AND sale_date <= CURRENT_DATE
-        AND sale_status != 'voided'
+      WHERE sale_status != 'voided'
         AND payment_status IN ('paid', 'pending')
+        AND sale_date >= date_trunc('week', CURRENT_DATE)
+        AND sale_date <= CURRENT_DATE
       GROUP BY DATE(sale_date)
     )
     SELECT
       TO_CHAR(d.day, 'DY') AS label,
-      s.revenue
+      CASE
+       WHEN d.day <= CURRENT_DATE THEN COALESCE(s.revenue, 0)
+        ELSE NULL
+      END AS revenue
     FROM days d
     LEFT JOIN sales_data s ON s.day = d.day
     ORDER BY d.day;
   `);
-    }
+}
+
 
     if (range === "month") {
       return db.query(`

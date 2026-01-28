@@ -133,31 +133,126 @@ class AdminDashboardNotifier extends Notifier<AdminDashboardState> {
     await changeSalesChartPeriod(state.chartPeriod);
   }
 
-  Future<void> changeSalesChartPeriod(SalesChartPeriod period) async {
-    state = state.copyWith(chartPeriod: period, loading: true);
 
-    final repo = ref.read(adminDashboardRepositoryProvider);
 
-    final range = switch (period) {
-      SalesChartPeriod.daily => "day",
-      SalesChartPeriod.weekly => "week",
-      SalesChartPeriod.monthly => "month",
-    };
 
-    final chart = await repo.getSalesChart(range);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Future<void> changeSalesChartPeriod(SalesChartPeriod period) async {
+  //   state = state.copyWith(chartPeriod: period, loading: true);
+
+  //   final repo = ref.read(adminDashboardRepositoryProvider);
+
+  //   final range = switch (period) {
+  //     SalesChartPeriod.daily => "day",
+  //     SalesChartPeriod.weekly => "week",
+  //     SalesChartPeriod.monthly => "month",
+  //   };
+
+  //   final chart = await repo.getSalesChart(range);
+
+  //   state = state.copyWith(
+  //     loading: false,
+  //     salesChart: chart
+  //         .map<Map<String, dynamic>>(
+  //           (e) => {
+  //             "label": e["label"],
+  //             "revenue": parseRequired(e["revenue"], "chart.revenue"),
+  //           },
+  //         )
+  //         .toList(),
+  //   );
+  // }
+
+Future<void> changeSalesChartPeriod(SalesChartPeriod period) async {
+
+  // ✅ DAILY → NO API CALL, NO LOADING
+  if (period == SalesChartPeriod.daily) {
     state = state.copyWith(
+      chartPeriod: period,
       loading: false,
-      salesChart: chart
-          .map<Map<String, dynamic>>(
-            (e) => {
-              "label": e["label"],
-              "revenue": parseRequired(e["revenue"], "chart.revenue"),
-            },
-          )
-          .toList(),
     );
+    return;
   }
+
+  // ✅ WEEKLY / MONTHLY → FETCH CHART
+  state = state.copyWith(chartPeriod: period, loading: true);
+
+  final repo = ref.read(adminDashboardRepositoryProvider);
+
+  final range = period == SalesChartPeriod.weekly ? "week" : "month";
+
+  final chart = await repo.getSalesChart(range);
+
+  state = state.copyWith(
+    loading: false,
+    salesChart: chart
+        .map<Map<String, dynamic>>(
+          (e) => {
+            "label": e["label"],
+            "revenue": parseRequired(e["revenue"], "chart.revenue"),
+          },
+        )
+        .toList(),
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   Future<void> fetchDashboard() async {
     await loadDashboard();
