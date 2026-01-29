@@ -1,6 +1,12 @@
 const {constants}=require("../../constants")
 const errorHandler = (err, req, res, next) => {
-  const statusCode = res.statusCode ? res.statusCode : 500;
+  // const statusCode = res.statusCode ? res.statusCode : 500;
+
+    // ✅ FIX: read status from ERROR, not from response
+  const statusCode = err.statusCode || res.statusCode || constants.SERVER_ERROR;
+
+  res.status(statusCode);
+  
 
 
   switch (statusCode) {
@@ -19,7 +25,7 @@ const errorHandler = (err, req, res, next) => {
         stackTrace: err.stack,
       });
       break;
-       case constants. UNAUTHORIZED:
+       case constants.UNAUTHORIZED:
       res.json({
         title: " UNAUTHORIZED",
         message: err.message,

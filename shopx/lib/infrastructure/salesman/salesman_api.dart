@@ -11,11 +11,27 @@ class SalesmanApi {
 
   SalesmanApi(this._dio);
 
-    // CREATE → admin registers salesperson
-  Future<Map<String, dynamic>> createSalesman(Map<String, dynamic> data) async {
+  // //   // CREATE → admin registers salesperson
+  // Future<Map<String, dynamic>> createSalesman(Map<String, dynamic> data) async {
+  //   final res = await _dio.post("auth/register", data: data);
+  //   return res.data["user"];
+  // }
+
+  
+Future<Map<String, dynamic>> createSalesman(Map<String, dynamic> data) async {
+  try {
     final res = await _dio.post("auth/register", data: data);
     return res.data["user"];
+  } on DioException catch (e) {
+    if (e.response?.statusCode == 409) {
+      throw Exception("USER_ALREADY_EXISTS");
+    }
+
+    throw Exception("UNKNOWN_ERROR");
   }
+}
+
+
 
  // GET ALL
   Future<List<dynamic>> getSalesmen() async {

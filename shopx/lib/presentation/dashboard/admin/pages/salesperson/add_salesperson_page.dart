@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shopx/application/salesman/salesman_notifier.dart';
+import 'package:shopx/application/salesman/salesman_state.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/salesman/salesman.dart';
 
@@ -13,6 +14,18 @@ class AddSalespersonPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    ref.listen<SalesmanState>(salesmanNotifierProvider, (prev, next) {
+  if (next.error != null && next.error!.isNotEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(next.error!),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+});
+
     // -------------------------------------------------------------------------
     // 1. FORM CONTROLLERS (Hooks)
     // -------------------------------------------------------------------------
@@ -46,30 +59,10 @@ class AddSalespersonPage extends HookConsumerWidget {
     const textLabel = Color(0xFF2B2B2B);
 
     // -------------------------------------------------------------------------
-    // 2.5 LISTEN TO SALESMAN STATE (SUCCESS / ERROR)
-    // -------------------------------------------------------------------------
-    ref.listen(salesmanNotifierProvider, (previous, next) {
-      // ❌ ERROR → show snackbar, stay on page
-      if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
-        );
-      }
-
-      // ✅ SUCCESS → navigate back
-      if (next.success) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Salesman saved successfully")),
-        );
-      }
-    });
-
-    // -------------------------------------------------------------------------
     // 3. LOGIC HANDLERS
     // -------------------------------------------------------------------------
 
-    void handleSubmit() {
+    Future<void> handleSubmit() async {
       final name = nameController.text.trim();
       final email = emailController.text.trim();
       final phone = phoneController.text.trim();
@@ -123,15 +116,50 @@ class AddSalespersonPage extends HookConsumerWidget {
       );
 
       // ---------------- SUBMIT ----------------
-      if (isEditMode) {
-        ref
-            .read(salesmanNotifierProvider.notifier)
-            .updateSalesman(salesman!.id!, newSalesmanData);
-      } else {
-        ref
-            .read(salesmanNotifierProvider.notifier)
-            .createSalesman(newSalesmanData);
-      }
+      //   if (isEditMode) {
+      //    await ref
+      //         .read(salesmanNotifierProvider.notifier)
+      //         .updateSalesman(salesman!.id!, newSalesmanData);
+      //   } else {
+      //   await  ref
+      //         .read(salesmanNotifierProvider.notifier)
+      //         .createSalesman(newSalesmanData);
+      //   }
+
+      //   Navigator.pop(context);
+      // }
+try {
+  if (isEditMode) {
+    await ref
+        .read(salesmanNotifierProvider.notifier)
+        .updateSalesman(salesman!.id!, newSalesmanData);
+  } else {
+    await ref
+        .read(salesmanNotifierProvider.notifier)
+        .createSalesman(newSalesmanData);
+  }
+
+  Navigator.pop(context); // ✅ success only
+} on Exception catch (e) {
+  String message;
+
+  final error = e.toString();
+
+  if (error.contains("USER_ALREADY_EXISTS")) {
+    message = "User already exists";
+  } else {
+    message = "Something went wrong. Please try again.";
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
+
+
     }
 
     void handleDelete() {
@@ -231,43 +259,15 @@ class AddSalespersonPage extends HookConsumerWidget {
             ),
 
             const SizedBox(height: 16),
-
-            // _buildLabel("Password"),
-            // _buildTextField(
-            //   passwordController,
-            //   isEditMode ? "Leave empty to keep current" : "Password",
-            //   isPassword: true,
-            //   errorMessage: passwordError.value,
-            // ),
-
-            // const SizedBox(height: 16),
-            // _buildLabel("Confirm Password"),
-            // _buildTextField(
-            //   confirmPasswordController,
-            //   "Confirm Password",
-            //   isPassword: true,
-            //   errorMessage: confirmError.value,
-            // ),
-            _buildLabel(isEditMode ? "Reset Password (Optional)" : "Password"),
+            _buildLabel("Password"),
             _buildTextField(
               passwordController,
-              isEditMode ? "Enter new password to reset" : "Password",
+              isEditMode ? "Leave empty to keep current" : "Password",
               isPassword: true,
               errorMessage: passwordError.value,
             ),
 
-            // ✅ ADD THIS HELPER TEXT HERE
-            if (isEditMode)
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text(
-                  "Salesman already has a password. Enter a new one only if you want to reset it.",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ),
-
             const SizedBox(height: 16),
-
             _buildLabel("Confirm Password"),
             _buildTextField(
               confirmPasswordController,

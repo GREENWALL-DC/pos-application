@@ -40,14 +40,16 @@ const register = async (data, reqUser) => {
 
   // const existing = await repo.findUserByEmail(email);
   // if (existing) throw new Error("User Already Registered!");
-
-  const existingEmail = await repo.findUserByEmail(email);
+  
+const existingEmail = await repo.findUserByEmail(email);
 if (existingEmail) {
   const err = new Error("User already exists");
   err.statusCode = 409;
   err.code = "USER_ALREADY_EXISTS";
+  req.res.status(409); // ⭐ ADD THIS LINE
   throw err;
 }
+
 
 const existingUsername = await repo.findUserByUsername(username);
 if (existingUsername) {

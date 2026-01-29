@@ -16,45 +16,58 @@ class SalesmanNotifier extends Notifier<SalesmanState> {
   }
 
   // CREATE
+  //   Future<void> createSalesman(Salesman salesman) async {
+  //     state = state.copyWith(isLoading: true, error: null, success: false);
+
+  //     try {
+  //       final created = await ref
+  //           .read(salesmanRepositoryProvider)
+  //           .createSalesman(salesman);
+
+  //       state = state.copyWith(
+  //         isLoading: false,
+  //         success: true,
+  //         salesmen: [...state.salesmen, created], // 🔥 append new item
+  //       );
+
+  //     } catch (e) {
+  //   String errorMessage = "Something went wrong";
+
+  //   if (e is DioException) {
+  //     final data = e.response?.data;
+
+  //     // ✅ CASE 1: Backend sends JSON
+  //     if (data is Map && data["message"] != null) {
+  //       errorMessage = data["message"].toString();
+  //     }
+
+  //     // ✅ CASE 2: Flutter Web sends plain string
+  //     else if (data is String) {
+  //       errorMessage = data;
+  //     }
+  //   }
+
+  //   state = state.copyWith(
+  //     isLoading: false,
+  //     error: errorMessage,
+  //     success: false,
+  //   );
+  // }
+
+  //   }
+
+
   Future<void> createSalesman(Salesman salesman) async {
-    state = state.copyWith(isLoading: true, error: null, success: false);
+  state = state.copyWith(isLoading: true);
 
-    try {
-      final created = await ref
-          .read(salesmanRepositoryProvider)
-          .createSalesman(salesman);
+  await ref
+      .read(salesmanRepositoryProvider)
+      .createSalesman(salesman);
 
-      state = state.copyWith(
-        isLoading: false,
-        success: true,
-        salesmen: [...state.salesmen, created], // 🔥 append new item
-      );
-    } catch (e) {
-      String errorMessage = "Something went wrong";
+  state = state.copyWith(isLoading: false);
+}
 
-      if (e is DioException) {
-        final status = e.response?.statusCode;
-        final data = e.response?.data;
 
-        if (status == 409) {
-          if (data?["code"] == "USERNAME_ALREADY_EXISTS") {
-            errorMessage = "Salesman name already exists";
-          } else if (data?["code"] == "USER_ALREADY_EXISTS") {
-            errorMessage = "Email already exists";
-          }
-        } else {
-          errorMessage = "Server error. Please try again.";
-        }
-      }
-
-      state = state.copyWith(
-        isLoading: false,
-        error: errorMessage,
-        success: false,
-      );
-    }
-  }
-  
 
   // GET ALL
   Future<void> fetchSalesmen() async {
