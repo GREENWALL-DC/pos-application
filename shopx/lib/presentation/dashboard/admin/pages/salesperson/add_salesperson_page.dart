@@ -46,6 +46,26 @@ class AddSalespersonPage extends HookConsumerWidget {
     const textLabel = Color(0xFF2B2B2B);
 
     // -------------------------------------------------------------------------
+    // 2.5 LISTEN TO SALESMAN STATE (SUCCESS / ERROR)
+    // -------------------------------------------------------------------------
+    ref.listen(salesmanNotifierProvider, (previous, next) {
+      // ❌ ERROR → show snackbar, stay on page
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
+        );
+      }
+
+      // ✅ SUCCESS → navigate back
+      if (next.success) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Salesman saved successfully")),
+        );
+      }
+    });
+
+    // -------------------------------------------------------------------------
     // 3. LOGIC HANDLERS
     // -------------------------------------------------------------------------
 
@@ -112,8 +132,6 @@ class AddSalespersonPage extends HookConsumerWidget {
             .read(salesmanNotifierProvider.notifier)
             .createSalesman(newSalesmanData);
       }
-
-      Navigator.pop(context);
     }
 
     void handleDelete() {
@@ -213,6 +231,7 @@ class AddSalespersonPage extends HookConsumerWidget {
             ),
 
             const SizedBox(height: 16),
+
             // _buildLabel("Password"),
             // _buildTextField(
             //   passwordController,
@@ -229,38 +248,33 @@ class AddSalespersonPage extends HookConsumerWidget {
             //   isPassword: true,
             //   errorMessage: confirmError.value,
             // ),
-
             _buildLabel(isEditMode ? "Reset Password (Optional)" : "Password"),
-_buildTextField(
-  passwordController,
-  isEditMode ? "Enter new password to reset" : "Password",
-  isPassword: true,
-  errorMessage: passwordError.value,
-),
+            _buildTextField(
+              passwordController,
+              isEditMode ? "Enter new password to reset" : "Password",
+              isPassword: true,
+              errorMessage: passwordError.value,
+            ),
 
-// ✅ ADD THIS HELPER TEXT HERE
-if (isEditMode)
-  const Padding(
-    padding: EdgeInsets.only(top: 6),
-    child: Text(
-      "Salesman already has a password. Enter a new one only if you want to reset it.",
-      style: TextStyle(
-        fontSize: 12,
-        color: Colors.grey,
-      ),
-    ),
-  ),
+            // ✅ ADD THIS HELPER TEXT HERE
+            if (isEditMode)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text(
+                  "Salesman already has a password. Enter a new one only if you want to reset it.",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ),
 
-const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-_buildLabel("Confirm Password"),
-_buildTextField(
-  confirmPasswordController,
-  "Confirm Password",
-  isPassword: true,
-  errorMessage: confirmError.value,
-),
-
+            _buildLabel("Confirm Password"),
+            _buildTextField(
+              confirmPasswordController,
+              "Confirm Password",
+              isPassword: true,
+              errorMessage: confirmError.value,
+            ),
 
             kHeight40,
 
@@ -334,15 +348,15 @@ _buildTextField(
       ),
     );
   }
-Widget _buildTextField(
-  TextEditingController controller,
-  String hint, {
-  bool isPassword = false,
-  bool isPhone = false, // ⭐ ADD THIS
-  TextInputType keyboardType = TextInputType.text,
-  String? errorMessage,
-})
- {
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint, {
+    bool isPassword = false,
+    bool isPhone = false, // ⭐ ADD THIS
+    TextInputType keyboardType = TextInputType.text,
+    String? errorMessage,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -355,30 +369,27 @@ Widget _buildTextField(
               width: 1.5,
             ),
           ),
-          child: 
-          
-       TextField(
-  controller: controller,
-  obscureText: isPassword,
-  keyboardType: keyboardType,
-  inputFormatters: isPhone
-      ? [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(10),
-        ]
-      : null, // ⭐ KEY FIX
-  style: const TextStyle(fontSize: 14, color: Colors.black87),
-  decoration: InputDecoration(
-    hintText: hint,
-    hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-    border: InputBorder.none,
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: 16,
-      vertical: 14,
-    ),
-  ),
-)
-
+          child: TextField(
+            controller: controller,
+            obscureText: isPassword,
+            keyboardType: keyboardType,
+            inputFormatters: isPhone
+                ? [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ]
+                : null, // ⭐ KEY FIX
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
         ),
 
         if (errorMessage != null)

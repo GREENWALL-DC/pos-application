@@ -38,8 +38,25 @@ const register = async (data, reqUser) => {
     finalType = user_type === "admin" ? "admin" : "user";
   }
 
-  const existing = await repo.findUserByEmail(email);
-  if (existing) throw new Error("User Already Registered!");
+  // const existing = await repo.findUserByEmail(email);
+  // if (existing) throw new Error("User Already Registered!");
+
+  const existingEmail = await repo.findUserByEmail(email);
+if (existingEmail) {
+  const err = new Error("User already exists");
+  err.statusCode = 409;
+  err.code = "USER_ALREADY_EXISTS";
+  throw err;
+}
+
+const existingUsername = await repo.findUserByUsername(username);
+if (existingUsername) {
+  const err = new Error("Username already exists");
+  err.statusCode = 409;
+  err.code = "USERNAME_ALREADY_EXISTS";
+  throw err;
+}
+
 
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -85,7 +102,7 @@ const login = async ({ username, password }) => {
     },
     process.env.ACCESS_TOKEN_SECRET,
     // { expiresIn: "1d" }
-    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
+    { expiresIn: "50m" }, // ⏱ TEMP: for refresh-token testing
   );
 
   // 🔐 Ensure single active session
@@ -134,7 +151,7 @@ const loginAdmin = async ({ username, password }) => {
     },
     process.env.ACCESS_TOKEN_SECRET,
     // { expiresIn: "1d" }
-    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
+    { expiresIn: "50m" }, // ⏱ TEMP: for refresh-token testing
   );
 
   const refreshToken = generateRefreshToken();
@@ -263,7 +280,7 @@ const verifyOTP = async ({ userId, otp }) => {
     },
     process.env.ACCESS_TOKEN_SECRET, // Secret key
     // { expiresIn: "1d" } // Token valid for 24 hours
-    { expiresIn: "50m" } // ⏱ TEMP: for refresh-token testing
+    { expiresIn: "50m" }, // ⏱ TEMP: for refresh-token testing
   );
 
   // await repo.deleteRefreshTokensByUser(user.id);
@@ -337,7 +354,7 @@ const refreshAccessToken = async (refreshToken) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "50m" }
+    { expiresIn: "50m" },
   );
 
   const newRefreshToken = generateRefreshToken();
@@ -355,9 +372,6 @@ const logout = async (refreshToken) => {
   await repo.deleteRefreshToken(refreshToken);
 };
 
-
-
-
 module.exports = {
   register,
   login,
@@ -371,5 +385,5 @@ module.exports = {
   sendOTP,
   verifyOTP,
   refreshAccessToken,
-  logout
+  logout,
 };
