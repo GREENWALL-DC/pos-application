@@ -67,6 +67,9 @@ class CartScreen extends HookConsumerWidget {
     final paymentStatus = useState<String>("paid"); // 👈 NEW
     final hasCustomerError = useState<bool>(false);
 
+    // 🛑 Prevent double submission
+    final isSubmitting = useState<bool>(false);
+
     // ================= DISCOUNT + VAT LOGIC =================
 
     // Subtotal (gross)
@@ -76,7 +79,14 @@ class CartScreen extends HookConsumerWidget {
     );
 
     // --- LOGIC: Place Order ---
+    // void handlePlaceOrder() async {
     void handlePlaceOrder() async {
+
+  // 🛑 HARD LOCK
+  if (isSubmitting.value) return;
+ 
+
+  // 1. Validation
       // 1. Validation
       if (cartItems.isEmpty) {
         ScaffoldMessenger.of(
@@ -98,6 +108,8 @@ class CartScreen extends HookConsumerWidget {
         );
         return;
       }
+
+       isSubmitting.value = true;
 
       // 2. Prepare sale items for backend
       final saleItems = cartItems.map((item) {
@@ -143,13 +155,11 @@ class CartScreen extends HookConsumerWidget {
             ),
           );
         }
-       
+
         // 4. Clear cart
         ref.read(cartProvider.notifier).clearCart();
         print("🟢 SALE CREATED! Sale ID = $saleId");
 
-     
-      
         // 5. Navigate to success screen (CLEAR STACK – POS SAFE)
         Navigator.pushAndRemoveUntil(
           context,
@@ -158,7 +168,14 @@ class CartScreen extends HookConsumerWidget {
           ),
           (route) => false,
         );
+        // } catch (e) {
+        //   ScaffoldMessenger.of(
+        //     context,
+        //   ).showSnackBar(SnackBar(content: Text("Order failed: $e")));
+        // }
       } catch (e) {
+        isSubmitting.value = false; // 🔓 unlock button on failure
+
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Order failed: $e")));
@@ -647,7 +664,8 @@ class CartScreen extends HookConsumerWidget {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: handlePlaceOrder,
+            // onPressed: handlePlaceOrder,
+            onPressed: isSubmitting.value ? null : handlePlaceOrder,
             style: ElevatedButton.styleFrom(
               backgroundColor: blueColor,
               shape: RoundedRectangleBorder(
@@ -655,14 +673,32 @@ class CartScreen extends HookConsumerWidget {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              "Place order",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+
+            // child: const Text(
+            //   "Place order",
+            //   style: TextStyle(
+            //     color: Colors.white,
+            //     fontWeight: FontWeight.bold,
+            //     fontSize: 16,
+            //   ),
+            // ),
+            child: isSubmitting.value
+    ? const SizedBox(
+        height: 22,
+        width: 22,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: Colors.white,
+        ),
+      )
+    : const Text(
+        "Place order",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
           ),
         ),
       ),

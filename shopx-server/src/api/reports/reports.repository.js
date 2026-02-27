@@ -130,7 +130,9 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
       p.id AS product_id,
       p.name AS product_name,
       SUM(si.quantity) AS units_sold,
-      SUM(si.total_price) AS revenue
+      SUM(
+  (si.total_price / s.subtotal_amount) * s.total_amount
+) AS revenue
     FROM sale_items si
    JOIN products p 
   ON p.id = si.product_id
@@ -150,35 +152,72 @@ exports.getProductPerformance = async (start, end, salespersonId = null) => {
   return rows.rows;
 };
 
+
+
+
+
+
+// exports.getCustomerPerformance = async (start, end) => {
+//   const rows = await db.query(
+//     `
+//   SELECT 
+//   c.name AS customer,
+//   SUM(sa.total_amount) AS revenue,
+//   COUNT(sa.id) AS orders,
+//   SUM(si.quantity) AS units
+// FROM sales sa
+// LEFT JOIN sale_items si ON si.sale_id = sa.id
+// JOIN customers c 
+//   ON sa.customer_id = c.id
+//  AND c.is_active = true
+// WHERE sa.sale_date >= $1
+//   AND sa.sale_date < ($2::date + INTERVAL '1 day')
+//   AND sa.payment_status = 'paid'
+//   AND sa.sale_status != 'voided'
+// GROUP BY c.name
+// ORDER BY revenue DESC;
+
+//   `,
+//     [start, end],
+//   );
+
+//   return rows.rows;
+// };
+
+
 exports.getCustomerPerformance = async (start, end) => {
   const rows = await db.query(
     `
-  SELECT 
-  c.name AS customer,
-  SUM(sa.total_amount) AS revenue,
-  COUNT(sa.id) AS orders,
-  SUM(si.quantity) AS units
-FROM sales sa
-LEFT JOIN sale_items si ON si.sale_id = sa.id
-JOIN customers c 
-  ON sa.customer_id = c.id
- AND c.is_active = true
-WHERE sa.sale_date >= $1
-  AND sa.sale_date < ($2::date + INTERVAL '1 day')
-  AND sa.payment_status = 'paid'
-  AND sa.sale_status != 'voided'
-GROUP BY c.name
-ORDER BY revenue DESC;
+    SELECT 
+      c.name AS customer,
+      SUM(sa.total_amount) AS revenue,
+      COUNT(sa.id) AS orders,
+      SUM(COALESCE(si.total_units, 0)) AS units
+    FROM sales sa
+    JOIN customers c 
+      ON sa.customer_id = c.id
+     AND c.is_active = true
 
-  `,
-    [start, end],
+    -- aggregate sale_items FIRST
+    LEFT JOIN (
+        SELECT sale_id, SUM(quantity) AS total_units
+        FROM sale_items
+        GROUP BY sale_id
+    ) si ON si.sale_id = sa.id
+
+    WHERE sa.sale_date >= $1
+      AND sa.sale_date < ($2::date + INTERVAL '1 day')
+      AND sa.payment_status = 'paid'
+      AND sa.sale_status != 'voided'
+
+    GROUP BY c.name
+    ORDER BY revenue DESC;
+    `,
+    [start, end]
   );
 
   return rows.rows;
 };
-
-
-
 
 
 
