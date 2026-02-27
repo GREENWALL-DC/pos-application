@@ -227,14 +227,16 @@ class SalespersonListPage extends HookConsumerWidget {
                                           child: SizedBox(
                                             height: 40,
                                             child: ElevatedButton(
-                                              onPressed: () {
+                                              onPressed: ()async {
                                                 // Navigate to Edit Page
-                                                Navigator.push(
+                                              await  Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (_) => AddSalespersonPage(salesman: salesman),
                                                   ),
                                                 );
+                                                // 🔥 REFRESH LIST AFTER RETURN
+  ref.read(salesmanNotifierProvider.notifier).fetchSalesmen();
                                               },
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: primaryBlue,
@@ -310,14 +312,16 @@ class SalespersonListPage extends HookConsumerWidget {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async{
                     // Navigate to Add Page (No salesman passed means Create mode)
-                    Navigator.push(
+                await    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const AddSalespersonPage(salesman: null),
                       ),
                     );
+                    // 🔥 REFRESH LIST AFTER RETURN
+  ref.read(salesmanNotifierProvider.notifier).fetchSalesmen();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,

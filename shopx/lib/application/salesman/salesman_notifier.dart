@@ -15,57 +15,32 @@ class SalesmanNotifier extends Notifier<SalesmanState> {
     return SalesmanState();
   }
 
-  // CREATE
-  //   Future<void> createSalesman(Salesman salesman) async {
-  //     state = state.copyWith(isLoading: true, error: null, success: false);
 
-  //     try {
-  //       final created = await ref
-  //           .read(salesmanRepositoryProvider)
-  //           .createSalesman(salesman);
+Future<void> createSalesman(Salesman salesman) async {
+  // Start loading
+  state = state.copyWith(isLoading: true, error: null);
 
-  //       state = state.copyWith(
-  //         isLoading: false,
-  //         success: true,
-  //         salesmen: [...state.salesmen, created], // 🔥 append new item
-  //       );
+  try {
+    final created = await ref
+        .read(salesmanRepositoryProvider)
+        .createSalesman(salesman);
 
-  //     } catch (e) {
-  //   String errorMessage = "Something went wrong";
+    // ✅ SUCCESS: update list immediately
+    state = state.copyWith(
+      isLoading: false,
+      salesmen: [...state.salesmen, created],
+    );
+  } catch (e) {
+    // ✅ FAILURE: ALWAYS clear loading
+    state = state.copyWith(
+      isLoading: false,
+      error: e.toString().replaceFirst('Exception: ', ''),
+    );
 
-  //   if (e is DioException) {
-  //     final data = e.response?.data;
-
-  //     // ✅ CASE 1: Backend sends JSON
-  //     if (data is Map && data["message"] != null) {
-  //       errorMessage = data["message"].toString();
-  //     }
-
-  //     // ✅ CASE 2: Flutter Web sends plain string
-  //     else if (data is String) {
-  //       errorMessage = data;
-  //     }
-  //   }
-
-  //   state = state.copyWith(
-  //     isLoading: false,
-  //     error: errorMessage,
-  //     success: false,
-  //   );
-  // }
-
-  //   }
-
-
-  Future<void> createSalesman(Salesman salesman) async {
-  state = state.copyWith(isLoading: true);
-
-  await ref
-      .read(salesmanRepositoryProvider)
-      .createSalesman(salesman);
-
-  state = state.copyWith(isLoading: false);
+    rethrow; // keeps your snackbar logic working
+  }
 }
+
 
 
 

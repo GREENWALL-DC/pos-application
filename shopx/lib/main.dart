@@ -10,9 +10,10 @@ import 'package:shopx/presentation/dashboard/admin/admin_dashboard.dart';
 import 'package:shopx/presentation/dashboard/user/user_dashboard.dart';
 import 'package:shopx/presentation/splash/splash_screen.dart';
 import 'package:shopx/widget/internet/no_internet_screen.dart';
+import 'package:shopx/widget/others/app_lifecycle_handler.dart';
 
 void main() {
-  runApp(ProviderScope(child: MyApp()));
+  runApp(ProviderScope(child: AppLifecycleHandler(child: MyApp())));
 }
 
 class MyApp extends HookConsumerWidget {

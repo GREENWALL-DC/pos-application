@@ -37,8 +37,9 @@ const revenueDirection =
     totals: {
       all: {
         revenue:
-          Number(totalSales.rows[0].total_revenue) -
-          Number(totalDiscount.rows[0].total_discount),
+          // Number(totalSales.rows[0].total_revenue) -
+          // Number(totalDiscount.rows[0].total_discount),
+           Number(totalSales.rows[0].total_revenue),
 
         total_sales: Number(totalSales.rows[0].total_sales),
 

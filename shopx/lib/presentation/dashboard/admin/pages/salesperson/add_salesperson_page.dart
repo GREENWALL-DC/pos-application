@@ -14,17 +14,15 @@ class AddSalespersonPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isSubmitting = useState(false); // 🔒 prevents double submit
 
     ref.listen<SalesmanState>(salesmanNotifierProvider, (prev, next) {
-  if (next.error != null && next.error!.isNotEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(next.error!),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-});
+      if (next.error != null && next.error!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
+        );
+      }
+    });
 
     // -------------------------------------------------------------------------
     // 1. FORM CONTROLLERS (Hooks)
@@ -116,50 +114,68 @@ class AddSalespersonPage extends HookConsumerWidget {
       );
 
       // ---------------- SUBMIT ----------------
+
+      // try {
       //   if (isEditMode) {
-      //    await ref
+      //     await ref
       //         .read(salesmanNotifierProvider.notifier)
       //         .updateSalesman(salesman!.id!, newSalesmanData);
       //   } else {
-      //   await  ref
+      //     await ref
       //         .read(salesmanNotifierProvider.notifier)
       //         .createSalesman(newSalesmanData);
       //   }
 
-      //   Navigator.pop(context);
+      //   Navigator.pop(context); // ✅ success only
+      // } on Exception catch (e) {
+      //   String message;
+
+      //   final error = e.toString();
+
+      //   if (error.contains("USER_ALREADY_EXISTS")) {
+      //     message = "User already exists";
+      //   } else {
+      //     message = "Something went wrong. Please try again.";
+      //   }
+
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(
+      //       content: Text(message),
+      //       backgroundColor: Colors.red,
+      //     ),
+      //   );
       // }
-try {
-  if (isEditMode) {
-    await ref
-        .read(salesmanNotifierProvider.notifier)
-        .updateSalesman(salesman!.id!, newSalesmanData);
-  } else {
-    await ref
-        .read(salesmanNotifierProvider.notifier)
-        .createSalesman(newSalesmanData);
-  }
 
-  Navigator.pop(context); // ✅ success only
-} on Exception catch (e) {
-  String message;
+      if (isSubmitting.value) return; // 🔒 stop double tap
+      isSubmitting.value = true;
 
-  final error = e.toString();
+      try {
+        if (isEditMode) {
+          await ref
+              .read(salesmanNotifierProvider.notifier)
+              .updateSalesman(salesman!.id!, newSalesmanData);
+        } else {
+          await ref
+              .read(salesmanNotifierProvider.notifier)
+              .createSalesman(newSalesmanData);
+        }
 
-  if (error.contains("USER_ALREADY_EXISTS")) {
-    message = "User already exists";
-  } else {
-    message = "Something went wrong. Please try again.";
-  }
+        Navigator.pop(context); // ✅ success only
+      } catch (e) {
+        String message = "Something went wrong. Please try again.";
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red,
-    ),
-  );
-}
+        final error = e.toString().toLowerCase();
 
+        if (error.contains("already") || error.contains("409")) {
+          message = "Salesman already exists";
+        }
 
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      } finally {
+        isSubmitting.value = false; // 🔓 ALWAYS release lock
+      }
     }
 
     void handleDelete() {
@@ -282,24 +298,55 @@ try {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: ElevatedButton(
-                onPressed: handleSubmit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+
+              child:
+                  //  ElevatedButton(
+                  //   onPressed: handleSubmit,
+                  //   style: ElevatedButton.styleFrom(
+                  //     backgroundColor: primaryBlue,
+                  //     elevation: 0,
+                  //     shape: RoundedRectangleBorder(
+                  //       borderRadius: BorderRadius.circular(8),
+                  //     ),
+                  //   ),
+                  //   child: Text(
+                  //     isEditMode ? "Update Salesman" : "Add Salesman",
+                  //     style: const TextStyle(
+                  //       color: Colors.white,
+                  //       fontSize: 14,
+                  //       fontWeight: FontWeight.bold,
+                  //     ),
+                  //   ),
+                  // ),
+                  ElevatedButton(
+                    onPressed: isSubmitting.value
+                        ? null
+                        : handleSubmit, // 🔒 disable while submitting
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: isSubmitting.value
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            isEditMode ? "Update Salesman" : "Add Salesman",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
-                ),
-                child: Text(
-                  isEditMode ? "Update Salesman" : "Add Salesman",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
             ),
 
             // Delete Button (Only in Edit Mode)

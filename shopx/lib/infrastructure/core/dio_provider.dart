@@ -12,6 +12,7 @@ final dioProvider = Provider<Dio>((ref) {
       //  baseUrl: "https://aba65707ae3f.ngrok-free.app/api/",
       // baseUrl: "http://16.112.120.235:5000/api/", // Aws
       baseUrl: "http://sellops.cloud:5000/api/",
+      // baseUrl:"http://52.66.146.243/api/",
 
       connectTimeout: Duration(seconds: 20),
       receiveTimeout: Duration(seconds: 20),

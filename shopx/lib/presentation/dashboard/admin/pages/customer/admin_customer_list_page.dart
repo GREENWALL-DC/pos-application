@@ -198,6 +198,8 @@ if (result.filterType == CustomerFilterType.area) {
           ),
 
           // List Content
+
+          
           Expanded(
             child: customerState.isLoading && customerState.customers.isEmpty
                 ? const Center(child: CircularProgressIndicator())

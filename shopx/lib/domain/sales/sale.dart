@@ -10,6 +10,7 @@ class Sale {
   final String salespersonName;
   final String customerName;
   final String customerPhone;
+  final String? customerTin;  // ✅ ADD
 
   final List<SaleItem> items;
   final List<Payment> payments;
@@ -34,6 +35,7 @@ class Sale {
     required this.salespersonName,
     required this.customerName,
     required this.customerPhone,
+    this.customerTin,
     required this.items,
     required this.payments,
     required this.subtotalAmount,
@@ -84,6 +86,7 @@ class Sale {
     salespersonName: saleData["salesperson_name"] ?? "",
     customerName: saleData["customer_name"] ?? "",
     customerPhone: saleData["customer_phone"] ?? "",
+    customerTin: saleData["customer_tin"],  // ✅ ADD
 
     items: (json["items"] as List?)?.map((i) => SaleItem.fromJson(i)).toList() ?? [],
     payments: (json["payments"] as List?)?.map((p) => Payment.fromJson(p)).toList() ?? [],

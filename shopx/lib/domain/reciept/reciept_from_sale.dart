@@ -29,6 +29,7 @@ ReceiptData receiptFromSale(
     invoiceNumber: sale.id.toString(),
     invoiceDate: sale.saleDate,
     customerName: sale.customerName,
+    customerVat: sale.customerTin,  // ✅ ADD THIS LINE
 
     items: receiptItems,
     subTotal: sale.subtotalAmount,

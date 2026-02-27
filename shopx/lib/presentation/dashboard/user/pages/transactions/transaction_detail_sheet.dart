@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart'; // ✅ REQUIRED
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shopx/application/payments/payments_notifier.dart';
 import 'package:shopx/application/sales/sales_notifier.dart';
 import 'package:shopx/application/settings/settings_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/reciept/reciept_from_sale.dart';
 import 'package:shopx/domain/sales/sale.dart';
+import 'package:shopx/infrastructure/pdf/pdf_receipt_service.dart';
 import 'package:shopx/presentation/printpreview/reciept_preview_screen.dart';
 
 class TransactionDetailSheet extends HookConsumerWidget {
@@ -159,6 +161,65 @@ final companySettings = settingsState.settings!;
                     },
             ),
           ),
+
+
+
+
+
+
+          //new pdf 
+          kHeight12,
+
+// ================= SEND RECEIPT =================
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.send),
+    label: const Text("Send Receipt"),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFFE3F2FD),
+      foregroundColor: Colors.blue,
+      minimumSize: const Size(double.infinity, 48),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+    onPressed: invoice == null
+        ? null
+        : () async {
+            // 🔒 Optional safety: avoid cancelled sales
+            if (invoice.saleStatus == 'voided') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    "Cannot send receipt for cancelled sale.",
+                  ),
+                ),
+              );
+              return;
+            }
+
+            // ✅ Build receipt for THIS invoice
+            final receipt =
+                receiptFromSale(invoice, companySettings);
+
+            // ✅ Generate PDF
+            final file =
+                await PdfReceiptService.generateReceiptPdf(
+              receipt: receipt,
+              settings: companySettings,
+            );
+
+            // ✅ Share (WhatsApp / Mail / etc.)
+            await Share.shareXFiles(
+              [XFile(file.path)],
+              text: 'Invoice ${invoice.id}',
+            );
+          },
+  ),
+),
+
 
           // ✅ Only show button if pending
           if (isPending)

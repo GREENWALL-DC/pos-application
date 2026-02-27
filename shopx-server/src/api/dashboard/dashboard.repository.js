@@ -1,12 +1,26 @@
 const db = require("../../config/db");
 
+// module.exports = {
+//   getTotalSales: async () => {
+//     return await db.query(`
+//     SELECT 
+//       COUNT(id) AS total_sales,
+//       COALESCE(SUM(subtotal_amount - discount_amount), 0) AS total_revenue,
+//       COALESCE(AVG(subtotal_amount - discount_amount), 0) AS avg_order_value
+//     FROM sales
+//     WHERE payment_status = 'paid'
+//       AND sale_status != 'voided'
+//   `);
+//   },
+
+
 module.exports = {
   getTotalSales: async () => {
     return await db.query(`
     SELECT 
       COUNT(id) AS total_sales,
-      COALESCE(SUM(subtotal_amount - discount_amount), 0) AS total_revenue,
-      COALESCE(AVG(subtotal_amount - discount_amount), 0) AS avg_order_value
+      COALESCE(SUM(total_amount), 0) AS total_revenue,
+      COALESCE(AVG(total_amount), 0) AS avg_order_value
     FROM sales
     WHERE payment_status = 'paid'
       AND sale_status != 'voided'
@@ -34,6 +48,36 @@ module.exports = {
   `);
   },
 
+//   getWeeklySales: async () => {
+//     return await db.query(`
+//     WITH days AS (
+//       SELECT unnest(ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN']) AS day
+//     ),
+//    sales_data AS (
+//   SELECT 
+//     TO_CHAR(sale_date, 'DY') AS day,
+//     SUM(subtotal_amount - discount_amount) AS revenue,
+//     COUNT(*) AS transactions
+//   FROM sales
+//   WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
+//     AND payment_status = 'paid'
+//     AND sale_status != 'voided'
+//   GROUP BY TO_CHAR(sale_date, 'DY')
+// )
+
+//     SELECT 
+//       d.day,
+//       COALESCE(s.revenue, 0) AS revenue,
+//       COALESCE(s.transactions, 0) AS transactions
+//     FROM days d
+//     LEFT JOIN sales_data s ON s.day = d.day
+//     ORDER BY array_position(
+//       ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN'], d.day
+//     );
+//   `);
+//   },
+
+
   getWeeklySales: async () => {
     return await db.query(`
     WITH days AS (
@@ -42,7 +86,7 @@ module.exports = {
    sales_data AS (
   SELECT 
     TO_CHAR(sale_date, 'DY') AS day,
-    SUM(subtotal_amount - discount_amount) AS revenue,
+    SUM(total_amount) AS revenue,
     COUNT(*) AS transactions
   FROM sales
   WHERE sale_date >= CURRENT_DATE - INTERVAL '6 days'
@@ -102,7 +146,7 @@ module.exports = {
             WHEN s.sale_date >= CURRENT_DATE - INTERVAL '6 days'
              AND s.sale_status != 'voided'
              AND s.payment_status IN ('paid', 'pending')
-            THEN (s.subtotal_amount - s.discount_amount)
+            THEN s.total_amount
             ELSE 0
           END
         ),
@@ -116,7 +160,7 @@ module.exports = {
             WHEN DATE_TRUNC('month', s.sale_date) = DATE_TRUNC('month', CURRENT_DATE)
              AND s.sale_status != 'voided'
              AND s.payment_status IN ('paid', 'pending')
-            THEN (s.subtotal_amount - s.discount_amount)
+            THEN s.total_amount
             ELSE 0
           END
         ),
@@ -169,15 +213,35 @@ module.exports = {
   `);
   },
 
+  // getTodayMetrics: async () => {
+  //   return await db.query(`
+  //   SELECT
+  //     COUNT(id) AS today_sales,
+  //     COALESCE(SUM(subtotal_amount - discount_amount), 0) AS today_revenue,
+  //     COALESCE(
+  //       CASE 
+  //         WHEN COUNT(id) = 0 THEN 0
+  //         ELSE SUM(subtotal_amount - discount_amount) / COUNT(id)
+  //       END,
+  //       0
+  //     ) AS today_avg_order_value
+  //   FROM sales
+  //   WHERE DATE(sale_date) = CURRENT_DATE
+  //     AND payment_status = 'paid'
+  //     AND sale_status != 'voided'
+  // `);
+  // },
+
+  
   getTodayMetrics: async () => {
     return await db.query(`
     SELECT
       COUNT(id) AS today_sales,
-      COALESCE(SUM(subtotal_amount - discount_amount), 0) AS today_revenue,
+      COALESCE(SUM(total_amount), 0) AS today_revenue,
       COALESCE(
         CASE 
           WHEN COUNT(id) = 0 THEN 0
-          ELSE SUM(subtotal_amount - discount_amount) / COUNT(id)
+          ELSE SUM(total_amount) / COUNT(id)
         END,
         0
       ) AS today_avg_order_value
@@ -188,11 +252,24 @@ module.exports = {
   `);
   },
 
+  // getYesterdayMetrics: async () => {
+  //   return await db.query(`
+  //   SELECT
+  //     COUNT(id) AS yesterday_sales,
+  //     COALESCE(SUM(subtotal_amount - discount_amount), 0) AS yesterday_revenue
+  //   FROM sales
+  //   WHERE DATE(sale_date) = CURRENT_DATE - INTERVAL '1 day'
+  //     AND payment_status = 'paid'
+  //     AND sale_status != 'voided'
+  // `);
+  // },
+
+  
   getYesterdayMetrics: async () => {
     return await db.query(`
     SELECT
       COUNT(id) AS yesterday_sales,
-      COALESCE(SUM(subtotal_amount - discount_amount), 0) AS yesterday_revenue
+      COALESCE(SUM(total_amount), 0) AS yesterday_revenue
     FROM sales
     WHERE DATE(sale_date) = CURRENT_DATE - INTERVAL '1 day'
       AND payment_status = 'paid'
@@ -216,7 +293,7 @@ module.exports = {
     sales_data AS (
       SELECT
         DATE(sale_date) AS day,
-        SUM(subtotal_amount - discount_amount) AS revenue
+        SUM(total_amount) AS revenue
       FROM sales
       WHERE sale_status != 'voided'
         AND payment_status IN ('paid', 'pending')
@@ -249,7 +326,7 @@ module.exports = {
     sales_data AS (
       SELECT
         DATE(sale_date) AS day,
-        SUM(subtotal_amount - discount_amount) AS revenue
+       SUM(total_amount) AS revenue
       FROM sales
       WHERE DATE_TRUNC('month', sale_date) = DATE_TRUNC('month', CURRENT_DATE)
         AND sale_date <= CURRENT_DATE
@@ -271,4 +348,8 @@ module.exports = {
 
     throw new Error("Invalid range");
   },
+
+
+
+
 };

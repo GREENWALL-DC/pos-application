@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shopx/application/settings/settings_notifier.dart';
 import 'package:shopx/core/constants.dart';
 import 'package:shopx/domain/reciept/reciept_from_sale.dart';
 import 'package:shopx/domain/sales/sale.dart';
+import 'package:shopx/infrastructure/pdf/pdf_receipt_service.dart';
 import 'package:shopx/presentation/printpreview/reciept_preview_screen.dart';
 
 class TransactionDetailsDialog extends HookConsumerWidget {
@@ -33,6 +35,15 @@ class TransactionDetailsDialog extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
 //     final settingsState = ref.watch(settingsNotifierProvider);
 // final companySettings = settingsState.settings!;
+
+
+  // 🔒 DEFENSIVE LOAD: ensure settings exist when dialog opens
+  useEffect(() {
+    Future.microtask(() {
+      ref.read(settingsNotifierProvider.notifier).loadOnce();
+    });
+    return null;
+  }, []);
 
 final settingsState = ref.watch(settingsNotifierProvider);
 
@@ -165,6 +176,59 @@ final companySettings = settingsState.settings!;
                     },
                   ),
                 ),
+
+
+
+
+
+
+                //new code 
+
+                kHeight12,
+
+// ================= SEND RECEIPT =================
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.send),
+    label: const Text("Send Receipt"),
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      backgroundColor: const Color(0xFFE3F2FD),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    onPressed: () async {
+      // 🔒 SAFETY: don’t allow for voided sales
+      if (_isVoided) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Cannot send receipt for cancelled sale."),
+          ),
+        );
+        return;
+      }
+
+      // ✅ Build receipt from THIS sale
+      final receipt = receiptFromSale(sale, companySettings);
+
+      // ✅ Generate PDF
+      final file = await PdfReceiptService.generateReceiptPdf(
+        receipt: receipt,
+        settings: companySettings,
+      );
+
+      // ✅ Share (WhatsApp / Gmail / etc.)
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Invoice ${sale.id}',
+      );
+    },
+  ),
+),
+
 
                 kHeight16,
 

@@ -817,10 +817,19 @@ class _LatestTransactionsSection extends StatelessWidget {
     );
   }
 
+  // double _todayTotal() {
+  //   return recentSales.fold(0, (sum, item) {
+  //     return sum + (item['total_amount'] as num);
+  //   });
+  // }
+
   double _todayTotal() {
-    return recentSales.fold(0, (sum, item) {
-      return sum + (item['total_amount'] as num);
-    });
+    return recentSales.where((item) => item['sale_status'] != 'voided').fold(
+      0,
+      (sum, item) {
+        return sum + (item['total_amount'] as num);
+      },
+    );
   }
 
   String _formatDate(String date) {

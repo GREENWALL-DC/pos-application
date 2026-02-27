@@ -83,7 +83,8 @@ exports.getFullInvoice = async (id) => {
       SELECT s.*, 
              u.username AS salesperson_name,
              c.name AS customer_name, 
-             c.phone AS customer_phone
+             c.phone AS customer_phone,
+             c.tin AS customer_tin   -- ✅ ADD THIS
       FROM sales s
       LEFT JOIN users u ON u.id = s.salesperson_id
       LEFT JOIN customers c ON c.id = s.customer_id

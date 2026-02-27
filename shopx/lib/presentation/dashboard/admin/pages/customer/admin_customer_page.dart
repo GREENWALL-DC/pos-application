@@ -44,37 +44,53 @@ class AdminCustomerPage extends HookConsumerWidget {
     final area = useState(customer?.area ?? "");
 
     //new
-final selectedSalesperson = useState<Salesman?>(null);
-final salespersonController = useTextEditingController();
-
+    final selectedSalesperson = useState<Salesman?>(null);
+    final salespersonController = useTextEditingController();
 
     final salesmenState = ref.watch(salesmanNotifierProvider);
-final salesmen = salesmenState.salesmen;
+    final salesmen = salesmenState.salesmen;
 
-useEffect(() {
-  if (!isEditMode) return null;
-  if (customer?.salespersonId == null) return null;
-  if (salesmen.isEmpty) return null; // wait for data
+    // useEffect(() {
+    //   if (!isEditMode) return null;
+    //   if (customer?.salespersonId == null) return null;
+    //   if (salesmen.isEmpty) return null; // wait for data
 
-  final matches =
-      salesmen.where((s) => s.id == customer!.salespersonId).toList();
+    //   final matches =
+    //       salesmen.where((s) => s.id == customer!.salespersonId).toList();
 
-  if (matches.isEmpty) {
-    // IMPORTANT:
-    // This means the salesperson was deleted or inactive.
-    // We DO NOTHING. No auto-selection. No forging.
-    return null;
-  }
+    //   if (matches.isEmpty) {
+    //     // IMPORTANT:
+    //     // This means the salesperson was deleted or inactive.
+    //     // We DO NOTHING. No auto-selection. No forging.
+    //     return null;
+    //   }
 
-  // selectedSalesperson.value = matches.first;
-  final salesperson = matches.first;
-selectedSalesperson.value = salesperson;
-salespersonController.text = salesperson.username;
+    //   // selectedSalesperson.value = matches.first;
+    //   final salesperson = matches.first;
+    // selectedSalesperson.value = salesperson;
+    // // salespersonController.text = salesperson.username;
 
-  return null;
-}, [salesmen]);
+    //   return null;
+    // }, [salesmen]);
 
+    useEffect(() {
+      if (!isEditMode) return null;
+      if (customer?.salespersonId == null) return null;
+      if (salesmen.isEmpty) return null;
 
+      final matches = salesmen
+          .where((s) => s.id == customer!.salespersonId)
+          .toList();
+
+      if (matches.isEmpty) return null;
+
+      final salesperson = matches.first;
+
+      selectedSalesperson.value = salesperson;
+      salespersonController.text = salesperson.username; // 🔥 THIS WAS MISSING
+
+      return null;
+    }, [salesmen]);
 
     // -----------------------------
     // LISTENERS (correct placement!)
@@ -97,7 +113,7 @@ salespersonController.text = salesperson.username;
     final isButtonEnabled =
         name.value.trim().isNotEmpty &&
         address.value.trim().isNotEmpty &&
-         selectedSalesperson.value != null &&
+        selectedSalesperson.value != null &&
         (phone.value.trim().isEmpty || isValidPhone(phone.value.trim())) &&
         (tin.value.trim().isEmpty || isValidTin(tin.value.trim()));
 
@@ -143,7 +159,7 @@ salespersonController.text = salesperson.username;
         area: areaController.text.trim().isEmpty
             ? null
             : areaController.text.trim(),
-             salespersonId: selectedSalesperson.value!.id,
+        salespersonId: selectedSalesperson.value!.id,
         createdAt: isEditMode ? customer!.createdAt : DateTime.now(),
       );
 
@@ -202,7 +218,7 @@ salespersonController.text = salesperson.username;
                       _buildLabel("Phone"),
                       _buildTextField(
                         phoneController,
-                       "Example: 9876543210 (Optional)",
+                        "Example: 9876543210 (Optional)",
                         required: false,
                         isPhone: true,
                       ),
@@ -210,7 +226,10 @@ salespersonController.text = salesperson.username;
                       const SizedBox(height: 20),
 
                       _buildLabel("Tin"),
-                      _buildTextField(tinController,"Example: TIN12345 (Optional)",),
+                      _buildTextField(
+                        tinController,
+                        "Example: TIN12345 (Optional)",
+                      ),
 
                       const SizedBox(height: 20),
 
@@ -232,48 +251,90 @@ salespersonController.text = salesperson.username;
 
                       const SizedBox(height: 20),
 
-_buildLabel("Salesperson"),
+                      _buildLabel("Salesperson"),
 
-Container(
-  padding: const EdgeInsets.symmetric(horizontal: 12),
-  decoration: BoxDecoration(
-    color: const Color(0xFFF2F2F2),
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Autocomplete<Salesman>(
-    displayStringForOption: (s) => s.username,
-    optionsBuilder: (TextEditingValue textEditingValue) {
-      if (textEditingValue.text.isEmpty) {
-        return salesmen;
-      }
-      return salesmen.where(
-        (s) => s.username
-            .toLowerCase()
-            .contains(textEditingValue.text.toLowerCase()),
-      );
-    },
-    onSelected: (Salesman selection) {
-      selectedSalesperson.value = selection;
-    },
-    fieldViewBuilder: (
-      context,
-      controller,
-      focusNode,
-      onFieldSubmitted,
-    ) {
-      return TextField(
-        controller: salespersonController,
-        focusNode: focusNode,
-        decoration: const InputDecoration(
-          hintText: "Search salesperson",
-          border: InputBorder.none,
-        ),
-      );
-    },
-  ),
-),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF2F2F2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child:
+                            // Autocomplete<Salesman>(
+                            //   displayStringForOption: (s) => s.username,
+                            //   optionsBuilder: (TextEditingValue textEditingValue) {
+                            //     if (textEditingValue.text.isEmpty) {
+                            //       return salesmen;
+                            //     }
+                            //     return salesmen.where(
+                            //       (s) => s.username
+                            //           .toLowerCase()
+                            //           .contains(textEditingValue.text.toLowerCase()),
+                            //     );
+                            //   },
+                            //   onSelected: (Salesman selection) {
+                            //     selectedSalesperson.value = selection;
+                            //   },
+                            //   fieldViewBuilder: (
+                            //     context,
+                            //     controller,
+                            //     focusNode,
+                            //     onFieldSubmitted,
+                            //   ) {
+                            //     return TextField(
+                            //       controller: salespersonController,
+                            //       focusNode: focusNode,
+                            //       decoration: const InputDecoration(
+                            //         hintText: "Search salesperson",
+                            //         border: InputBorder.none,
+                            //       ),
+                            //     );
+                            //   },
+                            // ),
+                            Autocomplete<Salesman>(
+                              displayStringForOption: (s) => s.username,
 
+                              initialValue: TextEditingValue(
+                                text: selectedSalesperson.value?.username ?? "",
+                              ),
 
+                              optionsBuilder: (textEditingValue) {
+                                if (salesmen.isEmpty)
+                                  return const Iterable<Salesman>.empty();
+
+                                if (textEditingValue.text.isEmpty) {
+                                  return salesmen;
+                                }
+
+                                return salesmen.where(
+                                  (s) => s.username.toLowerCase().contains(
+                                    textEditingValue.text.toLowerCase(),
+                                  ),
+                                );
+                              },
+
+                              onSelected: (Salesman selection) {
+                                selectedSalesperson.value = selection;
+                              },
+
+                              fieldViewBuilder:
+                                  (
+                                    context,
+                                    controller,
+                                    focusNode,
+                                    onFieldSubmitted,
+                                  ) {
+                                    return TextField(
+                                      controller: controller,
+                                      focusNode: focusNode,
+                                      decoration: const InputDecoration(
+                                        hintText: "Search salesperson",
+                                        border: InputBorder.none,
+                                      ),
+                                    );
+                                  },
+                            ),
+                      ),
                     ],
                   ),
                 ),
